@@ -64,22 +64,15 @@ class HomeScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.4),
         ),
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'logout') await onLogout();
-            },
-            itemBuilder:
-                (_) => const [
-                  PopupMenuItem(value: 'logout', child: Text('로그아웃')),
-                ],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                child: Text(
-                  nickname.characters.first,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
+          IconButton(
+            tooltip: '로그아웃',
+            onPressed: onLogout,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            icon: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Text(
+                nickname.characters.first,
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
           ),
