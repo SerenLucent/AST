@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'score_library_screen.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
@@ -196,10 +198,19 @@ class _MenuCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(22),
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
-        onTap:
-            () => ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${item.title} 화면은 다음 단계에서 연결합니다.')),
-            ),
+        onTap: () {
+          if (item.title == '악보 자료실') {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ScoreLibraryScreen(),
+              ),
+            );
+            return;
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${item.title} 화면은 다음 단계에서 연결합니다.')),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(
