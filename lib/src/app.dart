@@ -59,13 +59,12 @@ class _AstTeamAppState extends State<AstTeamApp> {
   }
 
   Future<void> _logout() async {
-    await _session.signOut();
-    if (!mounted) return;
     setState(() {
       _loginId = null;
       _nickname = null;
       _role = null;
     });
+    await _session.signOut();
   }
 
   @override
@@ -78,10 +77,11 @@ class _AstTeamAppState extends State<AstTeamApp> {
           _loading
               ? const _SplashScreen()
               : _loginId == null
-              ? LoginScreen(onLogin: _login)
+              ? LoginScreen(key: const ValueKey('login'), onLogin: _login)
               : _nickname == null
               ? NicknameScreen(loginId: _loginId!, onSave: _saveNickname)
               : HomeScreen(
+                key: const ValueKey('home'),
                 loginId: _loginId!,
                 nickname: _nickname!,
                 isAdmin: _role == 'admin',

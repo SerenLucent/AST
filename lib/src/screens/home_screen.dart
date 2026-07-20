@@ -65,8 +65,8 @@ class HomeScreen extends StatelessWidget {
         ),
         actions: [
           PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'logout') onLogout();
+            onSelected: (value) async {
+              if (value == 'logout') await onLogout();
             },
             itemBuilder:
                 (_) => const [
