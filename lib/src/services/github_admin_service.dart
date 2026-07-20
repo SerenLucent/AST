@@ -24,10 +24,9 @@ class GithubAdminService {
   Future<void> clearToken() => _storage.delete(key: _tokenKey);
 
   Future<bool> validateToken(String value) async {
-    final response = await http.get(
-      _contentsUri(const ['Music']),
-      headers: _headers(value.trim()),
-    );
+    final response = await http
+        .get(_contentsUri(const ['Music']), headers: _headers(value.trim()))
+        .timeout(const Duration(seconds: 10));
     return response.statusCode == 200;
   }
 

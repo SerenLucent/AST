@@ -40,10 +40,7 @@ Future<bool> showGithubTokenDialog(
                 ),
                 actions: [
                   TextButton(
-                    onPressed:
-                        validating
-                            ? null
-                            : () => Navigator.pop(dialogContext, false),
+                    onPressed: () => Navigator.pop(dialogContext, false),
                     child: const Text('취소'),
                   ),
                   FilledButton(
@@ -60,7 +57,18 @@ Future<bool> showGithubTokenDialog(
                                 validating = true;
                                 error = null;
                               });
-                              final valid = await service.validateToken(value);
+                              bool valid;
+                              try {
+                                valid = await service.validateToken(value);
+                              } catch (_) {
+                                if (!dialogContext.mounted) return;
+                                setDialogState(() {
+                                  validating = false;
+                                  error =
+                                      '연결 시간이 초과됐습니다. 인터넷 연결을 확인하고 다시 시도해주세요.';
+                                });
+                                return;
+                              }
                               if (!dialogContext.mounted) return;
                               if (!valid) {
                                 setDialogState(() {
