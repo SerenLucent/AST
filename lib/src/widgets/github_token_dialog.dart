@@ -15,7 +15,7 @@ Future<bool> showGithubTokenDialog(
         (dialogContext) => StatefulBuilder(
           builder:
               (context, setDialogState) => AlertDialog(
-                title: const Text('GitHub 관리자 연결'),
+                title: const Text('GitHub 저장소 연결'),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,

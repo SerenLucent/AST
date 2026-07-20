@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/score_file.dart';
+import '../models/schedule_entry.dart';
 
 class GithubAdminService {
   static const _owner = 'SerenLucent';
@@ -68,6 +69,42 @@ class GithubAdminService {
     existingSha: existingSha,
     commitLabel: '행사 히스토리 업로드',
   );
+
+  Future<void> saveSchedules(List<ScheduleEntry> schedules) async {
+    final adminToken = await token;
+    if (adminToken == null) {
+      throw const GithubAdminException('일정을 저장하려면 GitHub 연결이 필요합니다.');
+    }
+    const segments = ['remote-data', 'schedule.json'];
+    final current = await http.get(
+      _contentsUri(segments),
+      headers: _headers(adminToken),
+    );
+    String? sha;
+    if (current.statusCode == 200) {
+      sha =
+          (jsonDecode(current.body) as Map<String, dynamic>)['sha'] as String?;
+    } else if (current.statusCode != 404) {
+      throw GithubAdminException(_errorMessage(current, '일정 정보를 확인하지 못했습니다.'));
+    }
+    final content = const JsonEncoder.withIndent('  ').convert({
+      'schemaVersion': 1,
+      'schedules': schedules.map((entry) => entry.toJson()).toList(),
+    });
+    final response = await http.put(
+      _contentsUri(segments),
+      headers: _headers(adminToken),
+      body: jsonEncode({
+        'message': '일정 업데이트',
+        'content': base64Encode(utf8.encode(content)),
+        'branch': _branch,
+        if (sha != null) 'sha': sha,
+      }),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw GithubAdminException(_errorMessage(response, '일정을 저장하지 못했습니다.'));
+    }
+  }
 
   Future<void> _uploadFile({
     required String folder,

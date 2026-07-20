@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/team_event.dart';
 import 'history_screen.dart';
+import 'schedule_screen.dart';
 import 'score_library_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -108,8 +109,12 @@ class HomeScreen extends StatelessWidget {
                 childAspectRatio: .88,
               ),
               itemBuilder:
-                  (context, index) =>
-                      _MenuCard(item: _menuItems[index], isAdmin: isAdmin),
+                  (context, index) => _MenuCard(
+                    item: _menuItems[index],
+                    isAdmin: isAdmin,
+                    loginId: loginId,
+                    nickname: nickname,
+                  ),
             ),
             const SizedBox(height: 26),
             Text(
@@ -202,18 +207,37 @@ class _WelcomeCard extends StatelessWidget {
 }
 
 class _MenuCard extends StatelessWidget {
-  const _MenuCard({required this.item, required this.isAdmin});
+  const _MenuCard({
+    required this.item,
+    required this.isAdmin,
+    required this.loginId,
+    required this.nickname,
+  });
   final _MenuItem item;
   final bool isAdmin;
+  final String loginId;
+  final String nickname;
 
   @override
   Widget build(BuildContext context) {
+    final isSchedule = item.icon == Icons.schedule_outlined;
+    final title = isSchedule ? '연습 / 공연 스케줄' : item.title;
+    final subtitle = isSchedule ? '연습과 공연 일정을 함께 확인하세요.' : item.subtitle;
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(22),
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
         onTap: () {
+          if (isSchedule) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder:
+                    (_) => ScheduleScreen(loginId: loginId, nickname: nickname),
+              ),
+            );
+            return;
+          }
           if (item.title == '악보 자료실') {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -249,7 +273,7 @@ class _MenuCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                item.title,
+                title,
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -257,7 +281,7 @@ class _MenuCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                item.subtitle,
+                subtitle,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
