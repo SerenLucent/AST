@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/team_event.dart';
 import 'score_library_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -18,10 +19,10 @@ class HomeScreen extends StatelessWidget {
 
   static const _menuItems = [
     _MenuItem(
-      '팀원 소개',
-      '우리 팀의 목소리를 만나보세요',
-      Icons.groups_2_outlined,
-      Color(0xFF6750A4),
+      '연습 스케줄',
+      '이번 주 연습 시간을 확인하세요',
+      Icons.schedule_outlined,
+      Color(0xFF3D6CB4),
     ),
     _MenuItem(
       '악보 자료실',
@@ -36,15 +37,24 @@ class HomeScreen extends StatelessWidget {
       Color(0xFF287D6C),
     ),
     _MenuItem(
-      '연습 스케줄',
-      '이번 주 연습 시간을 확인하세요',
-      Icons.schedule_outlined,
-      Color(0xFF3D6CB4),
+      '팀원 소개',
+      '우리 팀의 목소리를 만나보세요',
+      Icons.groups_2_outlined,
+      Color(0xFF6750A4),
+    ),
+  ];
+
+  static final _events = [
+    TeamEvent(
+      title: '정기 연습',
+      scheduledAt: DateTime(2026, 7, 25, 19, 30),
+      location: '연습실 A',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final visibleEvents = upcomingEvents(_events, DateTime.now());
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -108,7 +118,7 @@ class HomeScreen extends StatelessWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 14),
-            const _ScheduleCard(),
+            _UpcomingSchedule(events: visibleEvents),
           ],
         ),
       ),
@@ -255,8 +265,44 @@ class _MenuCard extends StatelessWidget {
   }
 }
 
+class _UpcomingSchedule extends StatelessWidget {
+  const _UpcomingSchedule({required this.events});
+
+  final List<TeamEvent> events;
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.event_busy_outlined, color: Color(0xFF777184)),
+            SizedBox(width: 12),
+            Text('예정된 일정이 없습니다.', style: TextStyle(color: Color(0xFF777184))),
+          ],
+        ),
+      );
+    }
+    return Column(
+      children: [
+        for (var index = 0; index < events.length; index++) ...[
+          _ScheduleCard(event: events[index]),
+          if (index < events.length - 1) const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+}
+
 class _ScheduleCard extends StatelessWidget {
-  const _ScheduleCard();
+  const _ScheduleCard({required this.event});
+
+  final TeamEvent event;
 
   @override
   Widget build(BuildContext context) {
@@ -266,35 +312,47 @@ class _ScheduleCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          _DateBadge(),
-          SizedBox(width: 16),
+          _DateBadge(date: event.scheduledAt),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '정기 연습',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  event.title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
-                  '오후 7:30 · 연습실 A',
-                  style: TextStyle(color: Color(0xFF777184)),
+                  '${_timeLabel(event.scheduledAt)} · ${event.location}',
+                  style: const TextStyle(color: Color(0xFF777184)),
                 ),
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded),
+          const Icon(Icons.chevron_right_rounded),
         ],
       ),
     );
   }
+
+  String _timeLabel(DateTime date) {
+    final period = date.hour < 12 ? '오전' : '오후';
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    return '$period $hour:${date.minute.toString().padLeft(2, '0')}';
+  }
 }
 
 class _DateBadge extends StatelessWidget {
-  const _DateBadge();
+  const _DateBadge({required this.date});
+
+  final DateTime date;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -304,20 +362,20 @@ class _DateBadge extends StatelessWidget {
         color: const Color(0xFFF0EBF8),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'JUL',
-            style: TextStyle(
+            '${date.month}월',
+            style: const TextStyle(
               color: Color(0xFF6750A4),
               fontSize: 11,
               fontWeight: FontWeight.w800,
             ),
           ),
           Text(
-            '25',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+            '${date.day}',
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
           ),
         ],
       ),

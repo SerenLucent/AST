@@ -69,6 +69,26 @@ class _ScoreLibraryScreenState extends State<ScoreLibraryScreen> {
   }
 
   Future<void> _download(ScoreFile score) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('악보 다운로드'),
+            content: Text('${score.name}\n\n저장 위치를 선택할까요?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('취소'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('저장 위치 선택'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true) return;
+
     setState(() => _downloadingName = score.name);
     try {
       final saved = await _downloadService.downloadAndSave(score);
