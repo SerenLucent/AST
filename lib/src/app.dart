@@ -18,6 +18,7 @@ class _AstTeamAppState extends State<AstTeamApp> {
   bool _loading = true;
   String? _loginId;
   String? _nickname;
+  String? _role;
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _AstTeamAppState extends State<AstTeamApp> {
     setState(() {
       _loginId = profile?.loginId;
       _nickname = profile?.nickname;
+      _role = profile?.role;
       _loading = false;
     });
   }
@@ -42,6 +44,7 @@ class _AstTeamAppState extends State<AstTeamApp> {
     setState(() {
       _loginId = profile.loginId;
       _nickname = profile.nickname;
+      _role = profile.role;
     });
     return true;
   }
@@ -49,7 +52,10 @@ class _AstTeamAppState extends State<AstTeamApp> {
   Future<void> _saveNickname(String nickname) async {
     final profile = await _session.registerNickname(_loginId!, nickname);
     if (!mounted) return;
-    setState(() => _nickname = profile.nickname);
+    setState(() {
+      _nickname = profile.nickname;
+      _role = profile.role;
+    });
   }
 
   Future<void> _logout() async {
@@ -58,6 +64,7 @@ class _AstTeamAppState extends State<AstTeamApp> {
     setState(() {
       _loginId = null;
       _nickname = null;
+      _role = null;
     });
   }
 
@@ -77,6 +84,7 @@ class _AstTeamAppState extends State<AstTeamApp> {
               : HomeScreen(
                 loginId: _loginId!,
                 nickname: _nickname!,
+                isAdmin: _role == 'admin',
                 onLogout: _logout,
               ),
     );

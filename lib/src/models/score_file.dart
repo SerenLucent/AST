@@ -1,16 +1,22 @@
 class ScoreFile {
   const ScoreFile({
     required this.name,
+    required this.path,
+    required this.sha,
     required this.downloadUrl,
     required this.size,
   });
 
   final String name;
+  final String path;
+  final String sha;
   final String downloadUrl;
   final int size;
 
   factory ScoreFile.fromJson(Map<String, dynamic> json) => ScoreFile(
     name: json['name'] as String,
+    path: json['path'] as String,
+    sha: json['sha'] as String,
     downloadUrl: json['download_url'] as String,
     size: json['size'] as int? ?? 0,
   );

@@ -7,11 +7,13 @@ class HomeScreen extends StatelessWidget {
     super.key,
     required this.loginId,
     required this.nickname,
+    required this.isAdmin,
     required this.onLogout,
   });
 
   final String loginId;
   final String nickname;
+  final bool isAdmin;
   final Future<void> Function() onLogout;
 
   static const _menuItems = [
@@ -95,7 +97,8 @@ class HomeScreen extends StatelessWidget {
                 childAspectRatio: .88,
               ),
               itemBuilder:
-                  (context, index) => _MenuCard(item: _menuItems[index]),
+                  (context, index) =>
+                      _MenuCard(item: _menuItems[index], isAdmin: isAdmin),
             ),
             const SizedBox(height: 26),
             Text(
@@ -188,8 +191,9 @@ class _WelcomeCard extends StatelessWidget {
 }
 
 class _MenuCard extends StatelessWidget {
-  const _MenuCard({required this.item});
+  const _MenuCard({required this.item, required this.isAdmin});
   final _MenuItem item;
+  final bool isAdmin;
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +206,7 @@ class _MenuCard extends StatelessWidget {
           if (item.title == '악보 자료실') {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const ScoreLibraryScreen(),
+                builder: (_) => ScoreLibraryScreen(isAdmin: isAdmin),
               ),
             );
             return;
