@@ -14,7 +14,7 @@ void main() {
     expect(find.text('로그인'), findsOneWidget);
   });
 
-  testWidgets('프로필 버튼으로 로그아웃하면 로그인 화면으로 돌아간다', (tester) async {
+  testWidgets('로그아웃 버튼을 누르면 로그인 화면으로 돌아간다', (tester) async {
     SharedPreferences.setMockInitialValues({
       'active_login_id': 'test001',
       'nickname_test001': '테스트',
@@ -22,7 +22,7 @@ void main() {
     await tester.pumpWidget(const AstTeamApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(CircleAvatar).first);
+    await tester.tap(find.text('로그아웃'));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('login')), findsOneWidget);

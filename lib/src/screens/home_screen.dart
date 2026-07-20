@@ -64,18 +64,15 @@ class HomeScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.4),
         ),
         actions: [
-          IconButton(
-            tooltip: '로그아웃',
+          TextButton.icon(
             onPressed: onLogout,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            icon: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              child: Text(
-                nickname.characters.first,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
+            icon: const Icon(Icons.logout_rounded),
+            label: const Text(
+              '로그아웃',
+              style: TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
