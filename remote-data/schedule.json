@@ -9,13 +9,6 @@
       "authorNickname": "test002"
     },
     {
-      "id": "1784527610292899-test003",
-      "scheduledAt": "2026-07-24T19:00:00.000",
-      "memo": "333",
-      "authorId": "test003",
-      "authorNickname": "test003"
-    },
-    {
       "id": "1784528160146162-admin",
       "scheduledAt": "2026-07-22T19:00:00.000",
       "memo": "2",
