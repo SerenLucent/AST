@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "team": {
+    "name": "AST 아카펠라",
+    "welcomeMessage": "오늘도 멋진 하모니를 만들어볼까요?",
+    "themeColor": "#6750A4"
+  },
+  "access": {
+    "passwordVersion": 1,
+    "sessionVersion": 1
+  },
+  "homeSections": [
+    { "type": "members", "title": "팀원 소개", "visible": true, "order": 1 },
+    { "type": "scores", "title": "악보 자료실", "visible": true, "order": 2 },
+    { "type": "events", "title": "행사 일정", "visible": true, "order": 3 },
+    { "type": "schedule", "title": "연습 스케줄", "visible": true, "order": 4 }
+  ],
+  "members": [],
+  "scores": [],
+  "events": []
+}
