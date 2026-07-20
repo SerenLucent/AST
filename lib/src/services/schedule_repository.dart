@@ -7,18 +7,24 @@ import '../models/schedule_entry.dart';
 
 class ScheduleRepository {
   static const _url =
-      'https://api.github.com/repos/SerenLucent/AST/contents/remote-data/schedule.json?ref=main';
+      'https://api.github.com/repos/SerenLucent/AST/contents/remote-data/schedule.json';
   static const _cacheKey = 'schedule_json_cache';
 
   Future<List<ScheduleEntry>> fetch({bool forceRefresh = false}) async {
     final preferences = await SharedPreferences.getInstance();
     try {
       final response = await http.get(
-        Uri.parse(_url),
+        Uri.parse(_url).replace(
+          queryParameters: {
+            'ref': 'main',
+            'cacheBust': '${DateTime.now().microsecondsSinceEpoch}',
+          },
+        ),
         headers: const {
           'Accept': 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28',
           'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
         },
       );
       if (response.statusCode != 200) {
