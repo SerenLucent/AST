@@ -7,13 +7,25 @@ class DownloadService {
   static const _channel = MethodChannel('com.ast.acappella/file_saver');
 
   Future<bool> downloadAndSave(ScoreFile score) async {
-    final response = await http.get(Uri.parse(score.downloadUrl));
+    return downloadAndSaveFile(
+      fileName: score.name,
+      downloadUrl: score.downloadUrl,
+      mimeType: 'application/pdf',
+    );
+  }
+
+  Future<bool> downloadAndSaveFile({
+    required String fileName,
+    required String downloadUrl,
+    required String mimeType,
+  }) async {
+    final response = await http.get(Uri.parse(downloadUrl));
     if (response.statusCode != 200) {
       throw Exception('Download failed: ${response.statusCode}');
     }
     final saved = await _channel.invokeMethod<bool>('saveFile', {
-      'fileName': score.name,
-      'mimeType': 'application/pdf',
+      'fileName': fileName,
+      'mimeType': mimeType,
       'bytes': response.bodyBytes,
     });
     return saved ?? false;

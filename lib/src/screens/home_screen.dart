@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/team_event.dart';
+import 'history_screen.dart';
 import 'score_library_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -31,8 +32,8 @@ class HomeScreen extends StatelessWidget {
       Color(0xFFD85B61),
     ),
     _MenuItem(
-      '행사 일정',
-      '다가오는 공연과 행사를 확인하세요',
+      '행사 히스토리',
+      '지난 행사 자료를 확인하세요',
       Icons.event_available_outlined,
       Color(0xFF287D6C),
     ),
@@ -217,6 +218,14 @@ class _MenuCard extends StatelessWidget {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => ScoreLibraryScreen(isAdmin: isAdmin),
+              ),
+            );
+            return;
+          }
+          if (item.title == '행사 히스토리') {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => HistoryScreen(isAdmin: isAdmin),
               ),
             );
             return;

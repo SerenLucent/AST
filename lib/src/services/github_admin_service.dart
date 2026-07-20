@@ -57,6 +57,47 @@ class GithubAdminService {
     }
   }
 
+  Future<void> uploadHistoryFile({
+    required String fileName,
+    required Uint8List bytes,
+    String? existingSha,
+  }) => _uploadFile(
+    folder: 'Doc',
+    fileName: fileName,
+    bytes: bytes,
+    existingSha: existingSha,
+    commitLabel: '행사 히스토리 업로드',
+  );
+
+  Future<void> _uploadFile({
+    required String folder,
+    required String fileName,
+    required Uint8List bytes,
+    required String commitLabel,
+    String? existingSha,
+  }) async {
+    if (bytes.length > 50 * 1024 * 1024) {
+      throw const GithubAdminException('50MB 이하의 파일만 업로드할 수 있습니다.');
+    }
+    final adminToken = await token;
+    if (adminToken == null) {
+      throw const GithubAdminException('GitHub 연결이 필요합니다.');
+    }
+    final response = await http.put(
+      _contentsUri([folder, fileName]),
+      headers: _headers(adminToken),
+      body: jsonEncode({
+        'message': '$commitLabel: $fileName',
+        'content': base64Encode(bytes),
+        'branch': _branch,
+        if (existingSha != null) 'sha': existingSha,
+      }),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw GithubAdminException(_errorMessage(response, '업로드하지 못했습니다.'));
+    }
+  }
+
   Future<void> deleteScore(ScoreFile score) async {
     final adminToken = await token;
     if (adminToken == null) {
