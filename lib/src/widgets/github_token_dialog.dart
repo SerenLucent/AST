@@ -77,7 +77,16 @@ Future<bool> showGithubTokenDialog(
                                 });
                                 return;
                               }
-                              await service.saveToken(value);
+                              try {
+                                await service.saveToken(value);
+                              } catch (_) {
+                                if (!dialogContext.mounted) return;
+                                setDialogState(() {
+                                  validating = false;
+                                  error = '토큰을 휴대폰에 저장하지 못했습니다. 다시 시도해주세요.';
+                                });
+                                return;
+                              }
                               if (dialogContext.mounted) {
                                 Navigator.pop(dialogContext, true);
                               }

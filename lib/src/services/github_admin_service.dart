@@ -18,16 +18,23 @@ class GithubAdminService {
 
   Future<String?> get token => _storage.read(key: _tokenKey);
 
-  Future<void> saveToken(String value) =>
-      _storage.write(key: _tokenKey, value: value.trim());
+  Future<void> saveToken(String value) => _storage
+      .write(key: _tokenKey, value: value.trim())
+      .timeout(const Duration(seconds: 3));
 
   Future<void> clearToken() => _storage.delete(key: _tokenKey);
 
   Future<bool> validateToken(String value) async {
     final response = await http
-        .get(_contentsUri(const ['Music']), headers: _headers(value.trim()))
-        .timeout(const Duration(seconds: 10));
-    return response.statusCode == 200;
+        .get(
+          Uri.parse('https://api.github.com/repos/$_owner/$_repository'),
+          headers: _headers(value.trim()),
+        )
+        .timeout(const Duration(seconds: 5));
+    if (response.statusCode != 200) return false;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final permissions = body['permissions'] as Map<String, dynamic>?;
+    return permissions?['push'] == true;
   }
 
   Future<void> uploadPdf({
