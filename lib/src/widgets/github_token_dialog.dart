@@ -57,23 +57,11 @@ Future<bool> showGithubTokenDialog(
                                 validating = true;
                                 error = null;
                               });
-                              bool valid;
-                              try {
-                                valid = await service.validateToken(value);
-                              } catch (_) {
-                                if (!dialogContext.mounted) return;
+                              if (!value.startsWith('github_pat_') &&
+                                  !value.startsWith('ghp_')) {
                                 setDialogState(() {
                                   validating = false;
-                                  error =
-                                      '연결 시간이 초과됐습니다. 인터넷 연결을 확인하고 다시 시도해주세요.';
-                                });
-                                return;
-                              }
-                              if (!dialogContext.mounted) return;
-                              if (!valid) {
-                                setDialogState(() {
-                                  validating = false;
-                                  error = '저장소 접근 권한을 확인해주세요.';
+                                  error = '올바른 GitHub 토큰 형식인지 확인해주세요.';
                                 });
                                 return;
                               }
@@ -91,7 +79,7 @@ Future<bool> showGithubTokenDialog(
                                 Navigator.pop(dialogContext, true);
                               }
                             },
-                    child: Text(validating ? '확인 중...' : '연결'),
+                    child: Text(validating ? '저장 중...' : '저장'),
                   ),
                 ],
               ),

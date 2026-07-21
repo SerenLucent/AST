@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/score_file.dart';
 import '../models/schedule_entry.dart';
@@ -12,17 +12,23 @@ class GithubAdminService {
   static const _repository = 'AST';
   static const _branch = 'main';
   static const _tokenKey = 'github_admin_token';
-  static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
 
-  Future<String?> get token => _storage.read(key: _tokenKey);
+  Future<String?> get token async {
+    final preferences = await SharedPreferences.getInstance();
+    return preferences.getString(_tokenKey);
+  }
 
-  Future<void> saveToken(String value) => _storage
-      .write(key: _tokenKey, value: value.trim())
-      .timeout(const Duration(seconds: 3));
+  Future<void> saveToken(String value) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences
+        .setString(_tokenKey, value.trim())
+        .timeout(const Duration(seconds: 3));
+  }
 
-  Future<void> clearToken() => _storage.delete(key: _tokenKey);
+  Future<void> clearToken() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_tokenKey);
+  }
 
   Future<bool> validateToken(String value) async {
     final response = await http
