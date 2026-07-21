@@ -303,6 +303,7 @@ class _MemberSortDialogState extends State<_MemberSortDialog> {
         width: 420,
         height: 430,
         child: ReorderableListView.builder(
+          buildDefaultDragHandles: false,
           itemCount: _members.length,
           onReorder: (oldIndex, newIndex) {
             setState(() {
@@ -321,7 +322,13 @@ class _MemberSortDialogState extends State<_MemberSortDialog> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              trailing: const Icon(Icons.drag_handle_rounded),
+              trailing: ReorderableDragStartListener(
+                index: index,
+                child: const Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Icon(Icons.drag_handle_rounded),
+                ),
+              ),
             );
           },
         ),
