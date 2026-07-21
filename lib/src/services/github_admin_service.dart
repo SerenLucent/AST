@@ -12,20 +12,25 @@ class GithubAdminService {
   static const _repository = 'AST';
   static const _branch = 'main';
   static const _tokenKey = 'github_admin_token';
+  static String? _sessionToken;
 
   Future<String?> get token async {
+    if (_sessionToken != null) return _sessionToken;
     final preferences = await SharedPreferences.getInstance();
-    return preferences.getString(_tokenKey);
+    _sessionToken = preferences.getString(_tokenKey);
+    return _sessionToken;
   }
 
   Future<void> saveToken(String value) async {
+    _sessionToken = value.trim();
     final preferences = await SharedPreferences.getInstance();
     await preferences
-        .setString(_tokenKey, value.trim())
+        .setString(_tokenKey, _sessionToken!)
         .timeout(const Duration(seconds: 3));
   }
 
   Future<void> clearToken() async {
+    _sessionToken = null;
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_tokenKey);
   }
