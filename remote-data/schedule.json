@@ -1,12 +1,4 @@
 {
   "schemaVersion": 1,
-  "schedules": [
-    {
-      "id": "1784606944764544-test002",
-      "scheduledAt": "2026-07-25T19:00:00.000",
-      "memo": "222",
-      "authorId": "test002",
-      "authorNickname": "test002"
-    }
-  ]
+  "schedules": []
 }
