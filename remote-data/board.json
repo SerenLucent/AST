@@ -1,4 +1,13 @@
 {
   "schemaVersion": 1,
-  "notices": []
+  "notices": [
+    {
+      "id": "1784617211517904-admin_naokist",
+      "title": "베타테스터에 참여해주셔서 감사합니다",
+      "memo": "드디어 2.0 오픈!",
+      "createdAt": "2026-07-21T16:00:11.517994",
+      "authorId": "admin_naokist",
+      "authorNickname": "경식"
+    }
+  ]
 }
