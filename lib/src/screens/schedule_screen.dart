@@ -211,7 +211,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         subtitle: Text(
-                          '${entry.memo}\n등록: ${entry.authorNickname} (${entry.authorId})',
+                          '${entry.memo}\n등록: ${entry.authorNickname}',
                         ),
                         isThreeLine: true,
                         trailing: IconButton(
