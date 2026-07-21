@@ -16,6 +16,15 @@ void main() {
     expect(members.single.memo, '소프라노 홍길동');
   });
 
+  test('member without image is decoded with an empty image URL', () {
+    final members = MemberRepository().decode('''
+      {"schemaVersion":1,"members":[{"id":"two","memo":"사진 없는 팀원"}]}
+    ''');
+
+    expect(members.single.imageUrl, isEmpty);
+    expect(members.single.memo, '사진 없는 팀원');
+  });
+
   testWidgets('member cannot see add button', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(

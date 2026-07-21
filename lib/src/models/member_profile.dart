@@ -11,7 +11,7 @@ class MemberProfile {
 
   factory MemberProfile.fromJson(Map<String, dynamic> json) => MemberProfile(
     id: json['id'] as String,
-    imageUrl: json['imageUrl'] as String,
+    imageUrl: json['imageUrl'] as String? ?? '',
     memo: json['memo'] as String? ?? '',
   );
 

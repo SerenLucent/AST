@@ -60,13 +60,16 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
     }
     setState(() => _saving = true);
     try {
-      final extension = draft.fileName.split('.').last.toLowerCase();
-      final remoteName =
-          'member_${DateTime.now().microsecondsSinceEpoch}.$extension';
-      final imageUrl = await _github.uploadMemberImage(
-        fileName: remoteName,
-        bytes: draft.bytes,
-      );
+      var imageUrl = '';
+      if (draft.bytes != null && draft.fileName != null) {
+        final extension = draft.fileName!.split('.').last.toLowerCase();
+        final remoteName =
+            'member_${DateTime.now().microsecondsSinceEpoch}.$extension';
+        imageUrl = await _github.uploadMemberImage(
+          fileName: remoteName,
+          bytes: draft.bytes!,
+        );
+      }
       final latest = await _repository.fetch(forceRefresh: true);
       final member = MemberProfile(
         id: '${DateTime.now().microsecondsSinceEpoch}',
@@ -172,24 +175,7 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.network(
-                    member.imageUrl,
-                    width: 112,
-                    height: 112,
-                    fit: BoxFit.cover,
-                    errorBuilder:
-                        (_, _, _) => const SizedBox(
-                          width: 112,
-                          height: 112,
-                          child: ColoredBox(
-                            color: Color(0xFFE8E3EC),
-                            child: Icon(Icons.broken_image_outlined),
-                          ),
-                        ),
-                  ),
-                ),
+                _MemberImage(imageUrl: member.imageUrl),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Padding(
@@ -242,12 +228,6 @@ class _MemberEditorDialogState extends State<_MemberEditorDialog> {
 
   void _confirm() {
     final memo = _memoController.text.trim();
-    if (_bytes == null || _fileName == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('사진을 선택해주세요.')));
-      return;
-    }
     if (memo.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -256,7 +236,7 @@ class _MemberEditorDialogState extends State<_MemberEditorDialog> {
     }
     Navigator.pop(
       context,
-      _MemberDraft(fileName: _fileName!, bytes: _bytes!, memo: memo),
+      _MemberDraft(fileName: _fileName, bytes: _bytes, memo: memo),
     );
   }
 
@@ -322,7 +302,40 @@ class _MemberDraft {
     required this.memo,
   });
 
-  final String fileName;
-  final Uint8List bytes;
+  final String? fileName;
+  final Uint8List? bytes;
   final String memo;
+}
+
+class _MemberImage extends StatelessWidget {
+  const _MemberImage({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    const placeholder = SizedBox(
+      width: 112,
+      height: 112,
+      child: ColoredBox(
+        color: Color(0xFFE2E2E2),
+        child: Icon(
+          Icons.person_outline_rounded,
+          size: 46,
+          color: Color(0xFF888888),
+        ),
+      ),
+    );
+    if (imageUrl.isEmpty) return placeholder;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Image.network(
+        imageUrl,
+        width: 112,
+        height: 112,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => placeholder,
+      ),
+    );
+  }
 }
