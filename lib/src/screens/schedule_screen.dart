@@ -70,6 +70,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return showGithubTokenDialog(context, _github);
   }
 
+  Future<void> _changeToken() async {
+    final changed = await showGithubTokenDialog(context, _github);
+    if (!mounted || !changed) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('GitHub 토큰을 새 값으로 변경했습니다.')));
+  }
+
   Future<void> _add() async {
     final draft = await showModalBottomSheet<_Draft>(
       context: context,
@@ -146,6 +154,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'GitHub 토큰 변경',
+            onPressed: _changeToken,
+            icon: const Icon(Icons.key_rounded),
+          ),
+          IconButton(
+            tooltip: '새로고침',
             onPressed: _loading ? null : () => _load(refresh: true),
             icon: const Icon(Icons.refresh),
           ),
