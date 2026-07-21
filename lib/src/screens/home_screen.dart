@@ -247,11 +247,32 @@ class _NicknameEditDialogState extends State<_NicknameEditDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('취소'),
+        SizedBox(
+          width: double.maxFinite,
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('취소'),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: FilledButton(
+                    onPressed: _save,
+                    child: const Text('저장'),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        FilledButton(onPressed: _save, child: const Text('저장')),
       ],
     );
   }
