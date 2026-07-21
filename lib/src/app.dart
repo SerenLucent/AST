@@ -16,6 +16,7 @@ class AstTeamApp extends StatefulWidget {
 class _AstTeamAppState extends State<AstTeamApp> {
   final SessionService _session = SessionService();
   bool _loading = true;
+  bool _showTitle = true;
   String? _loginId;
   String? _nickname;
   String? _role;
@@ -27,12 +28,7 @@ class _AstTeamAppState extends State<AstTeamApp> {
   }
 
   Future<void> _restoreSession() async {
-    final profileFuture = _session.currentProfile();
-    await Future.wait<void>([
-      Future<void>.delayed(const Duration(seconds: 1)),
-      profileFuture.then((_) {}),
-    ]);
-    final profile = await profileFuture;
+    final profile = await _session.currentProfile();
     if (!mounted) return;
     setState(() {
       _loginId = profile?.loginId;
@@ -79,8 +75,10 @@ class _AstTeamAppState extends State<AstTeamApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       home:
-          _loading
-              ? const _SplashScreen()
+          _showTitle
+              ? _SplashScreen(onTap: () => setState(() => _showTitle = false))
+              : _loading
+              ? const _LoadingScreen()
               : _loginId == null
               ? LoginScreen(key: const ValueKey('login'), onLogin: _login)
               : _nickname == null
@@ -98,7 +96,9 @@ class _AstTeamAppState extends State<AstTeamApp> {
 }
 
 class _SplashScreen extends StatefulWidget {
-  const _SplashScreen();
+  const _SplashScreen({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
   State<_SplashScreen> createState() => _SplashScreenState();
@@ -117,25 +117,39 @@ class _SplashScreenState extends State<_SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F3EC),
-      body: SizedBox.expand(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(
-              'assets/images/title.png',
-              key: const ValueKey('title-splash-image'),
-              fit: BoxFit.cover,
-            ),
-            Image.network(
-              _remoteUrl,
-              fit: BoxFit.cover,
-              gaplessPlayback: true,
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
-            ),
-          ],
+      backgroundColor: Colors.black,
+      body: GestureDetector(
+        key: const ValueKey('title-splash'),
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: SizedBox.expand(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                'assets/images/title.png',
+                key: const ValueKey('title-splash-image'),
+                fit: BoxFit.contain,
+              ),
+              Image.network(
+                _remoteUrl,
+                fit: BoxFit.contain,
+                gaplessPlayback: true,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+}
+
+class _LoadingScreen extends StatelessWidget {
+  const _LoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

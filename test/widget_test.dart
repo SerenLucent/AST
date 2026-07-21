@@ -5,21 +5,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ast_team_app/src/app.dart';
 
 void main() {
-  testWidgets('앱 시작 시 타이틀 이미지를 1초간 표시한다', (tester) async {
+  testWidgets('앱 시작 타이틀은 터치할 때까지 전체 이미지로 표시한다', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(const AstTeamApp());
 
     expect(find.byKey(const ValueKey('title-splash-image')), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 999));
+    await tester.pump(const Duration(seconds: 3));
     expect(find.byKey(const ValueKey('title-splash-image')), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 2));
+    await tester.tap(find.byKey(const ValueKey('title-splash')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('login')), findsOneWidget);
   });
 
   testWidgets('로그인 화면을 표시한다', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(const AstTeamApp());
-    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byKey(const ValueKey('title-splash')));
     await tester.pumpAndSettle();
 
     expect(find.text('우리의 목소리를 한곳에'), findsOneWidget);
@@ -32,7 +33,7 @@ void main() {
       'nickname_test001': '테스트',
     });
     await tester.pumpWidget(const AstTeamApp());
-    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byKey(const ValueKey('title-splash')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('로그아웃'));
@@ -48,7 +49,7 @@ void main() {
       'nickname_test001': '기존이름',
     });
     await tester.pumpWidget(const AstTeamApp());
-    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byKey(const ValueKey('title-splash')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.person_outline).last);
