@@ -86,6 +86,7 @@ class _AstTeamAppState extends State<AstTeamApp> {
                 nickname: _nickname!,
                 isAdmin: _role == 'admin',
                 onLogout: _logout,
+                onNicknameChanged: _saveNickname,
               ),
     );
   }

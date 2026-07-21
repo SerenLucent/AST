@@ -28,4 +28,24 @@ void main() {
     expect(find.byKey(const ValueKey('login')), findsOneWidget);
     expect(find.byKey(const ValueKey('home')), findsNothing);
   });
+
+  testWidgets('내 정보에서 닉네임을 변경한다', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'active_login_id': 'test001',
+      'nickname_test001': '기존이름',
+    });
+    await tester.pumpWidget(const AstTeamApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.person_outline).last);
+    await tester.pumpAndSettle();
+    expect(find.text('닉네임 변경'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '새이름');
+    await tester.tap(find.text('저장'));
+    await tester.pumpAndSettle();
+
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.getString('nickname_test001'), '새이름');
+  });
 }

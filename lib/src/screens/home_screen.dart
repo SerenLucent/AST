@@ -33,12 +33,14 @@ class HomeScreen extends StatelessWidget {
     required this.nickname,
     required this.isAdmin,
     required this.onLogout,
+    required this.onNicknameChanged,
   });
 
   final String loginId;
   final String nickname;
   final bool isAdmin;
   final Future<void> Function() onLogout;
+  final Future<void> Function(String nickname) onNicknameChanged;
 
   static const _menuItems = [
     _MenuItem(
@@ -153,6 +155,9 @@ class HomeScreen extends StatelessWidget {
               ),
             );
           }
+          if (index == 3) {
+            _changeNickname(context);
+          }
         },
         destinations: const [
           NavigationDestination(
@@ -174,6 +179,80 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _changeNickname(BuildContext context) async {
+    final changed = await showDialog<String>(
+      context: context,
+      builder: (_) => _NicknameEditDialog(currentNickname: nickname),
+    );
+    if (changed == null || changed == nickname) return;
+    await onNicknameChanged(changed);
+  }
+}
+
+class _NicknameEditDialog extends StatefulWidget {
+  const _NicknameEditDialog({required this.currentNickname});
+
+  final String currentNickname;
+
+  @override
+  State<_NicknameEditDialog> createState() => _NicknameEditDialogState();
+}
+
+class _NicknameEditDialogState extends State<_NicknameEditDialog> {
+  late final TextEditingController _controller;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.currentNickname);
+    _controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _controller.text.length,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final value = _controller.text.trim();
+    if (value.isEmpty) {
+      setState(() => _error = '닉네임을 입력해주세요.');
+      return;
+    }
+    Navigator.pop(context, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('닉네임 변경'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: 20,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _save(),
+        decoration: InputDecoration(
+          labelText: '닉네임',
+          errorText: _error,
+          prefixIcon: const Icon(Icons.person_outline_rounded),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('취소'),
+        ),
+        FilledButton(onPressed: _save, child: const Text('저장')),
+      ],
     );
   }
 }
