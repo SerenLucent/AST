@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/score_file.dart';
 import '../models/schedule_entry.dart';
+import '../models/member_profile.dart';
 
 class GithubAdminService {
   static const _owner = 'SerenLucent';
@@ -120,6 +121,70 @@ class GithubAdminService {
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw GithubAdminException(_errorMessage(response, '일정을 저장하지 못했습니다.'));
+    }
+  }
+
+  Future<String> uploadMemberImage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    if (bytes.length > 10 * 1024 * 1024) {
+      throw const GithubAdminException('10MB 이하의 이미지만 등록할 수 있습니다.');
+    }
+    final adminToken = await token;
+    if (adminToken == null) {
+      throw const GithubAdminException('GitHub 연결이 필요합니다.');
+    }
+    final response = await http.put(
+      _contentsUri(['Image', fileName]),
+      headers: _headers(adminToken),
+      body: jsonEncode({
+        'message': '팀원 사진 등록: $fileName',
+        'content': base64Encode(bytes),
+        'branch': _branch,
+      }),
+    );
+    if (response.statusCode != 201) {
+      throw GithubAdminException(_errorMessage(response, '사진을 등록하지 못했습니다.'));
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final content = body['content'] as Map<String, dynamic>;
+    return content['download_url'] as String;
+  }
+
+  Future<void> saveMembers(List<MemberProfile> members) async {
+    final adminToken = await token;
+    if (adminToken == null) {
+      throw const GithubAdminException('GitHub 연결이 필요합니다.');
+    }
+    const segments = ['remote-data', 'members.json'];
+    final current = await http.get(
+      _contentsUri(segments),
+      headers: _headers(adminToken),
+    );
+    String? sha;
+    if (current.statusCode == 200) {
+      sha =
+          (jsonDecode(current.body) as Map<String, dynamic>)['sha'] as String?;
+    } else if (current.statusCode != 404) {
+      throw GithubAdminException(_errorMessage(current, '팀원 목록을 확인하지 못했습니다.'));
+    }
+    final source = const JsonEncoder.withIndent('  ').convert({
+      'schemaVersion': 1,
+      'members': members.map((member) => member.toJson()).toList(),
+    });
+    final response = await http.put(
+      _contentsUri(segments),
+      headers: _headers(adminToken),
+      body: jsonEncode({
+        'message': '팀원 소개 등록',
+        'content': base64Encode(utf8.encode(source)),
+        'branch': _branch,
+        if (sha != null) 'sha': sha,
+      }),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw GithubAdminException(_errorMessage(response, '팀원 소개를 저장하지 못했습니다.'));
     }
   }
 

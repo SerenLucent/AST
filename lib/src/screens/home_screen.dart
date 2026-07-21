@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/schedule_entry.dart';
 import '../services/schedule_repository.dart';
 import 'history_screen.dart';
+import 'member_intro_screen.dart';
 import 'schedule_screen.dart';
 import 'score_library_screen.dart';
 
@@ -221,6 +222,7 @@ class _MenuCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSchedule = item.icon == Icons.schedule_outlined;
+    final isMemberIntro = item.icon == Icons.groups_2_outlined;
     final title = isSchedule ? '연습 / 공연 스케줄' : item.title;
     final subtitle = isSchedule ? '연습과 공연 일정을 함께 확인하세요.' : item.subtitle;
     return Material(
@@ -234,6 +236,14 @@ class _MenuCard extends StatelessWidget {
               MaterialPageRoute<void>(
                 builder:
                     (_) => ScheduleScreen(loginId: loginId, nickname: nickname),
+              ),
+            );
+            return;
+          }
+          if (isMemberIntro) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => MemberIntroScreen(isAdmin: isAdmin),
               ),
             );
             return;
