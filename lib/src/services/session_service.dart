@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_profile.dart';
 
 class SessionService {
+  static const _adminId = 'admin_naokist';
   static const _activeIdKey = 'active_login_id';
   static const _accessCacheKey = 'team_access_cache';
   static const _configUrl =
@@ -80,7 +81,7 @@ class SessionService {
     return UserProfile(
       loginId: id,
       nickname: preferences.getString('nickname_$id'),
-      role: id == 'admin' ? 'admin' : 'member',
+      role: id == _adminId ? 'admin' : 'member',
     );
   }
 
@@ -91,7 +92,7 @@ class SessionService {
     return UserProfile(
       loginId: id,
       nickname: preferences.getString('nickname_$id'),
-      role: id == 'admin' ? 'admin' : 'member',
+      role: id == _adminId ? 'admin' : 'member',
     );
   }
 
@@ -102,7 +103,7 @@ class SessionService {
     return UserProfile(
       loginId: id,
       nickname: cleanedNickname,
-      role: id == 'admin' ? 'admin' : 'member',
+      role: id == _adminId ? 'admin' : 'member',
     );
   }
 

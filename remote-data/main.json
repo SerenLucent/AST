@@ -8,7 +8,7 @@
   "access": {
     "teamPassword": "harmony2026",
     "login_all": "Y",
-    "allowedIds": ["admin"],
+    "allowedIds": ["admin_naokist"],
     "passwordVersion": 1,
     "sessionVersion": 1
   },
