@@ -10,17 +10,19 @@ class NoticeScreen extends StatefulWidget {
     super.key,
     required this.loginId,
     required this.nickname,
+    this.isBoard = false,
   });
 
   final String loginId;
   final String nickname;
+  final bool isBoard;
 
   @override
   State<NoticeScreen> createState() => _NoticeScreenState();
 }
 
 class _NoticeScreenState extends State<NoticeScreen> {
-  final _repository = NoticeRepository();
+  late final NoticeRepository _repository;
   final _github = GithubAdminService();
   List<Notice> _notices = [];
   bool _loading = true;
@@ -30,6 +32,10 @@ class _NoticeScreenState extends State<NoticeScreen> {
   @override
   void initState() {
     super.initState();
+    _repository =
+        widget.isBoard
+            ? const NoticeRepository.board()
+            : const NoticeRepository.notices();
     _load();
   }
 
@@ -42,7 +48,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
       final notices = await _repository.fetch(forceRefresh: refresh);
       if (mounted) setState(() => _notices = notices);
     } catch (_) {
-      if (mounted) setState(() => _error = '공지사항을 불러오지 못했습니다.');
+      if (mounted) setState(() => _error = '$_sectionName을 불러오지 못했습니다.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -74,7 +80,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
       authorId: widget.loginId,
       authorNickname: widget.nickname,
     );
-    await _save([...latest, notice], '공지사항을 등록했습니다.');
+    await _save([...latest, notice], '$_sectionName 게시물을 등록했습니다.');
   }
 
   Future<void> _delete(Notice notice) async {
@@ -105,14 +111,18 @@ class _NoticeScreenState extends State<NoticeScreen> {
     }
     await _save(
       latest.where((item) => item.id != notice.id).toList(),
-      '공지사항을 삭제했습니다.',
+      '$_sectionName 게시물을 삭제했습니다.',
     );
   }
 
   Future<void> _save(List<Notice> notices, String message) async {
     setState(() => _saving = true);
     try {
-      await _github.saveNotices(notices);
+      if (widget.isBoard) {
+        await _github.saveBoardPosts(notices);
+      } else {
+        await _github.saveNotices(notices);
+      }
       notices.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       if (!mounted) return;
       setState(() => _notices = notices);
@@ -142,9 +152,9 @@ class _NoticeScreenState extends State<NoticeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          '공지사항',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        title: Text(
+          _sectionName,
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
           IconButton(
@@ -193,14 +203,18 @@ class _NoticeScreenState extends State<NoticeScreen> {
     if (_notices.isEmpty) {
       return ListView(
         padding: const EdgeInsets.all(24),
-        children: const [
-          SizedBox(height: 180),
-          Icon(Icons.campaign_outlined, size: 62, color: Color(0xFF938C9E)),
-          SizedBox(height: 16),
+        children: [
+          const SizedBox(height: 180),
+          const Icon(
+            Icons.campaign_outlined,
+            size: 62,
+            color: Color(0xFF938C9E),
+          ),
+          const SizedBox(height: 16),
           Text(
-            '등록된 공지사항이 없습니다.',
+            widget.isBoard ? '등록된 게시물이 없습니다.' : '등록된 공지사항이 없습니다.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF777184)),
+            style: const TextStyle(color: Color(0xFF777184)),
           ),
         ],
       );
@@ -234,6 +248,8 @@ class _NoticeScreenState extends State<NoticeScreen> {
 
   String _date(DateTime date) =>
       '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+
+  String get _sectionName => widget.isBoard ? '게시판' : '공지사항';
 }
 
 class _NoticeEditorDialog extends StatefulWidget {

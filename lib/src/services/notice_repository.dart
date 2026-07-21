@@ -6,9 +6,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notice.dart';
 
 class NoticeRepository {
-  static const _url =
-      'https://api.github.com/repos/SerenLucent/AST/contents/remote-data/notices.json';
-  static const _cacheKey = 'notices_cache';
+  const NoticeRepository.notices()
+    : _fileName = 'notices.json',
+      _cacheKey = 'notices_cache';
+
+  const NoticeRepository.board()
+    : _fileName = 'board.json',
+      _cacheKey = 'board_posts_cache';
+
+  final String _fileName;
+  final String _cacheKey;
+
+  String get _url =>
+      'https://api.github.com/repos/SerenLucent/AST/contents/remote-data/$_fileName';
 
   Future<List<Notice>> fetch({bool forceRefresh = false}) async {
     final preferences = await SharedPreferences.getInstance();

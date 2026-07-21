@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('notices are decoded in newest-first order', () {
-    final notices = NoticeRepository().decode('''
+    final notices = const NoticeRepository.notices().decode('''
       {"schemaVersion":1,"notices":[
         {"id":"old","title":"이전","memo":"내용","createdAt":"2026-07-20T10:00:00","authorId":"a","authorNickname":"A"},
         {"id":"new","title":"최신","memo":"내용","createdAt":"2026-07-21T10:00:00","authorId":"b","authorNickname":"B"}
@@ -24,6 +24,19 @@ void main() {
     await tester.pump();
 
     expect(find.byType(FloatingActionButton), findsOneWidget);
+    expect(find.text('작성'), findsOneWidget);
+  });
+
+  testWidgets('board mode shows board title and add button', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: NoticeScreen(loginId: 'member', nickname: '멤버', isBoard: true),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('게시판'), findsOneWidget);
     expect(find.text('작성'), findsOneWidget);
   });
 }

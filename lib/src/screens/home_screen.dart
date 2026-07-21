@@ -141,6 +141,18 @@ class HomeScreen extends StatelessWidget {
               ),
             );
           }
+          if (index == 2) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder:
+                    (_) => NoticeScreen(
+                      loginId: loginId,
+                      nickname: nickname,
+                      isBoard: true,
+                    ),
+              ),
+            );
+          }
         },
         destinations: const [
           NavigationDestination(
