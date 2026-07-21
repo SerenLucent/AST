@@ -27,7 +27,12 @@ class _AstTeamAppState extends State<AstTeamApp> {
   }
 
   Future<void> _restoreSession() async {
-    final profile = await _session.currentProfile();
+    final profileFuture = _session.currentProfile();
+    await Future.wait<void>([
+      Future<void>.delayed(const Duration(seconds: 1)),
+      profileFuture.then((_) {}),
+    ]);
+    final profile = await profileFuture;
     if (!mounted) return;
     setState(() {
       _loginId = profile?.loginId;
@@ -92,11 +97,45 @@ class _AstTeamAppState extends State<AstTeamApp> {
   }
 }
 
-class _SplashScreen extends StatelessWidget {
+class _SplashScreen extends StatefulWidget {
   const _SplashScreen();
 
   @override
+  State<_SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<_SplashScreen> {
+  late final String _remoteUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _remoteUrl =
+        'https://raw.githubusercontent.com/SerenLucent/AST/main/Image/title.png?cacheBust=${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F3EC),
+      body: SizedBox.expand(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              'assets/images/title.png',
+              key: const ValueKey('title-splash-image'),
+              fit: BoxFit.cover,
+            ),
+            Image.network(
+              _remoteUrl,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
