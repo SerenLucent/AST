@@ -14,13 +14,6 @@
       "memo": "333",
       "authorId": "test002",
       "authorNickname": "test002"
-    },
-    {
-      "id": "1784611283519031-admin",
-      "scheduledAt": "2026-07-29T19:00:00.000",
-      "memo": "ddddd",
-      "authorId": "admin",
-      "authorNickname": "경식"
     }
   ]
 }
