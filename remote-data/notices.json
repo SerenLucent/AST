@@ -1,13 +1,4 @@
 {
   "schemaVersion": 1,
-  "notices": [
-    {
-      "id": "1784611180110033-admin",
-      "title": "good",
-      "memo": "hahahahahahaha",
-      "createdAt": "2026-07-21T05:19:40.110396",
-      "authorId": "admin",
-      "authorNickname": "admin"
-    }
-  ]
+  "notices": []
 }
