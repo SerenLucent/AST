@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/score_file.dart';
 import '../models/schedule_entry.dart';
 import '../models/member_profile.dart';
+import '../models/notice.dart';
 
 class GithubAdminService {
   static const _owner = 'SerenLucent';
@@ -185,6 +186,42 @@ class GithubAdminService {
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw GithubAdminException(_errorMessage(response, '팀원 소개를 저장하지 못했습니다.'));
+    }
+  }
+
+  Future<void> saveNotices(List<Notice> notices) async {
+    final adminToken = await token;
+    if (adminToken == null) {
+      throw const GithubAdminException('공지사항을 저장하려면 GitHub 연결이 필요합니다.');
+    }
+    const segments = ['remote-data', 'notices.json'];
+    final current = await http.get(
+      _contentsUri(segments),
+      headers: _headers(adminToken),
+    );
+    String? sha;
+    if (current.statusCode == 200) {
+      sha =
+          (jsonDecode(current.body) as Map<String, dynamic>)['sha'] as String?;
+    } else if (current.statusCode != 404) {
+      throw GithubAdminException(_errorMessage(current, '공지사항을 확인하지 못했습니다.'));
+    }
+    final source = const JsonEncoder.withIndent('  ').convert({
+      'schemaVersion': 1,
+      'notices': notices.map((notice) => notice.toJson()).toList(),
+    });
+    final response = await http.put(
+      _contentsUri(segments),
+      headers: _headers(adminToken),
+      body: jsonEncode({
+        'message': '공지사항 업데이트',
+        'content': base64Encode(utf8.encode(source)),
+        'branch': _branch,
+        if (sha != null) 'sha': sha,
+      }),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw GithubAdminException(_errorMessage(response, '공지사항을 저장하지 못했습니다.'));
     }
   }
 

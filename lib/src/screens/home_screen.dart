@@ -4,6 +4,7 @@ import '../models/schedule_entry.dart';
 import '../services/schedule_repository.dart';
 import 'history_screen.dart';
 import 'member_intro_screen.dart';
+import 'notice_screen.dart';
 import 'schedule_screen.dart';
 import 'score_library_screen.dart';
 
@@ -131,6 +132,16 @@ class HomeScreen extends StatelessWidget {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: 0,
+        onDestinationSelected: (index) {
+          if (index == 1) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder:
+                    (_) => NoticeScreen(loginId: loginId, nickname: nickname),
+              ),
+            );
+          }
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
