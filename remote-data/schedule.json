@@ -14,6 +14,13 @@
       "memo": "마온 연습실 이수역점\n비밀번호 0000",
       "authorId": "test002",
       "authorNickname": "test002"
+    },
+    {
+      "id": "1784605429765978-test002",
+      "scheduledAt": "2026-07-21T19:00:00.000",
+      "memo": "1",
+      "authorId": "test002",
+      "authorNickname": "test002"
     }
   ]
 }
