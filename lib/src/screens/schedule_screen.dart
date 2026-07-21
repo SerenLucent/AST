@@ -10,9 +10,11 @@ class ScheduleScreen extends StatefulWidget {
     super.key,
     required this.loginId,
     required this.nickname,
+    this.initialDay,
   });
   final String loginId;
   final String nickname;
+  final DateTime? initialDay;
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -31,9 +33,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _month = DateTime(now.year, now.month);
-    _day = DateTime(now.year, now.month, now.day);
+    final initial = widget.initialDay ?? DateTime.now();
+    _month = DateTime(initial.year, initial.month);
+    _day = DateTime(initial.year, initial.month, initial.day);
     _load();
   }
 
@@ -419,7 +421,7 @@ class _EditorState extends State<_Editor> {
                   value: hour,
                   decoration: const InputDecoration(labelText: '시'),
                   items: List.generate(
-                    13,
+                    12,
                     (v) => DropdownMenuItem(value: v, child: Text('$v시')),
                   ),
                   onChanged: (v) => setState(() => hour = v!),
@@ -465,8 +467,7 @@ class _EditorState extends State<_Editor> {
                   return;
                 }
                 var converted = hour;
-                if (period == '오전' && hour == 12) converted = 0;
-                if (period == '오후' && hour != 12) converted = hour + 12;
+                if (period == '오후') converted = hour + 12;
                 Navigator.pop(
                   context,
                   _Draft(converted, minute, memo.text.trim()),

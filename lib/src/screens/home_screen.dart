@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
 
-import '../models/team_event.dart';
+import '../models/schedule_entry.dart';
+import '../services/schedule_repository.dart';
 import 'history_screen.dart';
 import 'schedule_screen.dart';
 import 'score_library_screen.dart';
+
+ScheduleEntry? closestVisibleSchedule(
+  Iterable<ScheduleEntry> entries,
+  DateTime now,
+) {
+  final today = DateTime(now.year, now.month, now.day);
+  final visible =
+      entries.where((entry) {
+          final day = DateTime(
+            entry.scheduledAt.year,
+            entry.scheduledAt.month,
+            entry.scheduledAt.day,
+          );
+          return !day.isBefore(today);
+        }).toList()
+        ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+  return visible.firstOrNull;
+}
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -46,17 +65,8 @@ class HomeScreen extends StatelessWidget {
     ),
   ];
 
-  static final _events = [
-    TeamEvent(
-      title: '정기 연습',
-      scheduledAt: DateTime(2026, 7, 25, 19, 30),
-      location: '연습실 A',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final visibleEvents = upcomingEvents(_events, DateTime.now());
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -108,13 +118,13 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 26),
             Text(
-              '다가오는 일정',
+              '가장 가까운 일정',
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 14),
-            _UpcomingSchedule(events: visibleEvents),
+            _ClosestSchedule(loginId: loginId, nickname: nickname),
           ],
         ),
       ),
@@ -288,14 +298,48 @@ class _MenuCard extends StatelessWidget {
   }
 }
 
-class _UpcomingSchedule extends StatelessWidget {
-  const _UpcomingSchedule({required this.events});
+class _ClosestSchedule extends StatefulWidget {
+  const _ClosestSchedule({required this.loginId, required this.nickname});
 
-  final List<TeamEvent> events;
+  final String loginId;
+  final String nickname;
+
+  @override
+  State<_ClosestSchedule> createState() => _ClosestScheduleState();
+}
+
+class _ClosestScheduleState extends State<_ClosestSchedule> {
+  final _repository = ScheduleRepository();
+  ScheduleEntry? _entry;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final entries = await _repository.fetch(forceRefresh: true);
+      if (mounted) {
+        setState(() {
+          _entry = closestVisibleSchedule(entries, DateTime.now());
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (events.isEmpty) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final entry = _entry;
+    if (entry == null) {
       return Container(
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
@@ -311,62 +355,77 @@ class _UpcomingSchedule extends StatelessWidget {
         ),
       );
     }
-    return Column(
-      children: [
-        for (var index = 0; index < events.length; index++) ...[
-          _ScheduleCard(event: events[index]),
-          if (index < events.length - 1) const SizedBox(height: 10),
-        ],
-      ],
+    return _ClosestScheduleCard(
+      entry: entry,
+      onTap: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder:
+                (_) => ScheduleScreen(
+                  loginId: widget.loginId,
+                  nickname: widget.nickname,
+                  initialDay: entry.scheduledAt,
+                ),
+          ),
+        );
+        await _load();
+      },
     );
   }
 }
 
-class _ScheduleCard extends StatelessWidget {
-  const _ScheduleCard({required this.event});
+class _ClosestScheduleCard extends StatelessWidget {
+  const _ClosestScheduleCard({required this.entry, required this.onTap});
 
-  final TeamEvent event;
+  final ScheduleEntry entry;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          _DateBadge(date: event.scheduledAt),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              _DateBadge(date: entry.scheduledAt),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.memo,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${_timeLabel(entry.scheduledAt)} · ${entry.authorNickname}',
+                      style: const TextStyle(color: Color(0xFF777184)),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  '${_timeLabel(event.scheduledAt)} · ${event.location}',
-                  style: const TextStyle(color: Color(0xFF777184)),
-                ),
-              ],
-            ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
           ),
-          const Icon(Icons.chevron_right_rounded),
-        ],
+        ),
       ),
     );
   }
 
   String _timeLabel(DateTime date) {
     final period = date.hour < 12 ? '오전' : '오후';
-    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final hour = date.hour % 12;
     return '$period $hour:${date.minute.toString().padLeft(2, '0')}';
   }
 }
