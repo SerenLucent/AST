@@ -7,6 +7,8 @@
   },
   "access": {
     "teamPassword": "harmony2026",
+    "login_all": "Y",
+    "allowedIds": ["admin"],
     "passwordVersion": 1,
     "sessionVersion": 1
   },

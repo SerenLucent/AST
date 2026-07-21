@@ -128,7 +128,11 @@ class HomeScreen extends StatelessWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 14),
-            _ClosestSchedule(loginId: loginId, nickname: nickname),
+            _ClosestSchedule(
+              loginId: loginId,
+              nickname: nickname,
+              isAdmin: isAdmin,
+            ),
           ],
         ),
       ),
@@ -139,7 +143,11 @@ class HomeScreen extends StatelessWidget {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder:
-                    (_) => NoticeScreen(loginId: loginId, nickname: nickname),
+                    (_) => NoticeScreen(
+                      loginId: loginId,
+                      nickname: nickname,
+                      isAdmin: isAdmin,
+                    ),
               ),
             );
           }
@@ -151,6 +159,7 @@ class HomeScreen extends StatelessWidget {
                       loginId: loginId,
                       nickname: nickname,
                       isBoard: true,
+                      isAdmin: isAdmin,
                     ),
               ),
             );
@@ -358,7 +367,11 @@ class _MenuCard extends StatelessWidget {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder:
-                    (_) => ScheduleScreen(loginId: loginId, nickname: nickname),
+                    (_) => ScheduleScreen(
+                      loginId: loginId,
+                      nickname: nickname,
+                      isAdmin: isAdmin,
+                    ),
               ),
             );
             return;
@@ -432,10 +445,15 @@ class _MenuCard extends StatelessWidget {
 }
 
 class _ClosestSchedule extends StatefulWidget {
-  const _ClosestSchedule({required this.loginId, required this.nickname});
+  const _ClosestSchedule({
+    required this.loginId,
+    required this.nickname,
+    required this.isAdmin,
+  });
 
   final String loginId;
   final String nickname;
+  final bool isAdmin;
 
   @override
   State<_ClosestSchedule> createState() => _ClosestScheduleState();
@@ -490,6 +508,7 @@ class _ClosestScheduleState extends State<_ClosestSchedule> {
     }
     return _ClosestScheduleCard(
       entry: entry,
+      isAdmin: widget.isAdmin,
       onTap: () async {
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -497,6 +516,7 @@ class _ClosestScheduleState extends State<_ClosestSchedule> {
                 (_) => ScheduleScreen(
                   loginId: widget.loginId,
                   nickname: widget.nickname,
+                  isAdmin: widget.isAdmin,
                   initialDay: entry.scheduledAt,
                 ),
           ),
@@ -508,9 +528,14 @@ class _ClosestScheduleState extends State<_ClosestSchedule> {
 }
 
 class _ClosestScheduleCard extends StatelessWidget {
-  const _ClosestScheduleCard({required this.entry, required this.onTap});
+  const _ClosestScheduleCard({
+    required this.entry,
+    required this.isAdmin,
+    required this.onTap,
+  });
 
   final ScheduleEntry entry;
+  final bool isAdmin;
   final VoidCallback onTap;
 
   @override
@@ -542,7 +567,7 @@ class _ClosestScheduleCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${_timeLabel(entry.scheduledAt)} · ${entry.authorNickname}',
+                      '${_timeLabel(entry.scheduledAt)} · ${_authorLabel(entry)}',
                       style: const TextStyle(color: Color(0xFF777184)),
                     ),
                   ],
@@ -560,6 +585,11 @@ class _ClosestScheduleCard extends StatelessWidget {
     final period = date.hour < 12 ? '오전' : '오후';
     final hour = date.hour % 12;
     return '$period $hour:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _authorLabel(ScheduleEntry entry) {
+    if (!isAdmin || entry.authorId.isEmpty) return entry.authorNickname;
+    return '${entry.authorNickname} (${entry.authorId})';
   }
 }
 

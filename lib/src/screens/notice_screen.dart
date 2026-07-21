@@ -11,11 +11,13 @@ class NoticeScreen extends StatefulWidget {
     required this.loginId,
     required this.nickname,
     this.isBoard = false,
+    this.isAdmin = false,
   });
 
   final String loginId;
   final String nickname;
   final bool isBoard;
+  final bool isAdmin;
 
   @override
   State<NoticeScreen> createState() => _NoticeScreenState();
@@ -143,7 +145,9 @@ class _NoticeScreenState extends State<NoticeScreen> {
   Future<void> _open(Notice notice) async {
     final delete = await showDialog<bool>(
       context: context,
-      builder: (context) => _NoticeDetailDialog(notice: notice),
+      builder:
+          (context) =>
+              _NoticeDetailDialog(notice: notice, isAdmin: widget.isAdmin),
     );
     if (delete == true && mounted) await _delete(notice);
   }
@@ -341,9 +345,10 @@ class _NoticeEditorDialogState extends State<_NoticeEditorDialog> {
 }
 
 class _NoticeDetailDialog extends StatelessWidget {
-  const _NoticeDetailDialog({required this.notice});
+  const _NoticeDetailDialog({required this.notice, required this.isAdmin});
 
   final Notice notice;
+  final bool isAdmin;
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +360,7 @@ class _NoticeDetailDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${notice.createdAt.year}.${notice.createdAt.month.toString().padLeft(2, '0')}.${notice.createdAt.day.toString().padLeft(2, '0')} · ${notice.authorNickname}',
+              '${notice.createdAt.year}.${notice.createdAt.month.toString().padLeft(2, '0')}.${notice.createdAt.day.toString().padLeft(2, '0')} · ${_authorLabel(notice)}',
               style: const TextStyle(color: Color(0xFF777184)),
             ),
             const SizedBox(height: 18),
@@ -374,6 +379,11 @@ class _NoticeDetailDialog extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _authorLabel(Notice notice) {
+    if (!isAdmin || notice.authorId.isEmpty) return notice.authorNickname;
+    return '${notice.authorNickname} (${notice.authorId})';
   }
 }
 

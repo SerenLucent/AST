@@ -18,6 +18,7 @@ flutter build apk --release
 ## 현재 샘플 로그인
 
 - 공용 비밀번호: `remote-data/main.json`의 `access.teamPassword`
+- 로그인 허용: `access.login_all`이 `"Y"`이면 누구나, 그 외 값이면 `access.allowedIds`에 등록된 아이디만 가능
 - `admin` 아이디는 관리자 악보 업로드·삭제 메뉴를 표시합니다.
 
 운영 전 공용 비밀번호 검사는 Firebase 같은 서버 측으로 이동해야 합니다. 현재 값은 화면 흐름 확인용으로 앱 코드에 들어 있습니다.

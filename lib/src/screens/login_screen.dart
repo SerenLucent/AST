@@ -37,9 +37,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _submitting = false);
     if (!success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('팀 공용 비밀번호를 확인해주세요.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('아이디 또는 팀 공용 비밀번호를 확인해주세요.')),
+      );
     }
   }
 

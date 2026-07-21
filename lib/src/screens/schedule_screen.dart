@@ -10,10 +10,12 @@ class ScheduleScreen extends StatefulWidget {
     super.key,
     required this.loginId,
     required this.nickname,
+    this.isAdmin = false,
     this.initialDay,
   });
   final String loginId;
   final String nickname;
+  final bool isAdmin;
   final DateTime? initialDay;
 
   @override
@@ -211,7 +213,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         subtitle: Text(
-                          '${entry.memo}\n등록: ${entry.authorNickname}',
+                          '${entry.memo}\n등록: ${_authorLabel(entry)}',
                         ),
                         isThreeLine: true,
                         trailing: IconButton(
@@ -237,6 +239,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         label: const Text('일정 등록'),
       ),
     );
+  }
+
+  String _authorLabel(ScheduleEntry entry) {
+    if (!widget.isAdmin || entry.authorId.isEmpty) {
+      return entry.authorNickname;
+    }
+    return '${entry.authorNickname} (${entry.authorId})';
   }
 
   String _time(DateTime date) {

@@ -39,7 +39,7 @@ class _AstTeamAppState extends State<AstTeamApp> {
   }
 
   Future<bool> _login(String id, String password) async {
-    if (!await _session.matchesTeamPassword(password)) return false;
+    if (!await _session.canSignIn(id, password)) return false;
     final profile = await _session.signIn(id);
     if (!mounted) return true;
     setState(() {
