@@ -94,6 +94,79 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
     }
   }
 
+  Future<bool> _ensureGithubToken() async {
+    final savedToken = await _github.token;
+    if (!mounted) return false;
+    if (savedToken != null) return true;
+    return showGithubTokenDialog(context, _github);
+  }
+
+  Future<void> _deleteMember(MemberProfile member) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('팀원 삭제'),
+            content: Text('${member.memo}\n\n이 팀원 소개를 삭제할까요?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('취소'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('삭제'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !mounted || !await _ensureGithubToken()) return;
+    setState(() => _saving = true);
+    try {
+      final latest = await _repository.fetch(forceRefresh: true);
+      final updated = latest.where((item) => item.id != member.id).toList();
+      await _github.saveMembers(updated);
+      if (!mounted) return;
+      setState(() => _members = updated);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('팀원 소개를 삭제했습니다.')));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _openSorter() async {
+    final sorted = await showDialog<List<MemberProfile>>(
+      context: context,
+      builder: (_) => _MemberSortDialog(members: _members),
+    );
+    if (sorted == null || !mounted || !await _ensureGithubToken()) return;
+    setState(() => _saving = true);
+    try {
+      await _github.saveMembers(sorted);
+      if (!mounted) return;
+      setState(() => _members = sorted);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('팀원 순서를 저장했습니다.')));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,6 +176,15 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
+          if (widget.isAdmin)
+            IconButton(
+              tooltip: '팀원 순서 변경',
+              onPressed:
+                  _loading || _saving || _members.length < 2
+                      ? null
+                      : _openSorter,
+              icon: const Icon(Icons.swap_vert_rounded),
+            ),
           IconButton(
             tooltip: '새로고침',
             onPressed: _loading ? null : () => _load(refresh: true),
@@ -186,11 +268,74 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
                     ),
                   ),
                 ),
+                if (widget.isAdmin)
+                  IconButton(
+                    tooltip: '팀원 삭제',
+                    onPressed: _saving ? null : () => _deleteMember(member),
+                    icon: const Icon(Icons.delete_outline_rounded),
+                  ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _MemberSortDialog extends StatefulWidget {
+  const _MemberSortDialog({required this.members});
+
+  final List<MemberProfile> members;
+
+  @override
+  State<_MemberSortDialog> createState() => _MemberSortDialogState();
+}
+
+class _MemberSortDialogState extends State<_MemberSortDialog> {
+  late final List<MemberProfile> _members = [...widget.members];
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('팀원 순서 변경'),
+      content: SizedBox(
+        width: 420,
+        height: 430,
+        child: ReorderableListView.builder(
+          itemCount: _members.length,
+          onReorder: (oldIndex, newIndex) {
+            setState(() {
+              if (newIndex > oldIndex) newIndex--;
+              final member = _members.removeAt(oldIndex);
+              _members.insert(newIndex, member);
+            });
+          },
+          itemBuilder: (context, index) {
+            final member = _members[index];
+            return ListTile(
+              key: ValueKey(member.id),
+              leading: CircleAvatar(child: Text('${index + 1}')),
+              title: Text(
+                member.memo,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: const Icon(Icons.drag_handle_rounded),
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('취소'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _members),
+          child: const Text('저장'),
+        ),
+      ],
     );
   }
 }
