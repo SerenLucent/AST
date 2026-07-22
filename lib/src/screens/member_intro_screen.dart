@@ -9,9 +9,14 @@ import '../services/member_repository.dart';
 import '../widgets/github_token_dialog.dart';
 
 class MemberIntroScreen extends StatefulWidget {
-  const MemberIntroScreen({super.key, required this.isAdmin});
+  const MemberIntroScreen({
+    super.key,
+    required this.isAdmin,
+    this.nickname = '',
+  });
 
   final bool isAdmin;
+  final String nickname;
 
   @override
   State<MemberIntroScreen> createState() => _MemberIntroScreenState();
@@ -46,10 +51,10 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
     }
   }
 
-  Future<void> _openEditor() async {
+  Future<void> _openEditor([MemberProfile? existing]) async {
     final draft = await showDialog<_MemberDraft>(
       context: context,
-      builder: (_) => const _MemberEditorDialog(),
+      builder: (_) => _MemberEditorDialog(existing: existing),
     );
     if (draft == null || !mounted) return;
     final savedToken = await _github.token;
@@ -60,7 +65,7 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
     }
     setState(() => _saving = true);
     try {
-      var imageUrl = '';
+      var imageUrl = existing?.imageUrl ?? '';
       if (draft.bytes != null && draft.fileName != null) {
         final extension = draft.fileName!.split('.').last.toLowerCase();
         final remoteName =
@@ -72,17 +77,25 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
       }
       final latest = await _repository.fetch(forceRefresh: true);
       final member = MemberProfile(
-        id: '${DateTime.now().microsecondsSinceEpoch}',
+        id: existing?.id ?? '${DateTime.now().microsecondsSinceEpoch}',
+        name: draft.name,
         imageUrl: imageUrl,
         memo: draft.memo,
       );
-      final updated = [...latest, member];
+      final updated =
+          existing == null
+              ? [...latest, member]
+              : latest
+                  .map((item) => item.id == existing.id ? member : item)
+                  .toList();
       await _github.saveMembers(updated);
       if (!mounted) return;
       setState(() => _members = updated);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('팀원 소개를 등록했습니다.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('팀원 소개를 ${existing == null ? '등록' : '수정'}했습니다.'),
+        ),
+      );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -107,7 +120,7 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
       builder:
           (context) => AlertDialog(
             title: const Text('팀원 삭제'),
-            content: Text('${member.memo}\n\n이 팀원 소개를 삭제할까요?'),
+            content: Text('${member.name}\n\n이 팀원 소개를 삭제할까요?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -208,7 +221,7 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
       floatingActionButton:
           widget.isAdmin
               ? FloatingActionButton(
-                onPressed: _saving ? null : _openEditor,
+                onPressed: _saving ? null : () => _openEditor(),
                 child: const Icon(Icons.add_rounded),
               )
               : null,
@@ -262,17 +275,40 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Text(
-                      member.memo,
-                      style: const TextStyle(height: 1.5),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          member.name,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        if (member.memo.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            member.memo,
+                            style: const TextStyle(height: 1.5),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
-                if (widget.isAdmin)
-                  IconButton(
-                    tooltip: '팀원 삭제',
-                    onPressed: _saving ? null : () => _deleteMember(member),
-                    icon: const Icon(Icons.delete_outline_rounded),
+                if (_canEdit(member))
+                  Column(
+                    children: [
+                      IconButton(
+                        tooltip: '팀원 수정',
+                        onPressed: _saving ? null : () => _openEditor(member),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                      if (widget.isAdmin)
+                        IconButton(
+                          tooltip: '팀원 삭제',
+                          onPressed:
+                              _saving ? null : () => _deleteMember(member),
+                          icon: const Icon(Icons.delete_outline_rounded),
+                        ),
+                    ],
                   ),
               ],
             ),
@@ -281,6 +317,12 @@ class _MemberIntroScreenState extends State<MemberIntroScreen> {
       },
     );
   }
+
+  bool _canEdit(MemberProfile member) =>
+      widget.isAdmin ||
+      (member.name.trim().isNotEmpty &&
+          member.name.trim().toLowerCase() ==
+              widget.nickname.trim().toLowerCase());
 }
 
 class _MemberSortDialog extends StatefulWidget {
@@ -318,7 +360,7 @@ class _MemberSortDialogState extends State<_MemberSortDialog> {
               key: ValueKey(member.id),
               leading: CircleAvatar(child: Text('${index + 1}')),
               title: Text(
-                member.memo,
+                member.name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -348,19 +390,30 @@ class _MemberSortDialogState extends State<_MemberSortDialog> {
 }
 
 class _MemberEditorDialog extends StatefulWidget {
-  const _MemberEditorDialog();
+  const _MemberEditorDialog({this.existing});
+
+  final MemberProfile? existing;
 
   @override
   State<_MemberEditorDialog> createState() => _MemberEditorDialogState();
 }
 
 class _MemberEditorDialogState extends State<_MemberEditorDialog> {
+  final _nameController = TextEditingController();
   final _memoController = TextEditingController();
   Uint8List? _bytes;
   String? _fileName;
 
   @override
+  void initState() {
+    super.initState();
+    _nameController.text = widget.existing?.name ?? '';
+    _memoController.text = widget.existing?.memo ?? '';
+  }
+
+  @override
   void dispose() {
+    _nameController.dispose();
     _memoController.dispose();
     super.dispose();
   }
@@ -379,23 +432,24 @@ class _MemberEditorDialogState extends State<_MemberEditorDialog> {
   }
 
   void _confirm() {
+    final name = _nameController.text.trim();
     final memo = _memoController.text.trim();
-    if (memo.isEmpty) {
+    if (name.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('메모를 입력해주세요.')));
+      ).showSnackBar(const SnackBar(content: Text('이름을 입력해주세요.')));
       return;
     }
     Navigator.pop(
       context,
-      _MemberDraft(fileName: _fileName, bytes: _bytes, memo: memo),
+      _MemberDraft(fileName: _fileName, bytes: _bytes, name: name, memo: memo),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('팀원 소개 등록'),
+      title: Text('팀원 소개 ${widget.existing == null ? '등록' : '수정'}'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -414,15 +468,26 @@ class _MemberEditorDialogState extends State<_MemberEditorDialog> {
                 clipBehavior: Clip.antiAlias,
                 child:
                     _bytes == null
-                        ? const Icon(
-                          Icons.add_photo_alternate_outlined,
-                          size: 58,
-                          color: Color(0xFF6750A4),
-                        )
+                        ? widget.existing?.imageUrl.isNotEmpty == true
+                            ? Image.network(
+                              widget.existing!.imageUrl,
+                              fit: BoxFit.cover,
+                            )
+                            : const Icon(
+                              Icons.add_photo_alternate_outlined,
+                              size: 58,
+                              color: Color(0xFF6750A4),
+                            )
                         : Image.memory(_bytes!, fit: BoxFit.cover),
               ),
             ),
             const SizedBox(height: 18),
+            TextField(
+              controller: _nameController,
+              maxLength: 30,
+              decoration: const InputDecoration(labelText: '이름'),
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: _memoController,
               minLines: 3,
@@ -451,11 +516,13 @@ class _MemberDraft {
   const _MemberDraft({
     required this.fileName,
     required this.bytes,
+    required this.name,
     required this.memo,
   });
 
   final String? fileName;
   final Uint8List? bytes;
+  final String name;
   final String memo;
 }
 

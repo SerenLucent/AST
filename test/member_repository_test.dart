@@ -8,12 +8,13 @@ void main() {
   test('member JSON is decoded', () {
     final members = MemberRepository().decode('''
       {"schemaVersion":1,"members":[
-        {"id":"one","imageUrl":"https://example.com/one.jpg","memo":"소프라노 홍길동"}
+        {"id":"one","name":"홍길동","imageUrl":"https://example.com/one.jpg","memo":"소프라노"}
       ]}
     ''');
 
     expect(members.single.id, 'one');
-    expect(members.single.memo, '소프라노 홍길동');
+    expect(members.single.name, '홍길동');
+    expect(members.single.memo, '소프라노');
   });
 
   test('member without image is decoded with an empty image URL', () {

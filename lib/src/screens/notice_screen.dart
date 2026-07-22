@@ -65,7 +65,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
   Future<void> _add() async {
     final draft = await showDialog<_NoticeDraft>(
       context: context,
-      builder: (_) => const _NoticeEditorDialog(),
+      builder: (_) => _NoticeEditorDialog(sectionName: _sectionName),
     );
     if (draft == null || !mounted || !await _ensureToken()) return;
     List<Notice> latest;
@@ -83,6 +83,35 @@ class _NoticeScreenState extends State<NoticeScreen> {
       authorNickname: widget.nickname,
     );
     await _save([...latest, notice], '$_sectionName 게시물을 등록했습니다.');
+  }
+
+  Future<void> _edit(Notice notice) async {
+    final draft = await showDialog<_NoticeDraft>(
+      context: context,
+      builder:
+          (_) =>
+              _NoticeEditorDialog(sectionName: _sectionName, existing: notice),
+    );
+    if (draft == null || !mounted || !await _ensureToken()) return;
+    List<Notice> latest;
+    try {
+      latest = await _repository.fetch(forceRefresh: true);
+    } catch (_) {
+      latest = _notices;
+    }
+    final updated =
+        latest.map((item) {
+          if (item.id != notice.id) return item;
+          return Notice(
+            id: item.id,
+            title: draft.title,
+            memo: draft.memo,
+            createdAt: item.createdAt,
+            authorId: item.authorId,
+            authorNickname: item.authorNickname,
+          );
+        }).toList();
+    await _save(updated, '$_sectionName 게시물을 수정했습니다.');
   }
 
   Future<void> _delete(Notice notice) async {
@@ -143,13 +172,20 @@ class _NoticeScreenState extends State<NoticeScreen> {
   }
 
   Future<void> _open(Notice notice) async {
-    final delete = await showDialog<bool>(
+    final action = await showDialog<String>(
       context: context,
       builder:
-          (context) =>
-              _NoticeDetailDialog(notice: notice, isAdmin: widget.isAdmin),
+          (context) => _NoticeDetailDialog(
+            notice: notice,
+            isAdmin: widget.isAdmin,
+            canManage:
+                widget.isAdmin ||
+                notice.authorId.toLowerCase() == widget.loginId.toLowerCase(),
+          ),
     );
-    if (delete == true && mounted) await _delete(notice);
+    if (!mounted) return;
+    if (action == 'delete') await _delete(notice);
+    if (action == 'edit') await _edit(notice);
   }
 
   @override
@@ -257,7 +293,10 @@ class _NoticeScreenState extends State<NoticeScreen> {
 }
 
 class _NoticeEditorDialog extends StatefulWidget {
-  const _NoticeEditorDialog();
+  const _NoticeEditorDialog({required this.sectionName, this.existing});
+
+  final String sectionName;
+  final Notice? existing;
 
   @override
   State<_NoticeEditorDialog> createState() => _NoticeEditorDialogState();
@@ -266,6 +305,13 @@ class _NoticeEditorDialog extends StatefulWidget {
 class _NoticeEditorDialogState extends State<_NoticeEditorDialog> {
   final _titleController = TextEditingController();
   final _memoController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.existing?.title ?? '';
+    _memoController.text = widget.existing?.memo ?? '';
+  }
 
   @override
   void dispose() {
@@ -289,7 +335,9 @@ class _NoticeEditorDialogState extends State<_NoticeEditorDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('공지사항 작성'),
+      title: Text(
+        '${widget.sectionName} ${widget.existing == null ? '작성' : '수정'}',
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -345,10 +393,15 @@ class _NoticeEditorDialogState extends State<_NoticeEditorDialog> {
 }
 
 class _NoticeDetailDialog extends StatelessWidget {
-  const _NoticeDetailDialog({required this.notice, required this.isAdmin});
+  const _NoticeDetailDialog({
+    required this.notice,
+    required this.isAdmin,
+    required this.canManage,
+  });
 
   final Notice notice;
   final bool isAdmin;
+  final bool canManage;
 
   @override
   Widget build(BuildContext context) {
@@ -369,12 +422,18 @@ class _NoticeDetailDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('삭제'),
-        ),
+        if (canManage)
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'delete'),
+            child: const Text('삭제'),
+          ),
+        if (canManage)
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context, 'edit'),
+            child: const Text('수정'),
+          ),
         FilledButton(
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => Navigator.pop(context),
           child: const Text('닫기'),
         ),
       ],

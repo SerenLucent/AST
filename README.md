@@ -46,6 +46,16 @@ android/              Android 네이티브 프로젝트
 
 `admin_naokist` 아이디로 로그인하면 관리자 전용 업로드·삭제 기능이 표시됩니다.
 
+## APK 내장 GitHub 토큰
+
+`config/private_config.example.json`을 `config/private_config.json`으로 복사한 뒤
+`githubToken`에 AST 저장소 Contents 쓰기 권한이 있는 Fine-grained token을 넣습니다.
+실제 `private_config.json`은 `.gitignore`로 제외되며 APK 빌드에만 포함됩니다.
+
+로그인한 사용자는 `remote-data/users.json`에 아이디, 닉네임, 최초 등록 시각,
+최근 로그인 시각이 기록됩니다. 관리자는 홈의 멤버 관리에서 악보 업로드와
+히스토리 업로드 권한을 사용자별로 설정할 수 있습니다.
+
 최초 사용 시 GitHub Fine-grained personal access token을 입력해야 합니다.
 
 1. GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens

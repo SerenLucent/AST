@@ -1,13 +1,13 @@
 import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/score_file.dart';
 import '../models/schedule_entry.dart';
 import '../models/member_profile.dart';
 import '../models/notice.dart';
+import '../models/team_user.dart';
 
 class GithubAdminService {
   static const _owner = 'SerenLucent';
@@ -15,9 +15,27 @@ class GithubAdminService {
   static const _branch = 'main';
   static const _tokenKey = 'github_admin_token';
   static String? _sessionToken;
+  static bool _embeddedTokenLoaded = false;
 
   Future<String?> get token async {
     if (_sessionToken != null) return _sessionToken;
+    if (!_embeddedTokenLoaded) {
+      _embeddedTokenLoaded = true;
+      try {
+        final source = await rootBundle.loadString(
+          'config/private_config.json',
+        );
+        final embedded =
+            (jsonDecode(source) as Map<String, dynamic>)['githubToken']
+                as String?;
+        if (embedded != null && embedded.trim().isNotEmpty) {
+          _sessionToken = embedded.trim();
+          return _sessionToken;
+        }
+      } catch (_) {
+        // Development builds may intentionally omit the local secret.
+      }
+    }
     final preferences = await SharedPreferences.getInstance();
     _sessionToken = preferences.getString(_tokenKey);
     return _sessionToken;
@@ -95,10 +113,9 @@ class GithubAdminService {
       throw const GithubAdminException('일정을 저장하려면 GitHub 연결이 필요합니다.');
     }
     const segments = ['remote-data', 'schedule.json'];
-    final current = await http.get(
-      _contentsUri(segments),
-      headers: _headers(adminToken),
-    );
+    final current = await http
+        .get(_contentsUri(segments), headers: _headers(adminToken))
+        .timeout(const Duration(seconds: 8));
     String? sha;
     if (current.statusCode == 200) {
       sha =
@@ -258,6 +275,45 @@ class GithubAdminService {
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw GithubAdminException(_errorMessage(response, '게시물을 저장하지 못했습니다.'));
+    }
+  }
+
+  Future<void> saveUsers(List<TeamUser> users) async {
+    final adminToken = await token;
+    if (adminToken == null) {
+      throw const GithubAdminException('내장 GitHub 토큰이 없습니다.');
+    }
+    const segments = ['remote-data', 'users.json'];
+    final current = await http
+        .get(_contentsUri(segments), headers: _headers(adminToken))
+        .timeout(const Duration(seconds: 8));
+    String? sha;
+    if (current.statusCode == 200) {
+      sha =
+          (jsonDecode(current.body) as Map<String, dynamic>)['sha'] as String?;
+    } else if (current.statusCode != 404) {
+      throw GithubAdminException(_errorMessage(current, '사용자 목록을 확인하지 못했습니다.'));
+    }
+    final source = const JsonEncoder.withIndent('  ').convert({
+      'schemaVersion': 1,
+      'users': users.map((user) => user.toJson()).toList(),
+    });
+    final response = await http
+        .put(
+          _contentsUri(segments),
+          headers: _headers(adminToken),
+          body: jsonEncode({
+            'message': '사용자 및 권한 업데이트',
+            'content': base64Encode(utf8.encode(source)),
+            'branch': _branch,
+            if (sha != null) 'sha': sha,
+          }),
+        )
+        .timeout(const Duration(seconds: 8));
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw GithubAdminException(
+        _errorMessage(response, '사용자 목록을 저장하지 못했습니다.'),
+      );
     }
   }
 

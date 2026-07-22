@@ -7,9 +7,14 @@ import '../services/github_admin_service.dart';
 import '../services/score_repository.dart';
 
 class ScoreLibraryScreen extends StatefulWidget {
-  const ScoreLibraryScreen({super.key, required this.isAdmin});
+  const ScoreLibraryScreen({
+    super.key,
+    required this.isAdmin,
+    this.canUpload = false,
+  });
 
   final bool isAdmin;
+  final bool canUpload;
 
   @override
   State<ScoreLibraryScreen> createState() => _ScoreLibraryScreenState();
@@ -306,15 +311,6 @@ class _ScoreLibraryScreenState extends State<ScoreLibraryScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
-          if (widget.isAdmin)
-            IconButton(
-              tooltip: 'GitHub 연결 설정',
-              onPressed:
-                  _adminBusyName == null
-                      ? () => _ensureGithubToken(forceDialog: true)
-                      : null,
-              icon: const Icon(Icons.admin_panel_settings_outlined),
-            ),
           IconButton(
             tooltip: '새로고침',
             onPressed: _loading ? null : () => _load(forceRefresh: true),
@@ -362,7 +358,7 @@ class _ScoreLibraryScreenState extends State<ScoreLibraryScreen> {
         ),
       ),
       floatingActionButton:
-          widget.isAdmin
+          widget.isAdmin || widget.canUpload
               ? FloatingActionButton.extended(
                 onPressed: _adminBusyName == null ? _uploadPdf : null,
                 icon:

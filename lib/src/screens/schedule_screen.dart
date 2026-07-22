@@ -72,14 +72,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return showGithubTokenDialog(context, _github);
   }
 
-  Future<void> _changeToken() async {
-    final changed = await showGithubTokenDialog(context, _github);
-    if (!mounted || !changed) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('GitHub 토큰을 새 값으로 변경했습니다.')));
-  }
-
   Future<void> _add() async {
     final draft = await showModalBottomSheet<_Draft>(
       context: context,
@@ -124,6 +116,40 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  Future<void> _edit(ScheduleEntry entry) async {
+    final draft = await showModalBottomSheet<_Draft>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _Editor(day: _day, entry: entry),
+    );
+    if (draft == null || !mounted || !await _connect()) return;
+    List<ScheduleEntry> latest;
+    try {
+      latest = await _repository.fetch(forceRefresh: true);
+    } catch (_) {
+      latest = _entries;
+    }
+    final updated =
+        latest.map((item) {
+          if (item.id != entry.id) return item;
+          return ScheduleEntry(
+            id: item.id,
+            scheduledAt: DateTime(
+              _day.year,
+              _day.month,
+              _day.day,
+              draft.hour,
+              draft.minute,
+            ),
+            memo: draft.memo,
+            authorId: item.authorId,
+            authorNickname: item.authorNickname,
+          );
+        }).toList();
+    await _save(updated, '일정을 수정했습니다.');
+  }
+
   Future<void> _save(List<ScheduleEntry> entries, String message) async {
     setState(() => _saving = true);
     try {
@@ -155,11 +181,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
-          IconButton(
-            tooltip: 'GitHub 토큰 변경',
-            onPressed: _changeToken,
-            icon: const Icon(Icons.key_rounded),
-          ),
           IconButton(
             tooltip: '새로고침',
             onPressed: _loading ? null : () => _load(refresh: true),
@@ -216,9 +237,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           '${entry.memo}\n등록: ${_authorLabel(entry)}',
                         ),
                         isThreeLine: true,
-                        trailing: IconButton(
-                          onPressed: _saving ? null : () => _delete(entry),
-                          icon: const Icon(Icons.delete_outline),
+                        trailing: Wrap(
+                          children: [
+                            IconButton(
+                              tooltip: '수정',
+                              onPressed: _saving ? null : () => _edit(entry),
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                            IconButton(
+                              tooltip: '삭제',
+                              onPressed: _saving ? null : () => _delete(entry),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -387,8 +418,9 @@ class _Calendar extends StatelessWidget {
 }
 
 class _Editor extends StatefulWidget {
-  const _Editor({required this.day});
+  const _Editor({required this.day, this.entry});
   final DateTime day;
+  final ScheduleEntry? entry;
   @override
   State<_Editor> createState() => _EditorState();
 }
@@ -398,6 +430,17 @@ class _EditorState extends State<_Editor> {
   String period = '오후';
   int hour = 7;
   int minute = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final entry = widget.entry;
+    if (entry == null) return;
+    memo.text = entry.memo;
+    period = entry.scheduledAt.hour < 12 ? '오전' : '오후';
+    hour = entry.scheduledAt.hour % 12;
+    minute = entry.scheduledAt.minute;
+  }
 
   @override
   void dispose() {
@@ -419,7 +462,7 @@ class _EditorState extends State<_Editor> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${widget.day.month}월 ${widget.day.day}일 일정 등록',
+            '${widget.day.month}월 ${widget.day.day}일 일정 ${widget.entry == null ? '등록' : '수정'}',
             style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 20),

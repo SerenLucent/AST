@@ -8,9 +8,14 @@ import '../services/history_repository.dart';
 import '../widgets/github_token_dialog.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key, required this.isAdmin});
+  const HistoryScreen({
+    super.key,
+    required this.isAdmin,
+    this.canUpload = false,
+  });
 
   final bool isAdmin;
+  final bool canUpload;
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -176,7 +181,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
       body: SafeArea(child: _content()),
       floatingActionButton:
-          widget.isAdmin
+          widget.isAdmin || widget.canUpload
               ? FloatingActionButton.extended(
                 onPressed: _busyName == null ? _upload : null,
                 icon: const Icon(Icons.upload_file_rounded),

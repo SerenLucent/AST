@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/nickname_screen.dart';
 import 'services/session_service.dart';
+import 'services/user_registry_service.dart';
 import 'theme/app_theme.dart';
 
 class AstTeamApp extends StatefulWidget {
@@ -15,6 +16,7 @@ class AstTeamApp extends StatefulWidget {
 
 class _AstTeamAppState extends State<AstTeamApp> {
   final SessionService _session = SessionService();
+  final UserRegistryService _registry = UserRegistryService();
   bool _loading = true;
   bool _showTitle = true;
   String? _loginId;
@@ -41,6 +43,13 @@ class _AstTeamAppState extends State<AstTeamApp> {
   Future<bool> _login(String id, String password) async {
     if (!await _session.canSignIn(id, password)) return false;
     final profile = await _session.signIn(id);
+    try {
+      await _registry
+          .recordLogin(loginId: profile.loginId, nickname: profile.nickname)
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // A temporary GitHub write failure must not prevent local sign-in.
+    }
     if (!mounted) return true;
     setState(() {
       _loginId = profile.loginId;
@@ -52,6 +61,13 @@ class _AstTeamAppState extends State<AstTeamApp> {
 
   Future<void> _saveNickname(String nickname) async {
     final profile = await _session.registerNickname(_loginId!, nickname);
+    try {
+      await _registry
+          .updateNickname(loginId: profile.loginId, nickname: profile.nickname!)
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // The nickname remains usable locally and can sync on the next login.
+    }
     if (!mounted) return;
     setState(() {
       _nickname = profile.nickname;

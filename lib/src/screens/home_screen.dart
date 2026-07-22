@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/schedule_entry.dart';
 import '../services/schedule_repository.dart';
+import '../services/user_repository.dart';
 import 'history_screen.dart';
 import 'member_intro_screen.dart';
+import 'member_management_screen.dart';
 import 'notice_screen.dart';
 import 'schedule_screen.dart';
 import 'score_library_screen.dart';
@@ -78,6 +80,17 @@ class HomeScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.4),
         ),
         actions: [
+          if (isAdmin)
+            IconButton(
+              tooltip: '멤버 관리',
+              onPressed:
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const MemberManagementScreen(),
+                    ),
+                  ),
+              icon: const Icon(Icons.manage_accounts_outlined),
+            ),
           TextButton.icon(
             onPressed: onLogout,
             icon: const Icon(Icons.logout_rounded),
@@ -102,23 +115,35 @@ class HomeScreen extends StatelessWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 14),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _menuItems.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: .88,
-              ),
-              itemBuilder:
-                  (context, index) => _MenuCard(
-                    item: _menuItems[index],
-                    isAdmin: isAdmin,
-                    loginId: loginId,
-                    nickname: nickname,
+            FutureBuilder(
+              future: UserRepository().fetch(),
+              builder: (context, snapshot) {
+                final users = snapshot.data ?? const [];
+                final current = users.where(
+                  (user) => user.loginId.toLowerCase() == loginId.toLowerCase(),
+                );
+                final user = current.firstOrNull;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _menuItems.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: .88,
                   ),
+                  itemBuilder:
+                      (context, index) => _MenuCard(
+                        item: _menuItems[index],
+                        isAdmin: isAdmin,
+                        canUploadScores: user?.canUploadScores ?? false,
+                        canUploadHistory: user?.canUploadHistory ?? false,
+                        loginId: loginId,
+                        nickname: nickname,
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 26),
             Text(
@@ -343,11 +368,15 @@ class _MenuCard extends StatelessWidget {
   const _MenuCard({
     required this.item,
     required this.isAdmin,
+    required this.canUploadScores,
+    required this.canUploadHistory,
     required this.loginId,
     required this.nickname,
   });
   final _MenuItem item;
   final bool isAdmin;
+  final bool canUploadScores;
+  final bool canUploadHistory;
   final String loginId;
   final String nickname;
 
@@ -379,7 +408,9 @@ class _MenuCard extends StatelessWidget {
           if (isMemberIntro) {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => MemberIntroScreen(isAdmin: isAdmin),
+                builder:
+                    (_) =>
+                        MemberIntroScreen(isAdmin: isAdmin, nickname: nickname),
               ),
             );
             return;
@@ -387,7 +418,11 @@ class _MenuCard extends StatelessWidget {
           if (item.title == '악보 자료실') {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => ScoreLibraryScreen(isAdmin: isAdmin),
+                builder:
+                    (_) => ScoreLibraryScreen(
+                      isAdmin: isAdmin,
+                      canUpload: canUploadScores,
+                    ),
               ),
             );
             return;
@@ -395,7 +430,11 @@ class _MenuCard extends StatelessWidget {
           if (item.title == '행사 히스토리') {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => HistoryScreen(isAdmin: isAdmin),
+                builder:
+                    (_) => HistoryScreen(
+                      isAdmin: isAdmin,
+                      canUpload: canUploadHistory,
+                    ),
               ),
             );
             return;
