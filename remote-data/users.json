@@ -2,26 +2,10 @@
   "schemaVersion": 1,
   "users": [
     {
-      "loginId": "admin_naokist",
-      "nickname": "경식",
-      "registeredAt": "2026-07-22T02:09:53.919859Z",
-      "lastLoginAt": "2026-07-22T02:39:12.128990Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
       "loginId": "test001",
       "nickname": "test001",
-      "registeredAt": "2026-07-22T02:11:38.038552Z",
-      "lastLoginAt": "2026-07-22T02:11:38.038552Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
-      "loginId": "test004",
-      "nickname": "test004",
-      "registeredAt": "2026-07-22T02:12:56.494943Z",
-      "lastLoginAt": "2026-07-22T02:13:31.272722Z",
+      "registeredAt": "2026-07-22T02:44:43.711234Z",
+      "lastLoginAt": "2026-07-22T02:44:43.711234Z",
       "canUploadScores": false,
       "canUploadHistory": false
     }
