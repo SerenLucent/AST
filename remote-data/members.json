@@ -3,38 +3,45 @@
   "members": [
     {
       "id": "1784609339507317",
+      "name": "",
       "imageUrl": "",
       "memo": "Mun"
     },
     {
       "id": "1784609361309119",
+      "name": "",
       "imageUrl": "",
       "memo": "Lee"
     },
     {
       "id": "1784609378357270",
+      "name": "",
       "imageUrl": "",
       "memo": "Kim"
     },
     {
       "id": "1784609352740414",
+      "name": "",
       "imageUrl": "",
       "memo": "Choi"
     },
     {
       "id": "1784609394339731",
+      "name": "",
       "imageUrl": "",
       "memo": "Shin"
     },
     {
       "id": "1784613350079431",
+      "name": "",
       "imageUrl": "",
       "memo": "Yu"
     },
     {
       "id": "1784616207109933",
+      "name": "경식",
       "imageUrl": "https://raw.githubusercontent.com/SerenLucent/AST/main/Image/member_1784616202279398.jpg",
-      "memo": "경식\n포지션 : 퍼커션, 바리톤"
+      "memo": "포지션 : 퍼커션, 바리톤"
     }
   ]
 }
