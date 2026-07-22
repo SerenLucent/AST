@@ -8,6 +8,14 @@
       "lastLoginAt": "2026-07-22T02:09:53.919859Z",
       "canUploadScores": false,
       "canUploadHistory": false
+    },
+    {
+      "loginId": "test001",
+      "nickname": "test001",
+      "registeredAt": "2026-07-22T02:11:38.038552Z",
+      "lastLoginAt": "2026-07-22T02:11:38.038552Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
     }
   ]
 }
