@@ -19,9 +19,9 @@
     },
     {
       "loginId": "test004",
-      "nickname": "",
+      "nickname": "test004",
       "registeredAt": "2026-07-22T02:12:56.494943Z",
-      "lastLoginAt": "2026-07-22T02:12:56.494943Z",
+      "lastLoginAt": "2026-07-22T02:13:31.272722Z",
       "canUploadScores": false,
       "canUploadHistory": false
     }
