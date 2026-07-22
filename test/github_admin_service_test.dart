@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('GitHub token is saved, replaced, and cleared locally', () async {
+  test('내장 GitHub token은 로컬 변경을 지운 뒤 다시 사용된다', () async {
     SharedPreferences.setMockInitialValues({});
     final service = GithubAdminService();
 
@@ -16,7 +16,7 @@ void main() {
     expect(await service.token, 'github_pat_second');
 
     await service.clearToken();
-    expect(await service.token, isNull);
+    expect(await service.token, isNotNull);
   });
 
   testWidgets('token dialog closes immediately after pressing save', (
