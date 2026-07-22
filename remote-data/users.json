@@ -32,6 +32,14 @@
       "lastLoginAt": "2026-07-22T03:02:43.791632Z",
       "canUploadScores": false,
       "canUploadHistory": false
+    },
+    {
+      "loginId": "semicolon",
+      "nickname": "",
+      "registeredAt": "2026-07-22T03:10:07.703481Z",
+      "lastLoginAt": "2026-07-22T03:10:07.703481Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
     }
   ]
 }
