@@ -1,4 +1,13 @@
 {
   "schemaVersion": 1,
-  "users": []
+  "users": [
+    {
+      "loginId": "admin_naokist",
+      "nickname": "경식",
+      "registeredAt": "2026-07-22T02:09:53.919859Z",
+      "lastLoginAt": "2026-07-22T02:09:53.919859Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
+    }
+  ]
 }
