@@ -1,12 +1,4 @@
 {
   "schemaVersion": 1,
-  "schedules": [
-    {
-      "id": "1784686476822767-admin_naokist",
-      "scheduledAt": "2026-07-22T19:00:00.000",
-      "memo": "2",
-      "authorId": "admin_naokist",
-      "authorNickname": "경식"
-    }
-  ]
+  "schedules": []
 }
