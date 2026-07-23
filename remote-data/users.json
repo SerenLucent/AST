@@ -2,34 +2,18 @@
   "schemaVersion": 1,
   "users": [
     {
-      "loginId": "test001",
-      "nickname": "test001",
-      "registeredAt": "2026-07-22T02:44:43.711234Z",
-      "lastLoginAt": "2026-07-22T02:44:43.711234Z",
+      "loginId": "hoon0323",
+      "nickname": "정훈",
+      "registeredAt": "2026-07-23T12:52:07.667099Z",
+      "lastLoginAt": "2026-07-23T12:52:21.179298Z",
       "canUploadScores": false,
-      "canUploadHistory": false
+      "canUploadHistory": true
     },
     {
-      "loginId": "test002",
-      "nickname": "test002",
-      "registeredAt": "2026-07-22T02:55:44.242125Z",
-      "lastLoginAt": "2026-07-22T02:55:51.888642Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
-      "loginId": "admin_naokist",
-      "nickname": "경식",
-      "registeredAt": "2026-07-22T02:56:19.534386Z",
-      "lastLoginAt": "2026-07-22T02:56:19.534386Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
-      "loginId": "신동호",
-      "nickname": "동호",
-      "registeredAt": "2026-07-22T02:59:34.608612Z",
-      "lastLoginAt": "2026-07-22T03:02:43.791632Z",
+      "loginId": "jekim07",
+      "nickname": "지은",
+      "registeredAt": "2026-07-22T05:46:23.695664Z",
+      "lastLoginAt": "2026-07-22T05:47:05.669118Z",
       "canUploadScores": false,
       "canUploadHistory": false
     },
@@ -42,18 +26,34 @@
       "canUploadHistory": false
     },
     {
-      "loginId": "jekim07",
-      "nickname": "지은",
-      "registeredAt": "2026-07-22T05:46:23.695664Z",
-      "lastLoginAt": "2026-07-22T05:47:05.669118Z",
+      "loginId": "신동호",
+      "nickname": "동호",
+      "registeredAt": "2026-07-22T02:59:34.608612Z",
+      "lastLoginAt": "2026-07-22T03:02:43.791632Z",
       "canUploadScores": false,
       "canUploadHistory": false
     },
     {
-      "loginId": "hoon0323",
-      "nickname": "정훈",
-      "registeredAt": "2026-07-23T12:52:07.667099Z",
-      "lastLoginAt": "2026-07-23T12:52:21.179298Z",
+      "loginId": "admin_naokist",
+      "nickname": "경식",
+      "registeredAt": "2026-07-22T02:56:19.534386Z",
+      "lastLoginAt": "2026-07-22T02:56:19.534386Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
+    },
+    {
+      "loginId": "test002",
+      "nickname": "test002",
+      "registeredAt": "2026-07-22T02:55:44.242125Z",
+      "lastLoginAt": "2026-07-22T02:55:51.888642Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
+    },
+    {
+      "loginId": "test001",
+      "nickname": "test001",
+      "registeredAt": "2026-07-22T02:44:43.711234Z",
+      "lastLoginAt": "2026-07-22T02:44:43.711234Z",
       "canUploadScores": false,
       "canUploadHistory": false
     }
