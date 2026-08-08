@@ -2,6 +2,22 @@
   "schemaVersion": 1,
   "users": [
     {
+      "loginId": "문준환",
+      "nickname": "",
+      "registeredAt": "2026-08-08T11:09:35.767524Z",
+      "lastLoginAt": "2026-08-08T11:09:35.767524Z",
+      "canUploadScores": true,
+      "canUploadHistory": true
+    },
+    {
+      "loginId": "ms35yhw5",
+      "nickname": "인옥",
+      "registeredAt": "2026-08-08T11:06:11.456539Z",
+      "lastLoginAt": "2026-08-08T11:06:33.595437Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
+    },
+    {
       "loginId": "hoon0323",
       "nickname": "정훈",
       "registeredAt": "2026-07-23T12:52:07.667099Z",
@@ -54,22 +70,6 @@
       "nickname": "test001",
       "registeredAt": "2026-07-22T02:44:43.711234Z",
       "lastLoginAt": "2026-07-22T02:44:43.711234Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
-      "loginId": "ms35yhw5",
-      "nickname": "인옥",
-      "registeredAt": "2026-08-08T11:06:11.456539Z",
-      "lastLoginAt": "2026-08-08T11:06:33.595437Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
-      "loginId": "문준환",
-      "nickname": "준환",
-      "registeredAt": "2026-08-08T11:09:35.767524Z",
-      "lastLoginAt": "2026-08-08T11:09:45.056361Z",
       "canUploadScores": false,
       "canUploadHistory": false
     }
