@@ -64,6 +64,14 @@
       "lastLoginAt": "2026-08-08T11:06:33.595437Z",
       "canUploadScores": false,
       "canUploadHistory": false
+    },
+    {
+      "loginId": "문준환",
+      "nickname": "",
+      "registeredAt": "2026-08-08T11:09:35.767524Z",
+      "lastLoginAt": "2026-08-08T11:09:35.767524Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
     }
   ]
 }
