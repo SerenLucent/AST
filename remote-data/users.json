@@ -124,7 +124,9 @@
       "lastLoginAt": "2026-09-15T09:33:36.253870Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [
+        "2기"
+      ]
     },
     {
       "loginId": "김종수",
