@@ -140,6 +140,15 @@
       "generations": [
         "4기"
       ]
+    },
+    {
+      "loginId": "준환",
+      "nickname": "",
+      "registeredAt": "2026-09-15T11:37:54.735462Z",
+      "lastLoginAt": "2026-09-15T11:37:54.735462Z",
+      "canUploadScores": false,
+      "canUploadHistory": false,
+      "generations": []
     }
   ]
 }
