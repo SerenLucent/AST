@@ -7,7 +7,8 @@
       "registeredAt": "2026-08-08T11:09:35.767524Z",
       "lastLoginAt": "2026-08-08T11:09:35.767524Z",
       "canUploadScores": true,
-      "canUploadHistory": true
+      "canUploadHistory": true,
+      "generations": []
     },
     {
       "loginId": "ms35yhw5",
@@ -15,7 +16,8 @@
       "registeredAt": "2026-08-08T11:06:11.456539Z",
       "lastLoginAt": "2026-08-08T11:06:33.595437Z",
       "canUploadScores": false,
-      "canUploadHistory": false
+      "canUploadHistory": false,
+      "generations": []
     },
     {
       "loginId": "hoon0323",
@@ -23,7 +25,8 @@
       "registeredAt": "2026-07-23T12:52:07.667099Z",
       "lastLoginAt": "2026-07-23T12:52:21.179298Z",
       "canUploadScores": false,
-      "canUploadHistory": true
+      "canUploadHistory": true,
+      "generations": []
     },
     {
       "loginId": "jekim07",
@@ -31,7 +34,8 @@
       "registeredAt": "2026-07-22T05:46:23.695664Z",
       "lastLoginAt": "2026-07-22T05:47:05.669118Z",
       "canUploadScores": true,
-      "canUploadHistory": false
+      "canUploadHistory": false,
+      "generations": []
     },
     {
       "loginId": "semicolon",
@@ -39,7 +43,8 @@
       "registeredAt": "2026-07-22T03:10:07.703481Z",
       "lastLoginAt": "2026-07-22T03:10:17.011012Z",
       "canUploadScores": false,
-      "canUploadHistory": false
+      "canUploadHistory": false,
+      "generations": []
     },
     {
       "loginId": "신동호",
@@ -47,15 +52,17 @@
       "registeredAt": "2026-07-22T02:59:34.608612Z",
       "lastLoginAt": "2026-07-22T03:02:43.791632Z",
       "canUploadScores": false,
-      "canUploadHistory": false
+      "canUploadHistory": false,
+      "generations": []
     },
     {
       "loginId": "admin_naokist",
       "nickname": "경식",
       "registeredAt": "2026-07-22T02:56:19.534386Z",
-      "lastLoginAt": "2026-07-22T02:56:19.534386Z",
+      "lastLoginAt": "2026-09-15T07:01:08.891478Z",
       "canUploadScores": false,
-      "canUploadHistory": false
+      "canUploadHistory": false,
+      "generations": []
     },
     {
       "loginId": "test002",
@@ -63,7 +70,8 @@
       "registeredAt": "2026-07-22T02:55:44.242125Z",
       "lastLoginAt": "2026-07-22T02:55:51.888642Z",
       "canUploadScores": false,
-      "canUploadHistory": false
+      "canUploadHistory": false,
+      "generations": []
     },
     {
       "loginId": "test001",
@@ -71,7 +79,8 @@
       "registeredAt": "2026-07-22T02:44:43.711234Z",
       "lastLoginAt": "2026-07-22T02:44:43.711234Z",
       "canUploadScores": false,
-      "canUploadHistory": false
+      "canUploadHistory": false,
+      "generations": []
     }
   ]
 }
