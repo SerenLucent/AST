@@ -92,6 +92,15 @@
       "canUploadScores": false,
       "canUploadHistory": false,
       "generations": []
+    },
+    {
+      "loginId": "태완",
+      "nickname": "",
+      "registeredAt": "2026-09-15T07:39:26.908145Z",
+      "lastLoginAt": "2026-09-15T07:39:26.908145Z",
+      "canUploadScores": false,
+      "canUploadHistory": false,
+      "generations": []
     }
   ]
 }
