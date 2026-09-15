@@ -135,6 +135,15 @@
       "canUploadScores": false,
       "canUploadHistory": false,
       "generations": []
+    },
+    {
+      "loginId": "jeonyul27",
+      "nickname": "",
+      "registeredAt": "2026-09-15T15:02:41.119886Z",
+      "lastLoginAt": "2026-09-15T15:02:41.119886Z",
+      "canUploadScores": false,
+      "canUploadHistory": false,
+      "generations": []
     }
   ]
 }
