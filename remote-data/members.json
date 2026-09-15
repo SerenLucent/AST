@@ -54,6 +54,12 @@
       "name": "인옥",
       "imageUrl": "",
       "memo": ""
+    },
+    {
+      "id": "fineburn",
+      "name": "임태우",
+      "imageUrl": "",
+      "memo": ""
     }
   ]
 }
