@@ -35,7 +35,11 @@
       "lastLoginAt": "2026-09-15T07:48:05.350801Z",
       "canUploadScores": true,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [
+        "1기",
+        "2기",
+        "3기"
+      ]
     },
     {
       "loginId": "semicolon",
