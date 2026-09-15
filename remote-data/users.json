@@ -83,6 +83,15 @@
       "canUploadScores": false,
       "canUploadHistory": false,
       "generations": []
+    },
+    {
+      "loginId": "fineburn",
+      "nickname": "",
+      "registeredAt": "2026-09-15T07:35:37.863523Z",
+      "lastLoginAt": "2026-09-15T07:35:37.863523Z",
+      "canUploadScores": false,
+      "canUploadHistory": false,
+      "generations": []
     }
   ]
 }
