@@ -107,6 +107,15 @@
       "canUploadScores": false,
       "canUploadHistory": false,
       "generations": []
+    },
+    {
+      "loginId": "winny101",
+      "nickname": "",
+      "registeredAt": "2026-09-15T08:07:54.495700Z",
+      "lastLoginAt": "2026-09-15T08:07:54.495700Z",
+      "canUploadScores": false,
+      "canUploadHistory": false,
+      "generations": []
     }
   ]
 }
