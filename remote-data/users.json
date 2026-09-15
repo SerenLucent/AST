@@ -91,7 +91,9 @@
       "lastLoginAt": "2026-09-15T07:35:45.125067Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [
+        "1기"
+      ]
     },
     {
       "loginId": "태완",
