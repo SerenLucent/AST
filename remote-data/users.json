@@ -125,6 +125,15 @@
       "canUploadScores": false,
       "canUploadHistory": false,
       "generations": []
+    },
+    {
+      "loginId": "김종수",
+      "nickname": "",
+      "registeredAt": "2026-09-15T09:32:23.493940Z",
+      "lastLoginAt": "2026-09-15T09:32:23.493940Z",
+      "canUploadScores": false,
+      "canUploadHistory": false,
+      "generations": []
     }
   ]
 }
