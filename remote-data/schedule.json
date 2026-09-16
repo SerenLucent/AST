@@ -82,20 +82,20 @@
       "generation": "1기"
     },
     {
+      "id": "1789551518878894-admin_naokist",
+      "scheduledAt": "2026-09-18T19:00:00.000",
+      "memo": "테스트",
+      "authorId": "admin_naokist",
+      "authorNickname": "경식",
+      "generation": "4기"
+    },
+    {
       "id": "1788154399259993-jekim07",
       "scheduledAt": "2026-09-18T20:00:00.000",
       "memo": "<사당 토숭이 연습실>(사당역 10번출구)\n-서울 동작구 동작대로 3길 21, B1\n-1F 유리문: 10411*\n-B1 검은문: 1220\n-화장실: 1041(남:2F, 여:3F)\n-경식오빠 주차 가능",
       "authorId": "jekim07",
       "authorNickname": "지은",
       "generation": "3기"
-    },
-    {
-      "id": "1789550927992775-admin_naokist",
-      "scheduledAt": "2026-09-19T19:00:00.000",
-      "memo": "테스트",
-      "authorId": "admin_naokist",
-      "authorNickname": "경식",
-      "generation": "4기"
     },
     {
       "id": "1786262932283819-jekim07",
@@ -120,14 +120,6 @@
       "authorId": "jekim07",
       "authorNickname": "지은",
       "generation": "3기"
-    },
-    {
-      "id": "1789551518878894-admin_naokist",
-      "scheduledAt": "2026-09-18T19:00:00.000",
-      "memo": "테스트",
-      "authorId": "admin_naokist",
-      "authorNickname": "경식",
-      "generation": "4기"
     }
   ]
 }
