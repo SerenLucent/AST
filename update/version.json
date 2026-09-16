@@ -1,7 +1,7 @@
 {
-  "versionCode": 30001,
-  "versionName": "3.0.1",
-  "apkFile": "AST-3.0.1.apk",
-  "message": "NWC 기능 추가, 보안 시스템, 멤버 및 기수관련 기능 추가",
+  "versionCode": 30002,
+  "versionName": "3.0.2",
+  "apkFile": "AST-3.0.2.apk",
+  "message": "NWC 기능 추가, 보안 시스템, 멤버 및 기수관련 기능 추가, 다운로드 캐시 문제 수정",
   "required": false
 }
