@@ -8,7 +8,8 @@
       "lastLoginAt": "2026-08-08T11:09:35.767524Z",
       "canUploadScores": true,
       "canUploadHistory": true,
-      "generations": []
+      "generations": [],
+      "memberId": "1784609339507317"
     },
     {
       "loginId": "ms35yhw5",
@@ -17,7 +18,8 @@
       "lastLoginAt": "2026-09-15T13:10:07.869882Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": "1786187590429119"
     },
     {
       "loginId": "hoon0323",
@@ -26,7 +28,8 @@
       "lastLoginAt": "2026-07-23T12:52:21.179298Z",
       "canUploadScores": false,
       "canUploadHistory": true,
-      "generations": []
+      "generations": [],
+      "memberId": "1784613350079431"
     },
     {
       "loginId": "jekim07",
@@ -35,7 +38,8 @@
       "lastLoginAt": "2026-09-15T10:03:24.567589Z",
       "canUploadScores": true,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": "1784609361309119"
     },
     {
       "loginId": "semicolon",
@@ -44,7 +48,8 @@
       "lastLoginAt": "2026-07-22T03:10:17.011012Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": "1784691132117930"
     },
     {
       "loginId": "신동호",
@@ -53,18 +58,20 @@
       "lastLoginAt": "2026-09-16T04:47:26.119035Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": "1784609394339731"
     },
     {
       "loginId": "admin_naokist",
       "nickname": "경식",
       "registeredAt": "2026-07-22T02:56:19.534386Z",
-      "lastLoginAt": "2026-09-16T04:39:55.982270Z",
+      "lastLoginAt": "2026-09-16T04:39:55.98227Z",
       "canUploadScores": false,
       "canUploadHistory": false,
       "generations": [
         "3기"
-      ]
+      ],
+      "memberId": "1784616207109933"
     },
     {
       "loginId": "test002",
@@ -73,7 +80,8 @@
       "lastLoginAt": "2026-07-22T02:55:51.888642Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": ""
     },
     {
       "loginId": "test001",
@@ -82,7 +90,8 @@
       "lastLoginAt": "2026-07-22T02:44:43.711234Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": ""
     },
     {
       "loginId": "fineburn",
@@ -91,7 +100,8 @@
       "lastLoginAt": "2026-09-15T07:41:52.088502Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": "1790000000000001"
     },
     {
       "loginId": "태완",
@@ -100,16 +110,18 @@
       "lastLoginAt": "2026-09-15T14:22:09.042775Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": "1790000000000002"
     },
     {
       "loginId": "winny101",
       "nickname": "수미",
-      "registeredAt": "2026-09-15T08:07:54.495700Z",
+      "registeredAt": "2026-09-15T08:07:54.4957Z",
       "lastLoginAt": "2026-09-15T11:09:02.435388Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": "1784609378357270"
     },
     {
       "loginId": "sorimoaduo",
@@ -118,16 +130,18 @@
       "lastLoginAt": "2026-09-15T14:56:26.380811Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": "1790000000000003"
     },
     {
       "loginId": "김종수",
       "nickname": "종수",
-      "registeredAt": "2026-09-15T09:32:23.493940Z",
+      "registeredAt": "2026-09-15T09:32:23.49394Z",
       "lastLoginAt": "2026-09-15T09:32:39.172076Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": "1790000000000004"
     },
     {
       "loginId": "준환",
@@ -136,7 +150,8 @@
       "lastLoginAt": "2026-09-15T11:38:04.667155Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [],
+      "memberId": ""
     },
     {
       "loginId": "jeonyul27",
@@ -147,7 +162,8 @@
       "canUploadHistory": false,
       "generations": [
         "4기"
-      ]
+      ],
+      "memberId": "1790000000000005"
     }
   ]
 }
