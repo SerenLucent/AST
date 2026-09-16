@@ -8,17 +8,77 @@
   "access": {
     "teamPassword": "harmony2026",
     "login_all": "Y",
-    "allowedIds": ["admin_naokist"],
+    "allowedIds": [
+      "admin_naokist"
+    ],
     "passwordVersion": 1,
     "sessionVersion": 1
   },
   "homeSections": [
-    { "type": "members", "title": "팀원 소개", "visible": true, "order": 1 },
-    { "type": "scores", "title": "악보 자료실", "visible": true, "order": 2 },
-    { "type": "events", "title": "행사 일정", "visible": true, "order": 3 },
-    { "type": "schedule", "title": "연습 스케줄", "visible": true, "order": 4 }
+    {
+      "type": "members",
+      "title": "팀원 소개",
+      "visible": true,
+      "order": 1
+    },
+    {
+      "type": "scores",
+      "title": "악보 자료실",
+      "visible": true,
+      "order": 2
+    },
+    {
+      "type": "events",
+      "title": "행사 일정",
+      "visible": true,
+      "order": 3
+    },
+    {
+      "type": "schedule",
+      "title": "연습 스케줄",
+      "visible": true,
+      "order": 4
+    }
   ],
   "members": [],
   "scores": [],
-  "events": []
+  "events": [],
+  "generationOptions": [
+    {
+      "id": "1기",
+      "color": "#E53935",
+      "scheduleVisible": true,
+      "memberVisible": true
+    },
+    {
+      "id": "2기",
+      "color": "#FB8C00",
+      "scheduleVisible": true,
+      "memberVisible": true
+    },
+    {
+      "id": "3기",
+      "color": "#FBC02D",
+      "scheduleVisible": true,
+      "memberVisible": true
+    },
+    {
+      "id": "4기",
+      "color": "#43A047",
+      "scheduleVisible": true,
+      "memberVisible": true
+    },
+    {
+      "id": "기타",
+      "color": "#42A5F5",
+      "scheduleVisible": true,
+      "memberVisible": true
+    },
+    {
+      "id": "Guest",
+      "color": "#9E9E9E",
+      "scheduleVisible": false,
+      "memberVisible": false
+    }
+  ]
 }
