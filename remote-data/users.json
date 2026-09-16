@@ -62,7 +62,9 @@
       "lastLoginAt": "2026-09-16T04:39:55.982270Z",
       "canUploadScores": false,
       "canUploadHistory": false,
-      "generations": []
+      "generations": [
+        "3기"
+      ]
     },
     {
       "loginId": "test002",
