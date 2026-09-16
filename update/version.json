@@ -2,6 +2,6 @@
   "versionCode": 30005,
   "versionName": "3.0.5",
   "apkFile": "AST-3.0.5.apk",
-  "message": "GitHub 토큰 연결 창 완전 제거, Apps Script 302 리다이렉트 처리, 기수·프로필·일정·공지·게시판 저장 안정화",
+  "message": "기수·프로필·일정·공지·게시판 저장 안정화",
   "required": false
 }
