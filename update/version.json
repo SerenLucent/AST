@@ -1,7 +1,7 @@
 {
-  "versionCode": 30002,
-  "versionName": "3.0.2",
-  "apkFile": "AST-3.0.2.apk",
-  "message": "NWC 기능 추가, 보안 시스템, 멤버 및 기수관련 기능 추가, 다운로드 캐시 문제 수정",
+  "versionCode": 30003,
+  "versionName": "3.0.3",
+  "apkFile": "AST-3.0.3.apk",
+  "message": "Apps Script 중계 저장 연동, 일정·기수·회원·공지·게시판 401 문제 수정, NWC 악보 및 재생 기능 개선",
   "required": false
 }
