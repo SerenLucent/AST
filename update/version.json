@@ -1,7 +1,7 @@
 {
-  "versionCode": 30003,
-  "versionName": "3.0.3",
-  "apkFile": "AST-3.0.3.apk",
-  "message": "Apps Script 중계 저장 연동, 일정·기수·회원·공지·게시판 401 문제 수정, NWC 악보 및 재생 기능 개선",
+  "versionCode": 30004,
+  "versionName": "3.0.4",
+  "apkFile": "AST-3.0.4.apk",
+  "message": "Apps Script 중계 저장 및 파일 업로드 연동, 일정·기수·회원·공지·게시판 401 문제 수정, 프로필 사진·악보·행사 자료 업로드 지원",
   "required": false
 }
