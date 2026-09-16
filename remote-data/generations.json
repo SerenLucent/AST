@@ -1,12 +1,30 @@
 {
   "schemaVersion": 1,
   "generations": {
-    "jekim07": ["1기", "2기", "3기"],
-    "admin_naokist": ["3기"],
-    "fineburn": ["1기"],
-    "winny101": ["3기"],
-    "sorimoaduo": ["2기"],
-    "김종수": ["4기"],
-    "jeonyul27": ["4기"]
+    "jekim07": [
+      "1기",
+      "2기",
+      "3기"
+    ],
+    "admin_naokist": [
+      "1기",
+      "2기",
+      "3기"
+    ],
+    "fineburn": [
+      "1기"
+    ],
+    "winny101": [
+      "3기"
+    ],
+    "sorimoaduo": [
+      "2기"
+    ],
+    "김종수": [
+      "4기"
+    ],
+    "jeonyul27": [
+      "4기"
+    ]
   }
 }
