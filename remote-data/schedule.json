@@ -104,6 +104,14 @@
       "authorId": "jekim07",
       "authorNickname": "지은",
       "generation": "3기"
+    },
+    {
+      "id": "1789550482270065-admin_naokist",
+      "scheduledAt": "2026-09-18T19:00:00.000",
+      "memo": "테스트",
+      "authorId": "admin_naokist",
+      "authorNickname": "경식",
+      "generation": "4기"
     }
   ]
 }
