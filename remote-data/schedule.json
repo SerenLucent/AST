@@ -65,6 +65,13 @@
       "authorNickname": "지은"
     },
     {
+      "id": "1788154399259993-jekim07",
+      "scheduledAt": "2026-09-18T20:00:00.000",
+      "memo": "<사당 토숭이 연습실>(사당역 10번출구)\n-서울 동작구 동작대로 3길 21, B1\n-1F 유리문: 10411*\n-B1 검은문: 1220\n-화장실: 1041(남:2F, 여:3F)\n-경식오빠 주차 가능",
+      "authorId": "jekim07",
+      "authorNickname": "지은"
+    },
+    {
       "id": "1786262932283819-jekim07",
       "scheduledAt": "2026-10-10T19:00:00.000",
       "memo": "-공존 2nd Live\n\n<SET LIST>\n- 한 페이지가 될 수 있게\n- 질풍가도 \n- 넌언제나 \n- 나는 반딧불\n- 커플\n- 우리의 꿈\n- 장미\n- 비행기",
@@ -86,11 +93,11 @@
       "authorNickname": "지은"
     },
     {
-      "id": "1788154399259993-jekim07",
-      "scheduledAt": "2026-09-18T20:00:00.000",
-      "memo": "<사당 토숭이 연습실>(사당역 10번출구)\n-서울 동작구 동작대로 3길 21, B1\n-1F 유리문: 10411*\n-B1 검은문: 1220\n-화장실: 1041(남:2F, 여:3F)\n-경식오빠 주차 가능",
-      "authorId": "jekim07",
-      "authorNickname": "지은"
+      "id": "1789535671876622-admin_naokist",
+      "scheduledAt": "2026-09-18T19:00:00.000",
+      "memo": "테스트",
+      "authorId": "admin_naokist",
+      "authorNickname": "경식"
     }
   ]
 }
