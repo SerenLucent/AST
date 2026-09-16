@@ -1,7 +1,7 @@
 {
-  "versionCode": 30005,
-  "versionName": "3.0.5",
-  "apkFile": "AST-3.0.5.apk",
-  "message": "기수·프로필·일정·공지·게시판 저장 안정화",
+  "versionCode": 30006,
+  "versionName": "3.0.6",
+  "apkFile": "AST-3.0.6.apk",
+  "message": "멤버 프로필·일정·기수·공지·게시판의 최신 내용이 즉시 반영되도록 데이터 캐시 문제 수정",
   "required": false
 }
