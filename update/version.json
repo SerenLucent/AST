@@ -1,7 +1,7 @@
 {
-  "versionCode": 1,
-  "versionName": "3.0.0",
-  "apkFile": "",
-  "message": "NWC 플레이어 탑재 버전",
+  "versionCode": 30001,
+  "versionName": "3.0.1",
+  "apkFile": "AST-3.0.1.apk",
+  "message": "NWC 기능 추가, 보안 시스템, 멤버 및 기수관련 기능 추가",
   "required": false
 }
