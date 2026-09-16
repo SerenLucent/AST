@@ -1,7 +1,7 @@
 {
-  "versionCode": 30004,
-  "versionName": "3.0.4",
-  "apkFile": "AST-3.0.4.apk",
-  "message": "Apps Script 중계 저장 및 파일 업로드 연동, 일정·기수·회원·공지·게시판 401 문제 수정, 프로필 사진·악보·행사 자료 업로드 지원",
+  "versionCode": 30005,
+  "versionName": "3.0.5",
+  "apkFile": "AST-3.0.5.apk",
+  "message": "GitHub 토큰 연결 창 완전 제거, Apps Script 302 리다이렉트 처리, 기수·프로필·일정·공지·게시판 저장 안정화",
   "required": false
 }
