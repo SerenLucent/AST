@@ -3,14 +3,15 @@
   "licenses": [
     {
       "id": "teacher-vip-001",
-      "keyHash": "라이선스 키의 해시값",
+      "keyHash": "e69225e4203c37fa1d2a8c0fdae9ae2111c8f2c15ce1667bb503507cda2d82c3",
       "tier": "vip",
       "licensedTo": "김선동 선생님",
       "deviceHash": null,
       "enabled": true,
       "verificationHours": 72,
       "registeredAt": null,
-      "lastVerifiedAt": null
+      "lastVerifiedAt": null,
+      "updatedAt": "2026-09-18T18:51:09.119Z"
     }
   ]
 }
