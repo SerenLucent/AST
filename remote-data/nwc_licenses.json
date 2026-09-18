@@ -6,12 +6,12 @@
       "keyHash": "e69225e4203c37fa1d2a8c0fdae9ae2111c8f2c15ce1667bb503507cda2d82c3",
       "tier": "vip",
       "licensedTo": "김선동 선생님",
-      "deviceHash": null,
+      "deviceHash": "a523ef3ba5ebd80f921082061dfcd01e34aaeac2d9678924c510787052e680b7",
       "enabled": true,
       "verificationHours": 72,
-      "registeredAt": null,
-      "lastVerifiedAt": null,
-      "updatedAt": "2026-09-18T18:51:09.119Z"
+      "registeredAt": "2026-09-18T19:15:34.639Z",
+      "lastVerifiedAt": "2026-09-18T19:15:34.641Z",
+      "updatedAt": "2026-09-18T19:15:34.641Z"
     }
   ]
 }
