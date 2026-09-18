@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "licenses": [
+    {
+      "id": "teacher-vip-001",
+      "keyHash": "라이선스 키의 해시값",
+      "tier": "vip",
+      "licensedTo": "김선동 선생님",
+      "deviceHash": null,
+      "enabled": true,
+      "verificationHours": 72,
+      "registeredAt": null,
+      "lastVerifiedAt": null
+    }
+  ]
+}
