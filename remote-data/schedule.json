@@ -82,6 +82,14 @@
       "generation": "3기"
     },
     {
+      "id": "1789561940947559-jeonyul27",
+      "scheduledAt": "2026-09-23T19:00:00.000",
+      "memo": "마온 연습실 이수점\n4기 연습",
+      "authorId": "jeonyul27",
+      "authorNickname": "하리",
+      "generation": "4기"
+    },
+    {
       "id": "1786262932283819-jekim07",
       "scheduledAt": "2026-10-10T19:00:00.000",
       "memo": "-공존 2nd Live\n\n<SET LIST>\n- 한 페이지가 될 수 있게\n- 질풍가도 \n- 넌언제나 \n- 나는 반딧불\n- 커플\n- 우리의 꿈\n- 장미\n- 비행기",
@@ -106,12 +114,12 @@
       "generation": "3기"
     },
     {
-      "id": "1789561940947559-jeonyul27",
-      "scheduledAt": "2026-09-23T19:00:00.000",
-      "memo": "마온 연습실 이수점\n4기 연습",
-      "authorId": "jeonyul27",
-      "authorNickname": "하리",
-      "generation": "4기"
+      "id": "1789777940336537-admin_naokist",
+      "scheduledAt": "2026-09-19T19:00:00.000",
+      "memo": "테스트",
+      "authorId": "admin_naokist",
+      "authorNickname": "경식",
+      "generation": "1기"
     }
   ]
 }
