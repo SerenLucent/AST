@@ -144,6 +144,15 @@
       "lastLoginAt": "2026-07-22T03:10:17.011012Z",
       "canUploadScores": false,
       "canUploadHistory": false
+    },
+    {
+      "loginId": "장현규",
+      "memberId": "1790173367147722",
+      "nickname": "현규",
+      "registeredAt": "2026-09-23T14:22:47.147703Z",
+      "lastLoginAt": "2026-09-23T14:22:47.147703Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
     }
   ]
 }
