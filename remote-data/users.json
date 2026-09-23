@@ -2,11 +2,38 @@
   "schemaVersion": 1,
   "users": [
     {
-      "loginId": "admin_naokist",
-      "memberId": "1784616207109933",
-      "nickname": "경식",
-      "registeredAt": "2026-07-22T02:56:19.534386Z",
-      "lastLoginAt": "2026-09-23T12:49:38.933008Z",
+      "loginId": "준환",
+      "memberId": "1784609339507317",
+      "nickname": "준환",
+      "registeredAt": "2026-09-15T11:37:54.735462Z",
+      "lastLoginAt": "2026-09-23T12:46:08.743715Z",
+      "canUploadScores": true,
+      "canUploadHistory": true
+    },
+    {
+      "loginId": "언재",
+      "memberId": "1790062963532855",
+      "nickname": "언재",
+      "registeredAt": "2026-09-22T07:42:43.532842Z",
+      "lastLoginAt": "2026-09-23T12:44:02.026948Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
+    },
+    {
+      "loginId": "monkey0",
+      "memberId": "1790166931844257",
+      "nickname": "김정애",
+      "registeredAt": "2026-09-23T12:35:31.844206Z",
+      "lastLoginAt": "2026-09-23T12:38:56.200721Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
+    },
+    {
+      "loginId": "고혜원",
+      "memberId": "1790166996397986",
+      "nickname": "고혜원",
+      "registeredAt": "2026-09-23T12:36:36.397969Z",
+      "lastLoginAt": "2026-09-23T12:36:36.397969Z",
       "canUploadScores": false,
       "canUploadHistory": false
     },
@@ -20,24 +47,6 @@
       "canUploadHistory": false
     },
     {
-      "loginId": "winny101",
-      "memberId": "1784609378357270",
-      "nickname": "수미",
-      "registeredAt": "2026-09-15T08:07:54.495700Z",
-      "lastLoginAt": "2026-09-22T10:33:39.932702Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
-      "loginId": "언재",
-      "memberId": "1790062963532855",
-      "nickname": "언재",
-      "registeredAt": "2026-09-22T07:42:43.532842Z",
-      "lastLoginAt": "2026-09-23T12:50:01.445625Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
       "loginId": "jekim07",
       "memberId": "1784609361309119",
       "nickname": "지은",
@@ -47,11 +56,20 @@
       "canUploadHistory": false
     },
     {
-      "loginId": "준환",
-      "memberId": "1784609339507317",
-      "nickname": "준환",
-      "registeredAt": "2026-09-15T11:37:54.735462Z",
-      "lastLoginAt": "2026-09-23T12:46:08.743715Z",
+      "loginId": "admin_naokist",
+      "memberId": "1784616207109933",
+      "nickname": "경식",
+      "registeredAt": "2026-07-22T02:56:19.534386Z",
+      "lastLoginAt": "2026-09-23T09:58:18.478336Z",
+      "canUploadScores": false,
+      "canUploadHistory": false
+    },
+    {
+      "loginId": "winny101",
+      "memberId": "1784609378357270",
+      "nickname": "수미",
+      "registeredAt": "2026-09-15T08:07:54.495700Z",
+      "lastLoginAt": "2026-09-22T10:33:39.932702Z",
       "canUploadScores": false,
       "canUploadHistory": false
     },
@@ -133,24 +151,6 @@
       "nickname": "언재",
       "registeredAt": "2026-07-22T03:10:07.703481Z",
       "lastLoginAt": "2026-07-22T03:10:17.011012Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
-      "loginId": "monkey0",
-      "memberId": "1790166931844257",
-      "nickname": "김정애",
-      "registeredAt": "2026-09-23T12:35:31.844206Z",
-      "lastLoginAt": "2026-09-23T12:38:56.200721Z",
-      "canUploadScores": false,
-      "canUploadHistory": false
-    },
-    {
-      "loginId": "고혜원",
-      "memberId": "1790166996397986",
-      "nickname": "고혜원",
-      "registeredAt": "2026-09-23T12:36:36.397969Z",
-      "lastLoginAt": "2026-09-23T12:36:36.397969Z",
       "canUploadScores": false,
       "canUploadHistory": false
     }
