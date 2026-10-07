@@ -19,6 +19,8 @@
 
 ## Behavior And Limits
 
+- AST's Game menu opens a leaderboard lobby first: current AST nickname, personal best, ranked players, and a Game Start button. Returning from the game refreshes rankings.
+- Rankings are read from the score JSON through the existing anonymous GitHub Contents API pattern. An empty leaderboard still allows game entry; read failures offer retry.
 - Game calculations happen on the device. Only completed clear results are sent via the Flutter JS channel.
 - The script checks the app key, registered login ID, integer score bounds, HP conversion, and total sum. It locks writes and retries GitHub SHA conflicts.
 - Retries for the same recent run ID are idempotent. Per-player best score and latest result are stored; this is not an unlimited match history.

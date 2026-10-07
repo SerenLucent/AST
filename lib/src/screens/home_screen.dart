@@ -9,7 +9,7 @@ import 'member_management_screen.dart';
 import 'notice_screen.dart';
 import 'schedule_screen.dart';
 import 'score_library_screen.dart';
-import 'timing_shooter_screen.dart';
+import 'game_lobby_screen.dart';
 
 ScheduleEntry? closestVisibleSchedule(
   Iterable<ScheduleEntry> entries,
@@ -396,7 +396,7 @@ class _MenuCard extends StatelessWidget {
         onTap: () {
           if (item.title == 'Game 하기') {
             Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => TimingShooterScreen(loginId: loginId),
+              builder: (_) => GameLobbyScreen(loginId: loginId, nickname: nickname),
             ));
             return;
           }
