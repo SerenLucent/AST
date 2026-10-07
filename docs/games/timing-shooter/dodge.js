@@ -56,14 +56,14 @@ class DodgeSequence {
     const color = colors[Math.floor(Math.random() * colors.length)];
     const { min, max } = this.config.durationMs;
     const duration = min + Math.random() * (max - min);
-    this.current = { target, color, duration, perfectTime: performance.now() + duration, resolved: false };
+    this.current = { target, color, duration, perfectTime: gameRuntime.now() + duration, resolved: false };
     this.layer.style.setProperty('--dodge-color', this.colors[color]);
     this.result.textContent = '';
     this.layer.classList.remove('dodge-success', 'dodge-miss');
     this.growing.style.display = '';
     this.layer.classList.add('visible');
     this.renderAmmo();
-    this.update(performance.now());
+    this.update(gameRuntime.now());
   }
 
   update(now) {
@@ -88,7 +88,7 @@ class DodgeSequence {
   press(color) {
     if (!this.active) return false;
     const shot = this.current;
-    const distance = Math.abs(performance.now() - shot.perfectTime);
+    const distance = Math.abs(gameRuntime.now() - shot.perfectTime);
     const judgement = color === shot.color
       ? Object.keys(this.config.judgementMs).find((key) => distance <= this.config.judgementMs[key]) || 'miss'
       : 'miss';
@@ -116,11 +116,11 @@ class DodgeSequence {
     this.result.replaceChildren(label, life);
     const resultColors = { perfect: '#ffd629', great: '#39ff67', good: '#3d8cff', bad: '#b15cff', miss: '#ff3434' };
     this.result.style.color = resultColors[judgement];
-    this.holdTimer = setTimeout(() => this.clearCurrent(), this.config.resultHoldMs);
+    this.holdTimer = gameRuntime.setTimeout(() => this.clearCurrent(), this.config.resultHoldMs);
   }
 
   clearCurrent(notifyIdle = true) {
-    clearTimeout(this.holdTimer);
+    gameRuntime.clearTimeout(this.holdTimer);
     this.current = null;
     this.layer.classList.remove('visible', 'timing-zone', 'dodge-success', 'dodge-miss');
     this.startNext();

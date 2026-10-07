@@ -52,8 +52,9 @@ class _TimingShooterScreenState extends State<TimingShooterScreen> {
                 if (mounted) setState(() => _error = null);
               },
               onWebResourceError: (error) {
-                if (mounted && error.isForMainFrame == true)
+                if (mounted && error.isForMainFrame == true) {
                   setState(() => _error = '게임을 불러오지 못했습니다.');
+                }
               },
             ),
           )
@@ -65,6 +66,10 @@ class _TimingShooterScreenState extends State<TimingShooterScreen> {
     try {
       result = jsonDecode(message.message) as Map<String, dynamic>;
     } catch (_) {
+      return;
+    }
+    if (result['type'] == 'exitGame' && result['game'] == 'timing-shooter') {
+      if (mounted) Navigator.of(context).pop();
       return;
     }
     final runId = result['runId'];

@@ -546,7 +546,7 @@
       left: 12px;
       top: 12px;
       z-index: 30;
-      width: min(310px, calc(100% - 24px));
+      width: min(310px, calc(100% - 88px));
       padding: 10px 12px 12px;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
@@ -689,6 +689,46 @@
       letter-spacing: 0;
       pointer-events: none;
     }
+
+    #exitGame {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 31;
+      width: 56px;
+      min-height: 44px;
+      border: 1px solid #ffffff60;
+      border-radius: 6px;
+      color: #fff;
+      background: #12171ee6;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #stage:not(.game-running) #exitGame,
+    #exitGame[hidden], #exitConfirm[hidden] { display: none; }
+    #exitConfirm {
+      position: absolute;
+      inset: 0;
+      z-index: 70;
+      display: grid;
+      place-items: center;
+      background: #000b;
+    }
+    .exit-dialog {
+      width: min(280px, calc(100% - 48px));
+      padding: 28px 20px 20px;
+      border: 1px solid #ffffff50;
+      border-radius: 8px;
+      background: #191d23;
+      color: #fff;
+      text-align: center;
+    }
+    .exit-dialog h2 { margin: 0 0 24px; font-size: 22px; }
+    .exit-actions { display: flex; gap: 12px; }
+    .exit-actions button { flex: 1; min-height: 44px; border: 1px solid #ffffff60; border-radius: 6px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    #exitYes { background: #b32b34; color: #fff; }
+    #exitNo { background: #e6e9ef; color: #20242c; }
 
     #stageClear,
     #gameOver {
@@ -1332,6 +1372,13 @@
       </div>
     </section>
     <div id="netStatus"><span id="netLabel">LOCAL</span> / 적 <span id="enemiesRemaining">30</span></div>
+    <button id="exitGame" type="button">나가기</button>
+    <div id="exitConfirm" role="dialog" aria-modal="true" aria-labelledby="exitQuestion" hidden>
+      <div class="exit-dialog">
+        <h2 id="exitQuestion">포기하시겠습니까?</h2>
+        <div class="exit-actions"><button id="exitYes" type="button">예</button><button id="exitNo" type="button">아니오</button></div>
+      </div>
+    </div>
     <div id="stageClear" role="status" hidden>
       <div class="clear-results">
         <h2 class="clear-title">Stage Clear</h2>
@@ -1414,12 +1461,13 @@
   <script>
     window.TIMING_SHOOTER_CONFIG = window.TIMING_SHOOTER_CONFIG || {};
   </script>
+  <script src="game_runtime.js"></script>
   <script src="judgement_config.js?v=dodge-relaxed-5"></script>
   <script src="opening_config.js"></script>
-  <script src="opening.js"></script>
+  <script src="opening.js?v=pause-2"></script>
   <script src="hall_config.js?v=fountain-rise-4"></script>
   <script src="hall.js?v=game-over-3"></script>
-  <script src="dodge.js?v=game-over-6"></script>
+  <script src="dodge.js?v=pause-7"></script>
   <script src="ast_integration.js"></script>
   <script>
     const stage = document.getElementById('stage');
@@ -1550,6 +1598,41 @@
     let transitionLocked = false;
     let selectedMode = '1p';
     let firstWaveReadyAt = 0;
+    let pausedAnimations = [];
+    let pausedAudio = [];
+    let pausedBgmContext = false;
+
+    function showExitDialog() {
+      if (!gameStarted || stageEnded || gameRuntime.paused) return;
+      gameRuntime.pause();
+      pausedAnimations = stage.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running');
+      pausedAnimations.forEach(animation => animation.pause());
+      const audio = [...document.querySelectorAll('audio'), ...[...effectSoundPools.values()].flat()];
+      pausedAudio = audio.filter(sound => !sound.paused && !sound.ended);
+      pausedAudio.forEach(sound => sound.pause());
+      pausedBgmContext = bgmContext?.state === 'running';
+      if (pausedBgmContext) bgmContext.suspend().catch(() => {});
+      document.getElementById('exitConfirm').hidden = false;
+      document.getElementById('exitNo').focus();
+    }
+
+    document.getElementById('exitGame').addEventListener('click', showExitDialog);
+    document.getElementById('exitNo').addEventListener('click', () => {
+      if (!gameRuntime.paused) return;
+      document.getElementById('exitConfirm').hidden = true;
+      gameRuntime.resume();
+      pausedAnimations.forEach(animation => { if (animation.playState === 'paused') animation.play(); });
+      pausedAudio.forEach(sound => sound.play().catch(() => {}));
+      if (pausedBgmContext) bgmContext.resume().catch(() => {});
+      document.getElementById('exitGame').focus();
+    });
+    document.getElementById('exitYes').addEventListener('click', () => {
+      if (!gameRuntime.paused || stageEnded) return;
+      stopCombat();
+      if (window.AST_GAME_CONFIG.embedded && window.AstGameScores?.postMessage) {
+        window.AstGameScores.postMessage(JSON.stringify({ type: 'exitGame', game: 'timing-shooter' }));
+      } else window.location.reload();
+    });
 
     const itemGaugeMax = 100;
     const itemGaugeCap = 300;
@@ -1637,10 +1720,10 @@
     }
 
     function reportAudioStatus(text) {
-      window.clearTimeout(audioStatusTimer);
+      gameRuntime.clearTimeout(audioStatusTimer);
       const previousText = netLabel.textContent;
       setNetStatus(text);
-      audioStatusTimer = window.setTimeout(() => {
+      audioStatusTimer = gameRuntime.setTimeout(() => {
         if (netLabel.textContent === text) {
           setNetStatus(previousText);
         }
@@ -1792,7 +1875,7 @@
       popup.style.left = `${x}px`;
       popup.style.top = `${Math.max(42, y)}px`;
       stage.appendChild(popup);
-      window.setTimeout(() => popup.remove(), judgementHoldMs + 120);
+      gameRuntime.setTimeout(() => popup.remove(), judgementHoldMs + 120);
     }
 
     async function playBgmLoop(mode, src) {
@@ -1866,7 +1949,7 @@
     }
 
     function waitMs(ms) {
-      return new Promise((resolve) => window.setTimeout(resolve, ms));
+      return new Promise((resolve) => gameRuntime.setTimeout(resolve, ms));
     }
 
     function playGunAndWait() {
@@ -1875,9 +1958,9 @@
         const fallbackMs = Number.isFinite(gunSound.duration) && gunSound.duration > 0
           ? (gunSound.duration * 1000) + 80
           : 1200;
-        const timer = window.setTimeout(done, fallbackMs);
+        const timer = gameRuntime.setTimeout(done, fallbackMs);
         function done() {
-          window.clearTimeout(timer);
+          gameRuntime.clearTimeout(timer);
           gunSound.removeEventListener('ended', done);
           resolve();
         }
@@ -1967,13 +2050,13 @@
           opening.finish();
           gameStarted = true;
           stage.classList.add('game-running');
-          firstWaveReadyAt = performance.now() + 450 + firstWaveDelayMs;
+          firstWaveReadyAt = gameRuntime.now() + 450 + firstWaveDelayMs;
           updateHp();
           updateItemGauge();
           runAfterFirstWaveDelay(connectWebSocket);
           if (!tickStarted) {
             tickStarted = true;
-            requestAnimationFrame(tick);
+            gameRuntime.requestAnimationFrame(tick);
           }
         }
       });
@@ -2040,7 +2123,7 @@
       popup.className = `item-name-popup ${presentation.tone}`;
       popup.textContent = presentation.label;
       stage.appendChild(popup);
-      window.setTimeout(() => popup.remove(), 1150);
+      gameRuntime.setTimeout(() => popup.remove(), 1150);
     }
 
     function playItemCue(item) {
@@ -2097,10 +2180,10 @@
     }
 
     function animateScoreTo(nextScore, gainedScore) {
-      window.cancelAnimationFrame(scoreAnimationFrame);
+      gameRuntime.cancelAnimationFrame(scoreAnimationFrame);
 
       const startScore = displayedScore;
-      const startTime = performance.now();
+      const startTime = gameRuntime.now();
       const duration = Math.min(520, Math.max(170, gainedScore * 5));
 
       function step(now) {
@@ -2110,14 +2193,14 @@
         scoreValue.textContent = formatScore(displayedScore);
 
         if (progress < 1) {
-          scoreAnimationFrame = requestAnimationFrame(step);
+          scoreAnimationFrame = gameRuntime.requestAnimationFrame(step);
         } else {
           displayedScore = nextScore;
           scoreValue.textContent = formatScore(displayedScore);
         }
       }
 
-      scoreAnimationFrame = requestAnimationFrame(step);
+      scoreAnimationFrame = gameRuntime.requestAnimationFrame(step);
     }
 
     function addScore(value) {
@@ -2133,7 +2216,7 @@
       popup.className = 'combo-popup';
       popup.textContent = `${combo} combo!!`;
       stage.appendChild(popup);
-      window.setTimeout(() => popup.remove(), 780);
+      gameRuntime.setTimeout(() => popup.remove(), 780);
     }
 
     function comboGaugeBonus() {
@@ -2212,7 +2295,7 @@
       itemGaugeDrainFill.style.transition = 'width 520ms ease-out, opacity 160ms ease-out 520ms';
       itemGaugeDrainFill.style.width = `${toPercent}%`;
       itemGaugeDrainFill.style.opacity = '0';
-      window.setTimeout(() => {
+      gameRuntime.setTimeout(() => {
         itemGaugeDrainFill.style.transition = 'none';
         itemGaugeDrainFill.style.width = `${toPercent}%`;
       }, 720);
@@ -2282,7 +2365,7 @@
           text.textContent = '0%';
           return;
         }
-        const remainingMs = Math.max(0, item.endsAt - performance.now());
+        const remainingMs = Math.max(0, item.endsAt - gameRuntime.now());
         const percent = Math.max(0, Math.min((remainingMs / item.durationMs) * 100, 100));
         fill.style.width = `${percent}%`;
         text.textContent = `${Math.ceil(percent)}%`;
@@ -2297,7 +2380,7 @@
       if (item.id === 'magnum') {
         applyMagnumToActiveTargets();
       } else if (item.id === 'slow_down') {
-        const now = performance.now();
+        const now = gameRuntime.now();
         activeTargets.forEach((target) => {
           if (target.judged) return;
           const elapsed = Math.max(0, now - target.startTime);
@@ -2312,7 +2395,7 @@
     function startTimedItem(item) {
       const level = rewardLevel();
       const durationMs = itemDurationByRewardLevel[level];
-      const now = performance.now();
+      const now = gameRuntime.now();
       const nextItem = {
         ...item,
         level,
@@ -2352,15 +2435,15 @@
         renderActiveItems();
         return;
       }
-      const now = performance.now();
+      const now = gameRuntime.now();
       activeItems = activeItems.filter((item) => item.endsAt > now);
       renderActiveItems();
     }
 
     function runAfterFirstWaveDelay(callback) {
       if (stageEnded) return;
-      const remainingMs = Math.max(0, firstWaveReadyAt - performance.now());
-      window.setTimeout(() => { if (!stageEnded) callback(); }, remainingMs);
+      const remainingMs = Math.max(0, firstWaveReadyAt - gameRuntime.now());
+      gameRuntime.setTimeout(() => { if (!stageEnded) callback(); }, remainingMs);
     }
 
     function selectItem(item) {
@@ -2396,7 +2479,7 @@
       popup.style.left = `${x}px`;
       popup.style.top = `${y}px`;
       stage.appendChild(popup);
-      window.setTimeout(() => popup.remove(), 900);
+      gameRuntime.setTimeout(() => popup.remove(), 900);
     }
 
     function drainEnemyHp(target, amount = 100) {
@@ -2419,9 +2502,9 @@
       effect.style.top = `${y}px`;
       stage.appendChild(effect);
 
-      window.setTimeout(() => { effect.src = frames[1]; }, 55);
-      window.setTimeout(() => { effect.src = frames[2]; }, 110);
-      window.setTimeout(() => effect.remove(), 230);
+      gameRuntime.setTimeout(() => { effect.src = frames[1]; }, 55);
+      gameRuntime.setTimeout(() => { effect.src = frames[2]; }, 110);
+      gameRuntime.setTimeout(() => effect.remove(), 230);
     }
 
     function showEnemyMuzzleFlash(target) {
@@ -2436,14 +2519,14 @@
       flash.style.left = `${x}px`;
       flash.style.top = `${y}px`;
       stage.appendChild(flash);
-      window.setTimeout(() => flash.remove(), enemyMuzzleFlashMs);
+      gameRuntime.setTimeout(() => flash.remove(), enemyMuzzleFlashMs);
     }
 
     function shakeStage() {
       stage.classList.remove('shake');
       void stage.offsetWidth;
       stage.classList.add('shake');
-      window.setTimeout(() => stage.classList.remove('shake'), 820);
+      gameRuntime.setTimeout(() => stage.classList.remove('shake'), 820);
     }
 
     function showHitBloodOverlay() {
@@ -2453,7 +2536,7 @@
       overlay.src = 'sprites/effects/hit_blood_overlay.png';
       overlay.alt = '';
       stage.appendChild(overlay);
-      window.setTimeout(() => overlay.remove(), 820);
+      gameRuntime.setTimeout(() => overlay.remove(), 820);
     }
 
     function setTargetAimingVisible(target, visible) {
@@ -2476,7 +2559,7 @@
 
     function restartTargetTiming(target) {
       if (!target?.element.isConnected) return;
-      const now = performance.now();
+      const now = gameRuntime.now();
       target.duration = hasActiveItem('slow_down')
         ? randomBetween(4000, 5000)
         : randomBetween(config.spawnDurationMs?.min ?? 1180, config.spawnDurationMs?.max ?? 2600);
@@ -2496,9 +2579,9 @@
     }
 
     function scheduleCounterRetries() {
-      window.clearTimeout(counterRetryTimer);
+      gameRuntime.clearTimeout(counterRetryTimer);
       if (dodge.current || activeTargets.some((target) => target.countering && !target.counterResolved)) return;
-      counterRetryTimer = window.setTimeout(() => {
+      counterRetryTimer = gameRuntime.setTimeout(() => {
         if (dodge.current || activeTargets.some((target) => target.countering && !target.counterResolved)) return;
         activeTargets.filter((target) => target.countering).forEach(restartTargetTiming);
       }, targetRetryAfterCounterMs);
@@ -2508,30 +2591,30 @@
       if (!target || target.countering) return;
       target.countering = true;
       target.counterResolved = false;
-      window.clearTimeout(counterRetryTimer);
+      gameRuntime.clearTimeout(counterRetryTimer);
       target.judged = true;
       setTargetAimingVisible(target, false);
 
       const shotDelay = judgementHoldMs + 120 + missCounterDelayAfterTextMs;
-      target.counterReadyAt = performance.now() + shotDelay;
+      target.counterReadyAt = gameRuntime.now() + shotDelay;
       startDodgeTurnWhenReady();
     }
 
     function startDodgeTurnWhenReady() {
-      window.clearTimeout(dodgeTurnTimer);
+      gameRuntime.clearTimeout(dodgeTurnTimer);
       if (hasUnjudgedTargets() || dodge.current || dodge.queue.length) return;
       const failed = activeTargets.filter((target) => target.countering && !target.counterResolved);
       if (!failed.length) return;
       const readyAt = Math.max(...failed.map((target) => target.counterReadyAt));
-      dodgeTurnTimer = window.setTimeout(() => {
+      dodgeTurnTimer = gameRuntime.setTimeout(() => {
         if (hasUnjudgedTargets() || dodge.current || dodge.queue.length) return;
         dodge.enqueueBatch(failed.filter((target) => target.element.isConnected));
-      }, Math.max(0, readyAt - performance.now()));
+      }, Math.max(0, readyAt - gameRuntime.now()));
     }
 
     function clearActiveTargets() {
-      window.clearTimeout(dodgeTurnTimer);
-      window.clearTimeout(counterRetryTimer);
+      gameRuntime.clearTimeout(dodgeTurnTimer);
+      gameRuntime.clearTimeout(counterRetryTimer);
       dodge.clear();
       activeTargets.forEach((target) => target.element.remove());
       activeTargets = [];
@@ -2540,8 +2623,8 @@
     function stopCombat() {
       stageEnded = true;
       gameStarted = false;
-      window.clearTimeout(nextSpawnTimer);
-      window.clearTimeout(localFallbackTimer);
+      gameRuntime.clearTimeout(nextSpawnTimer);
+      gameRuntime.clearTimeout(localFallbackTimer);
       clearActiveTargets();
       setItemChoicesOpen(false);
       buttons.forEach((button) => {
@@ -2551,6 +2634,7 @@
       gaugeRewardButtons.forEach((button) => { button.disabled = true; });
       itemChoices.forEach((button) => { button.disabled = true; });
       stage.classList.remove('shake');
+      document.getElementById('exitGame').hidden = true;
     }
 
     function completeStage() {
@@ -2569,7 +2653,7 @@
       const totalRow = document.getElementById('clearTotalRow');
       const hpScoreValue = document.getElementById('clearHpScore');
       const totalScoreValue = document.getElementById('clearTotalScore');
-      window.cancelAnimationFrame(scoreAnimationFrame);
+      gameRuntime.cancelAnimationFrame(scoreAnimationFrame);
       displayedScore = shootScore;
       scoreValue.textContent = formatScore(shootScore);
       await waitMs(650);
@@ -2589,20 +2673,20 @@
       totalRow.classList.add('revealed');
       shootRow.classList.add('summing');
       hpRow.classList.add('summing');
-      const startedAt = performance.now();
+      const startedAt = gameRuntime.now();
       const updateTotal = (now) => {
         const progress = Math.min(1, (now - startedAt) / 850);
         totalScoreValue.textContent = formatScore(Math.round(totalScore * (1 - (1 - progress) ** 3)));
-        if (progress < 1) requestAnimationFrame(updateTotal);
+        if (progress < 1) gameRuntime.requestAnimationFrame(updateTotal);
         else {
           stageClearScreen.dataset.resultsComplete = 'true';
           window.astSubmitClearScore({ shootScore, remainingHp, hpScore: remainingHp * 100, totalScore });
-          window.setTimeout(() => {
+          gameRuntime.setTimeout(() => {
             document.getElementById('clearReturnToTitle').hidden = false;
           }, 3000);
         }
       };
-      requestAnimationFrame(updateTotal);
+      gameRuntime.requestAnimationFrame(updateTotal);
     }
 
     function endGame() {
@@ -2614,7 +2698,7 @@
 
     gameOverScreen.addEventListener('animationend', (event) => {
       if (event.target !== gameOverScreen || event.animationName !== 'game-over-reveal') return;
-      window.setTimeout(() => { returnToTitleButton.hidden = false; }, 3000);
+      gameRuntime.setTimeout(() => { returnToTitleButton.hidden = false; }, 3000);
     });
     [stageClearScreen, gameOverScreen].forEach((screen) => {
       screen.addEventListener('click', () => {
@@ -2644,7 +2728,7 @@
       }
       startDodgeTurnWhenReady();
 
-      window.setTimeout(() => {
+      gameRuntime.setTimeout(() => {
         if (finishedTarget.element.isConnected) {
           finishedTarget.element.remove();
         }
@@ -2664,8 +2748,8 @@
 
     function scheduleSpawn(delay = 520) {
       if (stageEnded) return;
-      window.clearTimeout(nextSpawnTimer);
-      nextSpawnTimer = window.setTimeout(spawnWave, delay);
+      gameRuntime.clearTimeout(nextSpawnTimer);
+      nextSpawnTimer = gameRuntime.setTimeout(spawnWave, delay);
     }
 
     function makeImage(className, src) {
@@ -2733,7 +2817,7 @@
       });
       machinePrompt.style.top = `calc(50% + ${aimOffset - 34}px)`;
 
-      const now = performance.now();
+      const now = gameRuntime.now();
       const riseMs = slot.rise ? hall.config.riseMs : 0;
       const startTime = (options.startAt ? Math.max(now, now + (options.startAt - Date.now())) : now) + riseMs;
       if (riseMs) {
@@ -2835,7 +2919,7 @@
     }
 
     function currentScale(target) {
-      const elapsed = performance.now() - target.startTime;
+      const elapsed = gameRuntime.now() - target.startTime;
       const progress = Math.min(Math.max(elapsed / target.duration, 0), 1);
       return startScale + (endScale - startScale) * progress;
     }
@@ -2845,7 +2929,7 @@
     }
 
     function currentTimingDeltaMs(target) {
-      return performance.now() - target.perfectTime;
+      return gameRuntime.now() - target.perfectTime;
     }
 
     function hasUnjudgedTargets() {
@@ -2937,7 +3021,7 @@
       if (keepAlive) {
         target.machineGunHit = true;
         setEnemySprite(target, text === 'Bad' ? enemySprites.graze : enemySprites.hit, true);
-        window.setTimeout(() => {
+        gameRuntime.setTimeout(() => {
           if (target.element.isConnected && !target.judged) {
             setEnemySprite(target, enemySprites.aim, false);
           }
@@ -2949,7 +3033,7 @@
     }
 
     function startMachineGunRoute(target, result) {
-      const now = performance.now();
+      const now = gameRuntime.now();
       target.machineGunHit = true;
       target.machineGunState = {
         result,
@@ -2959,7 +3043,7 @@
       };
       target.judge.classList.remove('visible');
       setMachinePromptVisible(target, false);
-      window.setTimeout(() => {
+      gameRuntime.setTimeout(() => {
         if (target.element.isConnected && !target.judged && target.machineGunState) {
           finishTarget(target, 260, 'hit');
         }
@@ -2968,8 +3052,8 @@
 
     function applyMachineGunRepeatHit(target) {
       const state = target.machineGunState;
-      if (!state || performance.now() > state.endsAt) return;
-      state.lastInputAt = performance.now();
+      if (!state || gameRuntime.now() > state.endsAt) return;
+      state.lastInputAt = gameRuntime.now();
       setMachinePromptVisible(target, false);
       playJudgementSound(state.result.text);
       showBulletEffect(target.x, target.y);
@@ -2978,7 +3062,7 @@
       addScore(damage);
       drainEnemyHp(target, 12);
       setEnemySprite(target, state.result.text === 'Bad' ? enemySprites.graze : enemySprites.hit, true);
-      window.setTimeout(() => {
+      gameRuntime.setTimeout(() => {
         if (target.element.isConnected && !target.judged) {
           setEnemySprite(target, enemySprites.aim, false);
         }
@@ -2993,7 +3077,7 @@
     }
 
     function judgePressed(color) {
-      if (stageEnded) return;
+      if (stageEnded || gameRuntime.paused) return;
       if (opening.active) {
         opening.shoot(color);
         return;
@@ -3043,18 +3127,18 @@
 
     function updateButtonPress(button) {
       button.classList.add('pressed');
-      window.setTimeout(() => button.classList.remove('pressed'), 90);
+      gameRuntime.setTimeout(() => button.classList.remove('pressed'), 90);
     }
 
     function tick() {
       if (stageEnded) return;
       updateActiveItemGauge();
-      dodge.update(performance.now());
+      dodge.update(gameRuntime.now());
       activeTargets.forEach((target) => {
         if (target.judged) return;
 
         if (target.machineGunState) {
-          const now = performance.now();
+          const now = gameRuntime.now();
           if (now >= target.machineGunState.endsAt) {
             finishTarget(target, 260, 'hit');
             return;
@@ -3075,7 +3159,7 @@
         target.judge.classList.toggle('visible', judgeVisible);
 
         const expiredByMachineGun = (hasActiveItem('machine_gun') || target.machineGunHit)
-          && performance.now() > target.startTime + target.duration + autoMissMs;
+          && gameRuntime.now() > target.startTime + target.duration + autoMissMs;
         const expiredNormally = !hasActiveItem('machine_gun') && !target.machineGunHit && timingDeltaMs > autoMissMs;
 
         if (expiredByMachineGun || expiredNormally) {
@@ -3087,12 +3171,13 @@
         }
       });
 
-      requestAnimationFrame(tick);
+      gameRuntime.requestAnimationFrame(tick);
     }
 
     buttons.forEach((button) => {
       button.addEventListener('pointerdown', (event) => {
         event.preventDefault();
+        if (gameRuntime.paused) return;
         if (!gameStarted && !opening.canShoot) return;
         resumeBgm();
         updateButtonPress(button);
@@ -3147,6 +3232,7 @@
     });
 
     window.addEventListener('keydown', (event) => {
+      if (gameRuntime.paused) return;
       const keyMap = {
         ArrowUp: 'b',
         ArrowLeft: 'g',
@@ -3214,7 +3300,7 @@
 
       socket.addEventListener('open', () => {
         serverMode = true;
-        window.clearTimeout(localFallbackTimer);
+        gameRuntime.clearTimeout(localFallbackTimer);
         setNetStatus('SERVER');
       });
 
@@ -3244,7 +3330,7 @@
         setNetStatus('LOCAL');
       });
 
-      localFallbackTimer = window.setTimeout(() => {
+      localFallbackTimer = gameRuntime.setTimeout(() => {
         if (!serverMode && !hasActiveOrCounteringTargets()) {
           setNetStatus('LOCAL');
           runAfterFirstWaveDelay(spawnWave);

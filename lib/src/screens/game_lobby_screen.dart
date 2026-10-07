@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/game_ranking_repository.dart';
+import '../services/game_version_service.dart';
 import 'timing_shooter_screen.dart';
 
 class GameLobbyScreen extends StatefulWidget {
@@ -8,16 +9,19 @@ class GameLobbyScreen extends StatefulWidget {
     required this.loginId,
     required this.nickname,
     this.repository,
+    this.versionService,
   });
   final String loginId;
   final String nickname;
   final GameRankingRepository? repository;
+  final GameVersionService? versionService;
   @override
   State<GameLobbyScreen> createState() => _GameLobbyScreenState();
 }
 
 class _GameLobbyScreenState extends State<GameLobbyScreen> {
   late final GameRankingRepository _repository;
+  late final GameVersionService _versionService;
   List<GameRankingEntry> _entries = [];
   bool _loading = true;
   bool _launching = false;
@@ -28,6 +32,7 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
   void initState() {
     super.initState();
     _repository = widget.repository ?? GameRankingRepository();
+    _versionService = widget.versionService ?? GameVersionService();
     _load();
   }
 
@@ -41,8 +46,9 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
       final rows = await _repository.fetch();
       if (mounted && version == _loadVersion) setState(() => _entries = rows);
     } catch (_) {
-      if (mounted && version == _loadVersion)
+      if (mounted && version == _loadVersion) {
         setState(() => _error = '랭킹을 불러오지 못했습니다.');
+      }
     } finally {
       if (mounted && version == _loadVersion) setState(() => _loading = false);
     }
@@ -51,6 +57,39 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
   Future<void> _start() async {
     if (_launching) return;
     setState(() => _launching = true);
+    try {
+      final version = await _versionService.check();
+      if (!mounted) return;
+      if (!version.allowed) {
+        await showDialog<void>(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('앱 업데이트가 필요합니다'),
+                content: Text(
+                  '현재 버전: ${version.current}\n최신 버전: ${version.latest}\n\n최신 앱을 설치한 후 게임을 시작해주세요.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('확인'),
+                  ),
+                ],
+              ),
+        );
+        if (mounted) setState(() => _launching = false);
+        return;
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _launching = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('앱 버전을 확인할 수 없습니다. 인터넷 연결을 확인하고 다시 시도해주세요.'),
+        ),
+      );
+      return;
+    }
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => TimingShooterScreen(loginId: widget.loginId),
@@ -64,6 +103,7 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
   @override
   void dispose() {
     if (widget.repository == null) _repository.dispose();
+    if (widget.versionService == null) _versionService.dispose();
     super.dispose();
   }
 
@@ -168,11 +208,12 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
                           itemCount: _entries.isEmpty ? 1 : _entries.length,
                           separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, index) {
-                            if (_entries.isEmpty)
+                            if (_entries.isEmpty) {
                               return const Padding(
                                 padding: EdgeInsets.all(32),
                                 child: Center(child: Text('아직 등록된 점수가 없어요.')),
                               );
+                            }
                             final entry = _entries[index];
                             final mine = entry.playerKey == playerKey;
                             return ColoredBox(

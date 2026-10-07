@@ -86,7 +86,7 @@ class OpeningSequence {
     this.world.style.transform = `translateX(${-this.camera * this.stage.clientWidth}px)`;
   }
 
-  delay(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+  delay(ms) { return new Promise((resolve) => gameRuntime.setTimeout(resolve, ms)); }
 
   async animate(element, keyframes, options) {
     const animation = element.animate(keyframes, options);
@@ -117,17 +117,17 @@ class OpeningSequence {
     const duration = reducedMotion ? Math.min(350, this.config.travelMs) : this.config.travelMs;
     this.renderApproach(0);
     return new Promise((resolve) => {
-      const start = performance.now();
+      const start = gameRuntime.now();
       const advance = (now) => {
         const progress = Math.max(0, Math.min((now - start) / duration, 1));
         this.renderApproach(progress);
         if (progress < 1) {
-          requestAnimationFrame(advance);
+          gameRuntime.requestAnimationFrame(advance);
         } else {
           resolve();
         }
       };
-      requestAnimationFrame(advance);
+      gameRuntime.requestAnimationFrame(advance);
     });
   }
 
@@ -206,9 +206,9 @@ class OpeningSequence {
     impact.style.width = `${100 / this.currentZoom}px`;
     impact.style.height = `${100 / this.currentZoom}px`;
     this.scenePlane.append(impact);
-    setTimeout(() => { impact.src = 'sprites/effects/bullet_effect_2.png'; }, 55);
-    setTimeout(() => { impact.src = 'sprites/effects/bullet_effect_3.png'; }, 110);
-    setTimeout(() => impact.remove(), 230);
+    gameRuntime.setTimeout(() => { impact.src = 'sprites/effects/bullet_effect_2.png'; }, 55);
+    gameRuntime.setTimeout(() => { impact.src = 'sprites/effects/bullet_effect_3.png'; }, 110);
+    gameRuntime.setTimeout(() => impact.remove(), 230);
     this.animate(this.guard, [
       { transform: 'translate(-50%, -100%) rotate(0deg)', opacity: 1 },
       { transform: 'translate(-50%, -84%) rotate(-9deg)', opacity: 0 }
