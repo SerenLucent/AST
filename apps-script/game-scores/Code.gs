@@ -19,10 +19,10 @@ function doPost(e) {
     if (!loginId || loginId.length > 100) throw new Error('Invalid player');
     lock.waitLock(30000);
     const users = readFile(token, 'remote-data/users.json').data.users || [];
-    const user = users.find(function (entry) { return String(entry.loginId).toLowerCase() === loginId; });
+    const user = users.find(function (entry) { return String(entry.loginId).trim().toLowerCase() === loginId; });
     if (!user) throw new Error('Player is not registered');
     // Store an opaque ID instead of exposing the app login ID in the leaderboard.
-    const playerKey = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, loginId)
+    const playerKey = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, loginId, Utilities.Charset.UTF_8)
       .map(function (value) { return ('0' + ((value + 256) % 256).toString(16)).slice(-2); }).join('');
     for (let attempt = 0; attempt < 3; attempt++) {
       const current = readFile(token, SCORE_PATH);
