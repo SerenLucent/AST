@@ -67,8 +67,9 @@ class GameRankingRepository {
     }
     final storedWeek = DateTime.tryParse(body['weekStart']?.toString() ?? '');
     if (storedWeek == null ||
-        storedWeek.toUtc() != weekStart(now ?? DateTime.now()))
+        storedWeek.toUtc() != weekStart(now ?? DateTime.now())) {
       return [];
+    }
     final rows =
         (body['players'] as List<dynamic>).map((value) {
           final row = value as Map<String, dynamic>;
