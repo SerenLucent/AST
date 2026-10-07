@@ -9,6 +9,7 @@ import 'member_management_screen.dart';
 import 'notice_screen.dart';
 import 'schedule_screen.dart';
 import 'score_library_screen.dart';
+import 'timing_shooter_screen.dart';
 
 ScheduleEntry? closestVisibleSchedule(
   Iterable<ScheduleEntry> entries,
@@ -69,6 +70,7 @@ class HomeScreen extends StatelessWidget {
       Icons.groups_2_outlined,
       Color(0xFF6750A4),
     ),
+    _MenuItem('Game 하기', '타이밍 슈터', Icons.sports_esports_outlined, Color(0xFF2D857D)),
   ];
 
   @override
@@ -392,6 +394,12 @@ class _MenuCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
         onTap: () {
+          if (item.title == 'Game 하기') {
+            Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => TimingShooterScreen(loginId: loginId),
+            ));
+            return;
+          }
           if (isSchedule) {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
