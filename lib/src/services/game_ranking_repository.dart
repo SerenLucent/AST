@@ -24,7 +24,7 @@ class GameRankingRepository {
   Future<List<GameRankingEntry>> fetch() async {
     final uri = Uri.https(
       'api.github.com',
-      '/repos/SerenLucent/AST/contents/remote-data/games/timing-shooter-scores.json',
+      '/repos/SerenLucent/AST/contents/remote-data/games/timing-shooter/scores.json',
       {
         'ref': 'main',
         'cacheBust': DateTime.now().microsecondsSinceEpoch.toString(),
@@ -50,16 +50,32 @@ class GameRankingRepository {
     return decode(utf8.decode(base64Decode(encoded)));
   }
 
-  List<GameRankingEntry> decode(String source) {
+  static DateTime weekStart(DateTime now) {
+    final kst = now.toUtc().add(const Duration(hours: 9));
+    final monday = DateTime.utc(
+      kst.year,
+      kst.month,
+      kst.day,
+    ).subtract(Duration(days: kst.weekday - 1));
+    return monday.subtract(const Duration(hours: 9));
+  }
+
+  List<GameRankingEntry> decode(String source, {DateTime? now}) {
     final body = jsonDecode(source) as Map<String, dynamic>;
-    if (body['schemaVersion'] != 1 || body['game'] != 'timing-shooter')
+    if (body['schemaVersion'] != 1 || body['game'] != 'timing-shooter') {
       throw const FormatException('Invalid ranking');
+    }
+    final storedWeek = DateTime.tryParse(body['weekStart']?.toString() ?? '');
+    if (storedWeek == null ||
+        storedWeek.toUtc() != weekStart(now ?? DateTime.now()))
+      return [];
     final rows =
         (body['players'] as List<dynamic>).map((value) {
           final row = value as Map<String, dynamic>;
           final bestScore = row['bestScore'];
-          if (bestScore is! int || bestScore < 0)
+          if (bestScore is! int || bestScore < 0) {
             throw const FormatException('Invalid score');
+          }
           return GameRankingEntry(
             playerKey: row['playerKey'] as String,
             nickname: row['nickname'] as String? ?? 'Player',

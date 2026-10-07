@@ -9,9 +9,15 @@ import 'package:ast_team_app/src/services/game_ranking_repository.dart';
 GameRankingRepository repository(List<Map<String, Object>> players) =>
     GameRankingRepository(
       client: MockClient((request) async {
+        expect(
+          request.url.path,
+          endsWith('/remote-data/games/timing-shooter/scores.json'),
+        );
         final data = jsonEncode({
           'schemaVersion': 1,
           'game': 'timing-shooter',
+          'weekStart':
+              GameRankingRepository.weekStart(DateTime.now()).toIso8601String(),
           'players': players,
         });
         return http.Response(
@@ -22,6 +28,26 @@ GameRankingRepository repository(List<Map<String, Object>> players) =>
     );
 
 void main() {
+  test('weekly ranking hides previous week exactly at Monday midnight KST', () {
+    final repo = repository([]);
+    final source = jsonEncode({
+      'schemaVersion': 1,
+      'game': 'timing-shooter',
+      'weekStart': '2026-10-04T15:00:00.000Z',
+      'players': [
+        {'playerKey': 'test', 'nickname': 'Test', 'bestScore': 100},
+      ],
+    });
+    expect(
+      repo.decode(source, now: DateTime.parse('2026-10-11T14:59:59.999Z')),
+      hasLength(1),
+    );
+    expect(
+      repo.decode(source, now: DateTime.parse('2026-10-11T15:00:00.000Z')),
+      isEmpty,
+    );
+    repo.dispose();
+  });
   test('ranking sorts scores and matches normalized login IDs', () async {
     final key = GameRankingRepository.playerKeyFor('Tester');
     expect(GameRankingRepository.playerKeyFor(' tester '), key);

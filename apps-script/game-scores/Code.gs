@@ -1,7 +1,7 @@
 const OWNER = 'SerenLucent';
 const REPO = 'AST';
 const BRANCH = 'main';
-const SCORE_PATH = 'remote-data/games/timing-shooter-scores.json';
+const SCORE_PATH = 'remote-data/games/timing-shooter/scores.json';
 
 function doGet() { return respond({ ok: true, service: 'AST game scores' }); }
 
@@ -27,7 +27,8 @@ function doPost(e) {
     for (let attempt = 0; attempt < 3; attempt++) {
       const current = readFile(token, SCORE_PATH);
       const data = current.data;
-      if (data.schemaVersion !== 1 || !Array.isArray(data.players)) throw new Error('Invalid score file');
+      validateScoreFile(data);
+      rollWeek(data, new Date());
       let player = data.players.find(function (entry) { return entry.playerKey === playerKey; });
       if (player && (player.recentRunIds || []).includes(result.runId)) return respond({ ok: true, duplicate: true });
       const now = new Date().toISOString();
@@ -42,13 +43,7 @@ function doPost(e) {
       player.recentRunIds = [result.runId].concat(player.recentRunIds || []).slice(0, 50);
       data.updatedAt = now;
       data.players.sort(function (a, b) { return b.bestScore - a.bestScore; });
-      const response = UrlFetchApp.fetch(fileUrl(SCORE_PATH), {
-        method: 'put', headers: headers(token), contentType: 'application/json', muteHttpExceptions: true,
-        payload: JSON.stringify({ branch: BRANCH, sha: current.sha,
-          message: 'Update timing shooter score',
-          content: Utilities.base64Encode(JSON.stringify(data, null, 2), Utilities.Charset.UTF_8) })
-      });
-      const status = response.getResponseCode();
+      const status = writeScores(token, current, 'Update timing shooter weekly score');
       if (status === 200 || status === 201) return respond({ ok: true, bestScore: player.bestScore });
       if (status !== 409 && status !== 422) throw new Error('GitHub score update failed (' + status + ')');
     }
@@ -56,6 +51,63 @@ function doPost(e) {
   } catch (error) {
     return respond({ ok: false, error: String(error.message || error) });
   } finally { if (lock.hasLock()) lock.releaseLock(); }
+}
+
+// KST has no daylight-saving changes; derive Monday 00:00 without host timezone dependence.
+function weekStart(date) {
+  const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const monday = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate() - (kst.getUTCDay() + 6) % 7);
+  return new Date(monday - 9 * 60 * 60 * 1000).toISOString();
+}
+
+function validateScoreFile(data) {
+  if (data.schemaVersion !== 1 || data.game !== 'timing-shooter' || !Array.isArray(data.players)) throw new Error('Invalid score file');
+}
+
+function rollWeek(data, date) {
+  const start = weekStart(date);
+  if (data.weekStart === start) return false;
+  data.weekStart = start;
+  data.timeZone = 'Asia/Seoul';
+  data.players = [];
+  data.updatedAt = date.toISOString();
+  return true;
+}
+
+function writeScores(token, current, message) {
+  const response = UrlFetchApp.fetch(fileUrl(SCORE_PATH), {
+    method: 'put', headers: headers(token), contentType: 'application/json', muteHttpExceptions: true,
+    payload: JSON.stringify({ branch: BRANCH, sha: current.sha, message: message,
+      content: Utilities.base64Encode(JSON.stringify(current.data, null, 2), Utilities.Charset.UTF_8) })
+  });
+  return response.getResponseCode();
+}
+
+function resetWeeklyScores() {
+  const lock = LockService.getScriptLock();
+  try {
+    const token = PropertiesService.getScriptProperties().getProperty('GITHUB_TOKEN');
+    if (!token) throw new Error('Score server is not configured');
+    lock.waitLock(30000);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const current = readFile(token, SCORE_PATH);
+      validateScoreFile(current.data);
+      if (!rollWeek(current.data, new Date())) return;
+      const status = writeScores(token, current, 'Reset timing shooter weekly ranking');
+      if (status === 200 || status === 201) return;
+      if (status !== 409 && status !== 422) throw new Error('Weekly reset failed (' + status + ')');
+    }
+    throw new Error('Weekly reset conflict; retry');
+  } finally { if (lock.hasLock()) lock.releaseLock(); }
+}
+
+// Run once after configuring properties. Only this project's reset trigger is replaced.
+function installWeeklyResetTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === 'resetWeeklyScores') ScriptApp.deleteTrigger(trigger);
+  });
+  ScriptApp.newTrigger('resetWeeklyScores').timeBased().everyWeeks(1)
+    .onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(0).nearMinute(15).inTimezone('Asia/Seoul').create();
 }
 
 function validateResult(value) {

@@ -15,7 +15,16 @@
 2. Set Script Properties `GITHUB_TOKEN` (AST Contents read/write token) and a new random `APP_KEY`. Never commit either secret or put them in the game JavaScript.
 3. Deploy as a web app executing as the owner. Choose the access setting required for the mobile app; authorize the Google permissions yourself.
 4. Build Flutter with existing app settings plus `--dart-define=AST_GAME_SCORE_URL=<web-app-exec-url>` and `--dart-define=AST_GAME_SCORE_KEY=<new-app-key>`. Override `AST_GAME_URL` only if the hosting URL differs.
-5. Install the new APK and test a clear. It should append/update `remote-data/games/timing-shooter-scores.json`.
+5. Install the new APK and test a clear. It should append/update `remote-data/games/timing-shooter/scores.json`.
+
+Each game owns its data directory under `remote-data/games/<game-id>/`. This script only writes the fixed Timing Shooter path; clients cannot choose a different game or file. The previous `timing-shooter-scores.json` file is unused and kept for compatibility/history.
+
+## Weekly Ranking
+
+- Weeks run Monday 00:00 to the next Monday 00:00 in Asia/Seoul. Best scores and clear counts are weekly, not lifetime.
+- After setting script properties, run `installWeeklyResetTrigger` once in the editor and authorize it. It only replaces this project's `resetWeeklyScores` triggers.
+- Google time triggers are approximate (the configured reset runs around Monday 00:15, +/- 15 minutes). The app filters stale weeks at the exact boundary, and every score submission rolls the week under a lock before saving. Delayed reset cannot erase scores already saved for the new week.
+- Running `resetWeeklyScores` manually is idempotent: it does not erase current-week scores. Historical JSON revisions remain in Git history.
 
 ## Behavior And Limits
 

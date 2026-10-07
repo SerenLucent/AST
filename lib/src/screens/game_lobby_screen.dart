@@ -135,7 +135,7 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('내 기록'),
+                        const Text('이번 주 기록'),
                         const SizedBox(height: 6),
                         Text(
                           widget.nickname,
@@ -153,7 +153,7 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text('최고 점수'),
+                      const Text('주간 최고 점수'),
                       Text(
                         _loading && own == null
                             ? '-'
