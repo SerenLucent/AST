@@ -1561,6 +1561,7 @@
     const targetRetryAfterCounterMs = 2000;
     const firstWaveDelayMs = 2000;
     const machineGunHoldMs = 2000;
+    const machineGunMaxShots = 5;
     const machineGunPromptIdleMs = 600;
     const enemyHpBarMaxWidth = 117;
     const enemyMuzzleOffsetXRatio = -36 / 210;
@@ -3026,17 +3027,19 @@
             setEnemySprite(target, enemySprites.aim, false);
           }
         }, 120);
-        return;
+        return damage;
       }
 
       finishTarget(target, 260, text === 'Bad' ? 'graze' : 'hit');
     }
 
-    function startMachineGunRoute(target, result) {
+    function startMachineGunRoute(target, result, firstScore) {
       const now = gameRuntime.now();
       target.machineGunHit = true;
       target.machineGunState = {
         result,
+        shotsFired: 1,
+        lastScore: firstScore,
         startedAt: now,
         endsAt: now + machineGunHoldMs,
         lastInputAt: now
@@ -3052,14 +3055,17 @@
 
     function applyMachineGunRepeatHit(target) {
       const state = target.machineGunState;
-      if (!state || gameRuntime.now() > state.endsAt) return;
+      if (!state || target.judged || !target.element.isConnected
+          || state.shotsFired >= machineGunMaxShots || gameRuntime.now() >= state.endsAt) return;
+      state.shotsFired += 1;
+      state.lastScore = Math.floor(state.lastScore / 2);
       state.lastInputAt = gameRuntime.now();
       setMachinePromptVisible(target, false);
       playJudgementSound(state.result.text);
       showBulletEffect(target.x, target.y);
       const damage = damageForJudgement(state.result.text);
       showDamage(damage, target.x, target.y + 3);
-      addScore(damage);
+      addScore(state.lastScore);
       drainEnemyHp(target, 12);
       setEnemySprite(target, state.result.text === 'Bad' ? enemySprites.graze : enemySprites.hit, true);
       gameRuntime.setTimeout(() => {
@@ -3067,6 +3073,9 @@
           setEnemySprite(target, enemySprites.aim, false);
         }
       }, 90);
+      if (state.shotsFired === machineGunMaxShots) {
+        finishTarget(target, 260, 'hit');
+      }
     }
 
     function applyShotgunResult(result) {
@@ -3112,8 +3121,8 @@
           applyHitResult(target, result);
           return;
         }
-        applyHitResult(target, result, { keepAlive: true, silentMiss: true });
-        startMachineGunRoute(target, result);
+        const firstScore = applyHitResult(target, result, { keepAlive: true, silentMiss: true });
+        startMachineGunRoute(target, result, firstScore);
         return;
       }
 
