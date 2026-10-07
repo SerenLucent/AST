@@ -4,7 +4,10 @@ import 'package:http/http.dart' as http;
 class GameScoreService {
   GameScoreService({http.Client? client}) : _client = client ?? http.Client();
   final http.Client _client;
-  static const url = String.fromEnvironment('AST_GAME_SCORE_URL');
+  static const url = String.fromEnvironment(
+    'AST_GAME_SCORE_URL',
+    defaultValue: 'https://script.google.com/macros/s/AKfycbytssQmaa9dr3IE2NODl_L9k2A8qjPjfSgwNgw-cRcvmLO_CR0vIVTNGxKAUle7ughKow/exec',
+  );
   static const key = String.fromEnvironment('AST_GAME_SCORE_KEY');
 
   Future<void> save(String loginId, Map<String, dynamic> result) async {

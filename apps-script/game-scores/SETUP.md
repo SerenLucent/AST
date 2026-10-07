@@ -17,6 +17,8 @@
 4. Build Flutter with existing app settings plus `--dart-define=AST_GAME_SCORE_URL=<web-app-exec-url>` and `--dart-define=AST_GAME_SCORE_KEY=<new-app-key>`. Override `AST_GAME_URL` only if the hosting URL differs.
 5. Install the new APK and test a clear. It should append/update `remote-data/games/timing-shooter/scores.json`.
 
+The deployed endpoint is the default in `GameScoreService`. For a local build, use `config/game_score_defines.example.json` as the template for `config/game_score_defines.json`, enter the matching APP_KEY locally, and build with `flutter build apk --release --dart-define-from-file=config/game_score_defines.json`. The real defines file must stay untracked, is not a Flutter asset, and must not contain the GitHub token. Do not share it or print it in build logs.
+
 Each game owns its data directory under `remote-data/games/<game-id>/`. This script only writes the fixed Timing Shooter path; clients cannot choose a different game or file. The previous `timing-shooter-scores.json` file is unused and kept for compatibility/history.
 
 ## Weekly Ranking

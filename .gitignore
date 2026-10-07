@@ -50,3 +50,4 @@ app.*.map.json
 
 # Local secret bundled into APK. Never commit this file.
 /config/private_config.json
+/config/game_score_defines.json
