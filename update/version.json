@@ -1,7 +1,7 @@
 {
-  "versionCode": 30007,
-  "versionName": "3.0.7",
-  "apkFile": "AST-3.0.7.apk",
-  "message": "NWC 기능추가",
+  "versionCode": 30008,
+  "versionName": "3.0.8",
+  "apkFile": "AST-3.0.8.apk",
+  "message": "타이밍슈터 1인 플레이와 주간 랭킹 추가, 게임 일시정지 및 나가기 지원",
   "required": false
 }
