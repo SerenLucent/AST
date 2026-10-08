@@ -92,6 +92,23 @@
       opacity: 1;
     }
 
+    #loadingScreen {
+      position: absolute;
+      inset: 0;
+      z-index: 140;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      color: #ffdc45;
+      font-size: 21px;
+      font-weight: 700;
+      text-align: center;
+      padding: 24px;
+    }
+
+    #loadingScreen[hidden] { display: none; }
+
     #titleScreen {
       align-items: center;
       justify-content: flex-start;
@@ -1336,7 +1353,8 @@
 </head>
 <body>
   <main id="stage">
-    <section id="titleScreen" class="front-screen" aria-label="title screen">
+    <div id="loadingScreen" role="status" aria-live="polite">게임을 실행중입니다</div>
+    <section id="titleScreen" class="front-screen hidden" aria-label="title screen">
       <div class="tap-to-start">TAP TO START</div>
     </section>
     <section id="modeScreen" class="front-screen hidden" aria-label="mode select">
@@ -2021,16 +2039,18 @@
       if (gameStarted || transitionLocked || opening.active) return;
       transitionLocked = true;
       startGameButton.disabled = true;
+      showLoading('Now Loading...');
       stopBgm();
       const unlockDone = unlockBgm();
-      warmStageMusic();
+      const assetsReady = Promise.all([opening.prepare(), warmStageMusic(), waitMs(350)]);
       const fadeDone = runFadeTransition({
         fadeOutMs: 500,
         fadeInMs: 400,
         swap: async () => {
-          await opening.prepare();
+          await assetsReady;
           titleScreen.classList.add('hidden');
           modeScreen.classList.add('hidden');
+          hideLoading();
           opening.play({
             mode: selectedMode,
             onBreach: () => prepareCombatAssets().catch((error) => console.warn('[Stage] Preload failed:', error)),
@@ -2051,6 +2071,7 @@
         console.error('[Opening] Could not load scene:', error);
         screenFade.classList.remove('visible');
         startGameButton.disabled = false;
+        hideLoading();
       } finally {
         transitionLocked = false;
       }
@@ -2058,7 +2079,7 @@
 
     function warmStageMusic({ decode = true } = {}) {
       const load = decode ? loadBgmBuffer : downloadBgm;
-      Promise.all([
+      return Promise.all([
         load('sound/stage1_1.mp3'),
         load('sound/stage1_2.mp3')
       ]).catch((error) => console.warn('[BGM] Stage preload failed:', error));
@@ -2090,11 +2111,11 @@
     async function enterStageAfterOpening() {
       if (gameStarted) return;
       transitionLocked = true;
+      await prepareCombatAssets();
       await runFadeTransition({
         fadeOutMs: 450,
         fadeInMs: 450,
         swap: async () => {
-          await prepareCombatAssets();
           opening.finish();
           gameStarted = true;
           stage.classList.add('game-running');
@@ -3394,7 +3415,30 @@
       }, 900);
     }
 
-    playBgmLoop('title', 'sound/title.mp3');
+    const loadingScreen = document.getElementById('loadingScreen');
+    function showLoading(message) {
+      loadingScreen.textContent = message;
+      loadingScreen.hidden = false;
+    }
+    function hideLoading() { loadingScreen.hidden = true; }
+    async function prepareTitle() {
+      try {
+        const image = new Image();
+        image.src = 'sprites/Main/main_title.png';
+        await Promise.all([image.decode(), loadBgmBuffer('sound/title.mp3')]);
+        titleScreen.classList.remove('hidden');
+        hideLoading();
+        ensureTitleBgm();
+      } catch (error) {
+        console.error('[Title] Could not prepare title:', error);
+        showLoading('로딩에 실패했습니다. 터치해서 다시 시도해주세요.');
+        loadingScreen.addEventListener('pointerdown', () => {
+          showLoading('게임을 실행중입니다');
+          prepareTitle();
+        }, { once: true });
+      }
+    }
+    prepareTitle();
     window.setTimeout(() => {
       opening.prepare().catch((error) => console.warn('[Opening] Preload failed:', error));
       warmStageMusic({ decode: false });
