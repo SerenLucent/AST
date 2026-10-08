@@ -1747,6 +1747,7 @@
     };
 
     function preloadBgm(src) {
+      if (window.AudioContext || window.webkitAudioContext) return;
       if (bgmPreloads.has(src)) return;
       const audio = new Audio(src);
       audio.preload = 'auto';
@@ -1789,6 +1790,7 @@
     function loadBgmBuffer(src) {
       if (bgmBuffers.has(src)) return bgmBuffers.get(src);
       const context = ensureBgmContext();
+      if (!context) return Promise.resolve(null);
       const promise = fetch(src)
         .then((response) => {
           if (!response.ok) {
@@ -1796,7 +1798,11 @@
           }
           return response.arrayBuffer();
         })
-        .then((arrayBuffer) => context.decodeAudioData(arrayBuffer));
+        .then((arrayBuffer) => context.decodeAudioData(arrayBuffer))
+        .catch((error) => {
+          bgmBuffers.delete(src);
+          throw error;
+        });
       bgmBuffers.set(src, promise);
       return promise;
     }
@@ -1973,7 +1979,7 @@
       screenFade.style.transition = `opacity ${fadeOutMs}ms ease`;
       screenFade.classList.add('visible');
       await waitMs(fadeOutMs);
-      swap();
+      await swap();
       screenFade.style.transition = `opacity ${fadeInMs}ms ease`;
       screenFade.classList.remove('visible');
       await waitMs(fadeInMs);
@@ -2004,28 +2010,19 @@
       if (gameStarted || transitionLocked || opening.active) return;
       transitionLocked = true;
       startGameButton.disabled = true;
-      try {
-        await Promise.all([opening.prepare(), hall.prepare()]);
-      } catch (error) {
-        console.error('[Opening] Could not load scene:', error);
-        startGameButton.disabled = false;
-        transitionLocked = false;
-        return;
-      }
       stopBgm();
       const unlockDone = unlockBgm();
-      await Promise.all([
-        loadBgmBuffer('sound/stage1_1.mp3'),
-        loadBgmBuffer('sound/stage1_2.mp3')
-      ]).catch((error) => console.warn('[BGM] Stage preload failed:', error));
+      warmStageMusic();
       const fadeDone = runFadeTransition({
         fadeOutMs: 500,
         fadeInMs: 400,
-        swap: () => {
+        swap: async () => {
+          await opening.prepare();
           titleScreen.classList.add('hidden');
           modeScreen.classList.add('hidden');
           opening.play({
             mode: selectedMode,
+            onBreach: () => prepareCombatAssets().catch((error) => console.warn('[Stage] Preload failed:', error)),
             onShot: () => {
               playOneShot(gunSound);
               playBgmSequence('stage1', 'sound/stage1_1.mp3', 'sound/stage1_2.mp3');
@@ -2037,8 +2034,45 @@
           });
         }
       });
-      await Promise.all([unlockDone, fadeDone]);
-      transitionLocked = false;
+      try {
+        await Promise.all([unlockDone, fadeDone]);
+      } catch (error) {
+        console.error('[Opening] Could not load scene:', error);
+        screenFade.classList.remove('visible');
+        startGameButton.disabled = false;
+      } finally {
+        transitionLocked = false;
+      }
+    }
+
+    function warmStageMusic() {
+      Promise.all([
+        loadBgmBuffer('sound/stage1_1.mp3'),
+        loadBgmBuffer('sound/stage1_2.mp3')
+      ]).catch((error) => console.warn('[BGM] Stage preload failed:', error));
+    }
+
+    let combatAssetsReady = null;
+    const combatPreloads = [];
+    function prepareCombatAssets() {
+      if (combatAssetsReady) return combatAssetsReady;
+      const sources = [...Object.values(enemySprites), 'sprites/UI/hp_frame.png',
+        'sprites/effects/hit_blood_overlay.png',
+        ...[1, 2, 3].map((frame) => `sprites/effects/bullet_effect_${frame}.png`),
+        ...['b', 'g', 'r', 'y'].flatMap((color) =>
+          ['target', 'perfect_target', 'circle', 'judge'].map((name) => `sprites/${name}_${color}.png`))];
+      const images = sources.map((src) => {
+        const image = new Image();
+        image.src = src;
+        combatPreloads.push(image);
+        return image.decode();
+      });
+      combatAssetsReady = Promise.all([hall.prepare(), ...images]).catch((error) => {
+        combatAssetsReady = null;
+        combatPreloads.length = 0;
+        throw error;
+      });
+      return combatAssetsReady;
     }
 
     async function enterStageAfterOpening() {
@@ -2047,7 +2081,8 @@
       await runFadeTransition({
         fadeOutMs: 450,
         fadeInMs: 450,
-        swap: () => {
+        swap: async () => {
+          await prepareCombatAssets();
           opening.finish();
           gameStarted = true;
           stage.classList.add('game-running');
@@ -3348,6 +3383,10 @@
     }
 
     playBgmLoop('title', 'sound/title.mp3');
+    window.setTimeout(() => {
+      opening.prepare().catch((error) => console.warn('[Opening] Preload failed:', error));
+      warmStageMusic();
+    }, 0);
     window.addEventListener('load', ensureTitleBgm);
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) ensureTitleBgm();

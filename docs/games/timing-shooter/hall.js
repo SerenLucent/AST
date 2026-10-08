@@ -29,7 +29,15 @@ class HallScene {
     this.observer.observe(stage);
   }
 
-  prepare() { return Promise.all(this.images.map((image) => image.decode())); }
+  prepare() {
+    if (!this.assetsReady) {
+      this.assetsReady = Promise.all(this.images.map((image) => image.decode())).catch((error) => {
+        this.assetsReady = null;
+        throw error;
+      });
+    }
+    return this.assetsReady;
+  }
 
   setCamera(view) {
     this.camera = Math.max(0, Math.min(1, view));

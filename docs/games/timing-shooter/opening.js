@@ -148,10 +148,11 @@ class OpeningSequence {
     });
   }
 
-  async play({ onShot, onComplete, mode = '1p' }) {
+  async play({ onShot, onComplete, onBreach, mode = '1p' }) {
     await this.prepare();
     this.onShot = onShot;
     this.onComplete = onComplete;
+    this.onBreach = onBreach;
     this.mode = mode;
     this.breachImages.forEach((image) => image.classList.remove('visible'));
     this.caption.classList.remove('game-start');
@@ -229,6 +230,7 @@ class OpeningSequence {
       duration: halfDuration, fill: 'forwards'
     });
     this.phase = 'breach';
+    this.onBreach?.();
     this.caption.classList.remove('game-start');
     this.caption.textContent = 'HOLD YOUR FIRE';
     this.breachImages[this.mode === '2p' ? 1 : 0].classList.add('visible');

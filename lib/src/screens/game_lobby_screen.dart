@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../services/game_ranking_repository.dart';
 import '../services/game_version_service.dart';
 import 'timing_shooter_screen.dart';
@@ -10,11 +11,13 @@ class GameLobbyScreen extends StatefulWidget {
     required this.nickname,
     this.repository,
     this.versionService,
+    this.requireLatestVersion = false,
   });
   final String loginId;
   final String nickname;
   final GameRankingRepository? repository;
   final GameVersionService? versionService;
+  final bool requireLatestVersion;
   @override
   State<GameLobbyScreen> createState() => _GameLobbyScreenState();
 }
@@ -57,38 +60,39 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
   Future<void> _start() async {
     if (_launching) return;
     setState(() => _launching = true);
-    try {
-      final version = await _versionService.check();
-      if (!mounted) return;
-      if (!version.allowed) {
-        await showDialog<void>(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('앱 업데이트가 필요합니다'),
-                content: Text(
-                  '현재 버전: ${version.current}\n최신 버전: ${version.latest}\n\n최신 앱을 설치한 후 게임을 시작해주세요.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('확인'),
-                  ),
-                ],
+    if (widget.requireLatestVersion) {
+      try {
+        final version = await _versionService.check();
+        if (!mounted) return;
+        if (!version.allowed) {
+          await showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('앱 업데이트가 필요합니다'),
+              content: Text(
+                '현재 버전: ${version.current}\n최신 버전: ${version.latest}\n\n최신 앱을 설치한 후 게임을 시작해주세요.',
               ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('확인'),
+                ),
+              ],
+            ),
+          );
+          if (mounted) setState(() => _launching = false);
+          return;
+        }
+      } catch (_) {
+        if (!mounted) return;
+        setState(() => _launching = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('앱 버전을 확인할 수 없습니다. 인터넷 연결을 확인하고 다시 시도해주세요.'),
+          ),
         );
-        if (mounted) setState(() => _launching = false);
         return;
       }
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _launching = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('앱 버전을 확인할 수 없습니다. 인터넷 연결을 확인하고 다시 시도해주세요.'),
-        ),
-      );
-      return;
     }
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -111,8 +115,9 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final playerKey = GameRankingRepository.playerKeyFor(widget.loginId);
-    final own =
-        _entries.where((entry) => entry.playerKey == playerKey).firstOrNull;
+    final own = _entries
+        .where((entry) => entry.playerKey == playerKey)
+        .firstOrNull;
     return Scaffold(
       appBar: AppBar(
         title: const Text('타이밍 슈터'),
@@ -184,80 +189,78 @@ class _GameLobbyScreenState extends State<GameLobbyScreen> {
             ),
             const Divider(height: 1),
             Expanded(
-              child:
-                  _loading && _entries.isEmpty
-                      ? const Center(child: CircularProgressIndicator())
-                      : _error != null && _entries.isEmpty
-                      ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(_error!),
-                            IconButton(
-                              onPressed: _load,
-                              icon: const Icon(Icons.refresh),
-                              tooltip: '다시 불러오기',
-                            ),
-                          ],
-                        ),
-                      )
-                      : RefreshIndicator(
-                        onRefresh: _load,
-                        child: ListView.separated(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _entries.isEmpty ? 1 : _entries.length,
-                          separatorBuilder: (_, _) => const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            if (_entries.isEmpty) {
-                              return const Padding(
-                                padding: EdgeInsets.all(32),
-                                child: Center(child: Text('아직 등록된 점수가 없어요.')),
-                              );
-                            }
-                            final entry = _entries[index];
-                            final mine = entry.playerKey == playerKey;
-                            return ColoredBox(
-                              color:
-                                  mine
-                                      ? colors.primaryContainer
-                                      : Colors.transparent,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 18,
-                                ),
-                                child: Row(
-                                  children: [
-                                    SizedBox(
-                                      width: 40,
-                                      child: Text(
-                                        '${index + 1}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        mine ? widget.nickname : entry.nickname,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      _number(entry.bestScore),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+              child: _loading && _entries.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null && _entries.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error!),
+                          IconButton(
+                            onPressed: _load,
+                            icon: const Icon(Icons.refresh),
+                            tooltip: '다시 불러오기',
+                          ),
+                        ],
                       ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: _entries.isEmpty ? 1 : _entries.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          if (_entries.isEmpty) {
+                            return const Padding(
+                              padding: EdgeInsets.all(32),
+                              child: Center(child: Text('아직 등록된 점수가 없어요.')),
+                            );
+                          }
+                          final entry = _entries[index];
+                          final mine = entry.playerKey == playerKey;
+                          return ColoredBox(
+                            color: mine
+                                ? colors.primaryContainer
+                                : Colors.transparent,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 18,
+                              ),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 40,
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      mine ? widget.nickname : entry.nickname,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    _number(entry.bestScore),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
             ),
             if (_error != null && _entries.isNotEmpty)
               Padding(padding: const EdgeInsets.all(8), child: Text(_error!)),
