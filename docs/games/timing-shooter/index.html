@@ -1733,6 +1733,7 @@
 
     const bgmPreloads = new Map();
     const bgmBuffers = new Map();
+    const bgmDownloads = new Map();
     const audioCueBuffers = new Map();
     let bgmContext = null;
     let bgmGain = null;
@@ -1747,7 +1748,6 @@
     };
 
     function preloadBgm(src) {
-      if (window.AudioContext || window.webkitAudioContext) return;
       if (bgmPreloads.has(src)) return;
       const audio = new Audio(src);
       audio.preload = 'auto';
@@ -1787,10 +1787,8 @@
       }
     }
 
-    function loadBgmBuffer(src) {
-      if (bgmBuffers.has(src)) return bgmBuffers.get(src);
-      const context = ensureBgmContext();
-      if (!context) return Promise.resolve(null);
+    function downloadBgm(src) {
+      if (bgmDownloads.has(src)) return bgmDownloads.get(src);
       const promise = fetch(src)
         .then((response) => {
           if (!response.ok) {
@@ -1798,7 +1796,20 @@
           }
           return response.arrayBuffer();
         })
-        .then((arrayBuffer) => context.decodeAudioData(arrayBuffer))
+        .catch((error) => {
+          bgmDownloads.delete(src);
+          throw error;
+        });
+      bgmDownloads.set(src, promise);
+      return promise;
+    }
+
+    function loadBgmBuffer(src) {
+      if (bgmBuffers.has(src)) return bgmBuffers.get(src);
+      const context = ensureBgmContext();
+      if (!context) return Promise.reject(new Error('Web Audio is unavailable'));
+      const promise = downloadBgm(src)
+        .then((arrayBuffer) => context.decodeAudioData(arrayBuffer.slice(0)))
         .catch((error) => {
           bgmBuffers.delete(src);
           throw error;
@@ -1888,13 +1899,13 @@
     async function playBgmLoop(mode, src) {
       if (bgmMode === mode && activeBgmSources.length > 0) return true;
       preloadBgm(src);
-      await unlockBgm({ quiet: mode === 'title' });
-      if (!bgmUnlocked) return false;
       bgmMode = mode;
       bgmSequenceToken += 1;
       const token = bgmSequenceToken;
       stopWebBgmSources();
       try {
+        await unlockBgm({ quiet: mode === 'title' });
+        if (!bgmUnlocked || token !== bgmSequenceToken || bgmMode !== mode) return false;
         const buffer = await loadBgmBuffer(src);
         if (token !== bgmSequenceToken || bgmMode !== mode) return false;
         startWebBgmSource(buffer, { loop: true });
@@ -1910,13 +1921,13 @@
       if (bgmMode === mode && activeBgmSources.length > 0) return true;
       preloadBgm(introSrc);
       preloadBgm(loopSrc);
-      await unlockBgm();
-      if (!bgmUnlocked) return false;
       bgmMode = mode;
       bgmSequenceToken += 1;
       const token = bgmSequenceToken;
       stopWebBgmSources();
       try {
+        await unlockBgm();
+        if (!bgmUnlocked || token !== bgmSequenceToken || bgmMode !== mode) return false;
         const [introBuffer, loopBuffer] = await Promise.all([
           loadBgmBuffer(introSrc),
           loadBgmBuffer(loopSrc)
@@ -1951,7 +1962,7 @@
     }
 
     function ensureTitleBgm() {
-      if (gameStarted || titleScreen.classList.contains('hidden')) return;
+      if (gameStarted || transitionLocked || opening.active || titleScreen.classList.contains('hidden')) return;
       playBgmLoop('title', 'sound/title.mp3');
     }
 
@@ -2045,10 +2056,11 @@
       }
     }
 
-    function warmStageMusic() {
+    function warmStageMusic({ decode = true } = {}) {
+      const load = decode ? loadBgmBuffer : downloadBgm;
       Promise.all([
-        loadBgmBuffer('sound/stage1_1.mp3'),
-        loadBgmBuffer('sound/stage1_2.mp3')
+        load('sound/stage1_1.mp3'),
+        load('sound/stage1_2.mp3')
       ]).catch((error) => console.warn('[BGM] Stage preload failed:', error));
     }
 
@@ -3385,7 +3397,7 @@
     playBgmLoop('title', 'sound/title.mp3');
     window.setTimeout(() => {
       opening.prepare().catch((error) => console.warn('[Opening] Preload failed:', error));
-      warmStageMusic();
+      warmStageMusic({ decode: false });
     }, 0);
     window.addEventListener('load', ensureTitleBgm);
     document.addEventListener('visibilitychange', () => {
