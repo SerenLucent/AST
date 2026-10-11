@@ -1,7 +1,7 @@
 {
-  "versionCode": 30008,
-  "versionName": "3.0.8",
-  "apkFile": "AST-3.0.8.apk",
-  "message": "타이밍슈터 1인 플레이와 주간 랭킹 추가, 게임 일시정지 및 나가기 지원",
+  "versionCode": 30100,
+  "versionName": "3.1.0",
+  "apkFile": "AST-3.1.0.apk",
+  "message": "아스트 수령 및 코인 효과, AST 집 꾸미기 추가, 계정별 구매 복구 개선",
   "required": false
 }
