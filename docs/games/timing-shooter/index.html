@@ -2620,7 +2620,7 @@
       storedItems[index] = null;
       announceItem(item);
       if (item.id === 'medkit') {
-        hp = Math.min(100, hp + 20);
+        hp = Math.min(100, hp + ({ 1: 10, 2: 30, 3: 50 }[item.level] ?? 10));
         updateHp();
       } else {
         startTimedItem(item, item.level);
@@ -3248,7 +3248,7 @@
       const gaugeBonus = registerComboHit();
       showJudgement(text, colorText, target.x, judgementYFor(target));
       showDamage(damage, target.x, target.y + 3);
-      drainEnemyHp(target, keepAlive ? 100 / machineGunMaxShots : 100);
+      drainEnemyHp(target, 100);
       addScore(damage);
       addItemGaugeFor(text, gaugeBonus);
       sendJudgement(text, target);
