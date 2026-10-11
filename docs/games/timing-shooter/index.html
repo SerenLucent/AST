@@ -1554,7 +1554,7 @@
     window.TIMING_SHOOTER_CONFIG = window.TIMING_SHOOTER_CONFIG || {};
   </script>
   <script src="game_runtime.js"></script>
-  <script src="judgement_config.js?v=combat-pacing-6"></script>
+  <script src="judgement_config.js?v=dodge-speed-7"></script>
   <script src="opening_config.js"></script>
   <script src="opening.js?v=pause-2"></script>
   <script src="hall_config.js?v=stairs-delay-5"></script>
@@ -1608,6 +1608,9 @@
       if (!target.element.isConnected) return 0;
       showEnemyMuzzleFlash(target);
       playPooledEffect('sound/gun.mp3', 0.8);
+      if (['perfect', 'great', 'good'].includes(judgement)) {
+        playPooledEffect('sound/miss.mp3', 0.8);
+      }
       if (damage > 0 && !hasActiveItem('armor_vest')) {
         if (judgement === 'bad' || judgement === 'miss') shakeStage();
         damagePlayer(damage);
