@@ -46,6 +46,9 @@
     #stage:not(.game-running) #netStatus,
     #stage:not(.game-running) #itemGaugeHud,
     #stage:not(.game-running) #itemTray,
+    #stage:not(.game-running) #inventory,
+    #stage:not(.game-running) #activeEffects,
+    #stage:not(.game-running) #enemyCounter,
     #stage:not(.game-running) #pad {
       display: none;
     }
@@ -403,7 +406,7 @@
     .combo-popup {
       position: absolute;
       left: 50%;
-      top: 25%;
+      top: max(260px, 28%);
       z-index: 12;
       transform: translate(-50%, -50%);
       color: #ffd85a;
@@ -448,7 +451,7 @@
     .item-name-popup {
       position: absolute;
       left: 50%;
-      top: 17%;
+      top: max(300px, 33%);
       z-index: 13;
       transform: translate(-50%, -50%);
       font-size: clamp(18px, 4.9vw, 38px);
@@ -588,7 +591,7 @@
       left: 12px;
       top: 12px;
       z-index: 30;
-      width: min(310px, calc(100% - 88px));
+      width: min(310px, calc(100% - 100px));
       padding: 10px 12px 12px;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
@@ -614,7 +617,7 @@
 
     #scoreValue {
       color: #ffffff;
-      font-size: clamp(24px, 6vw, 38px);
+      font-size: 38px;
       font-weight: 900;
       line-height: 0.95;
       letter-spacing: 0;
@@ -718,6 +721,7 @@
     }
 
     #netStatus {
+      display: none;
       position: absolute;
       left: 10px;
       top: 94px;
@@ -747,6 +751,38 @@
       font-weight: 700;
       cursor: pointer;
     }
+
+    .player-label { color: #fff; font-size: 14px; font-weight: 900; margin-bottom: 3px; }
+    #enemyCounter {
+      position: absolute; top: 65px; right: 12px; z-index: 30;
+      display: flex; align-items: center; gap: 4px; pointer-events: none;
+    }
+    .enemy-face { position: relative; width: 30px; height: 36px; overflow: hidden; }
+    .enemy-face img { position: absolute; width: 96px; max-width: none; left: -24px; top: -2px; }
+    #enemiesRemaining { color: #fff; font-size: 30px; font-weight: 900; text-shadow: 0 2px 3px #000; }
+    #activeEffects {
+      position: absolute; left: 12px; top: 134px; width: min(310px, calc(100% - 100px));
+      z-index: 30; pointer-events: none;
+    }
+    #activeEffects .effect-row {
+      position: static; height: 30px; margin-bottom: 4px;
+      grid-template-columns: 30px minmax(0, 1fr) 36px;
+    }
+    #activeEffects .active-item-icon { width: 30px; height: 26px; }
+    #inventory {
+      position: absolute; left: 14px; bottom: 92px; z-index: 20;
+      width: min(252px, calc(100% - 170px)); display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;
+    }
+    .inventory-slot {
+      position: relative; height: 62px; min-width: 0; padding: 4px;
+      border: 1px solid #ffe0a0; border-radius: 8px;
+      background: linear-gradient(#ffdb9d, #d98e48); cursor: pointer;
+    }
+    .inventory-slot:disabled { background: #131a22b8; border-color: #ffffff50; cursor: default; }
+    .inventory-slot img { width: 100%; height: 100%; object-fit: contain; }
+    .inventory-slot span { position: absolute; right: 3px; bottom: 2px; font-size: 10px; font-weight: 900; color: #23150b; }
+    .inventory-slot:active:not(:disabled) { transform: translateY(3px); }
     #stage:not(.game-running) #exitGame,
     #exitGame[hidden], #exitConfirm[hidden] { display: none; }
     #exitConfirm {
@@ -1047,10 +1083,10 @@
     #itemTray {
       position: absolute;
       left: 14px;
-      bottom: 62px;
+      bottom: 170px;
       z-index: 20;
-      width: 166px;
-      height: 210px;
+      width: min(166px, calc(100% - 170px));
+      height: 172px;
       pointer-events: none;
     }
 
@@ -1068,8 +1104,8 @@
 
     .item-choice {
       position: absolute;
-      width: 78px;
-      height: 64px;
+      width: calc(50% - 4px);
+      height: 52px;
       border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 8px;
       background: linear-gradient(180deg, rgba(38, 45, 55, 0.88), rgba(13, 17, 23, 0.88));
@@ -1099,8 +1135,8 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      max-width: 72px;
-      max-height: 58px;
+      max-width: calc(100% - 6px);
+      max-height: 46px;
       transform: translate(-50%, -50%);
       filter: brightness(1.14) saturate(1.12) contrast(1.06) drop-shadow(0 2px 2px rgba(80, 35, 10, 0.38));
       pointer-events: none;
@@ -1145,12 +1181,12 @@
 
     .item-choice[data-slot="3"] {
       left: 0;
-      top: 72px;
+      top: 60px;
     }
 
     .item-choice[data-slot="4"] {
       right: 0;
-      top: 72px;
+      top: 60px;
     }
 
     .item-choice[data-slot="5"] {
@@ -1407,6 +1443,7 @@
     </section>
     <div id="judgement"></div>
     <section id="hud" aria-label="score and item gauge">
+      <div class="player-label">1P</div>
       <div class="score-row">
         <div class="hud-label">SCORE</div>
         <div id="scoreValue">0</div>
@@ -1418,8 +1455,10 @@
         <div id="hpText">HP 100</div>
       </div>
     </section>
-    <div id="netStatus"><span id="netLabel">LOCAL</span> / 적 <span id="enemiesRemaining">30</span></div>
+    <div id="netStatus" hidden><span id="netLabel">LOCAL</span></div>
+    <div id="activeEffects" aria-label="active items"></div>
     <button id="exitGame" type="button">나가기</button>
+    <div id="enemyCounter" aria-label="remaining enemies"><span class="enemy-face"><img src="sprites/enemies/mafia_gunman_aim_01.png" alt=""></span><span id="enemiesRemaining">30</span></div>
     <div id="exitConfirm" role="dialog" aria-modal="true" aria-labelledby="exitQuestion" hidden>
       <div class="exit-dialog">
         <h2 id="exitQuestion">포기하시겠습니까?</h2>
@@ -1436,6 +1475,11 @@
       </div>
     </div>
     <div id="gameOver" role="status" hidden>Game Over<button id="returnToTitle" class="return-to-title" type="button" hidden>TAP TO RETURN TO TITLE</button></div>
+    <div id="inventory" aria-label="stored items">
+      <button class="inventory-slot" type="button" disabled aria-label="empty item slot 1"></button>
+      <button class="inventory-slot" type="button" disabled aria-label="empty item slot 2"></button>
+      <button class="inventory-slot" type="button" disabled aria-label="empty item slot 3"></button>
+    </div>
     <div id="itemTray">
       <button class="item-choice" data-slot="1" type="button"></button>
       <button class="item-choice" data-slot="2" type="button"></button>
@@ -1539,6 +1583,8 @@
     const itemGaugePercent = document.getElementById('itemGaugePercent');
     const gaugeRewardButtons = [...document.querySelectorAll('.gauge-reward-button')];
     const effectGaugeRows = [...document.querySelectorAll('.effect-row')];
+    effectGaugeRows.forEach((row) => document.getElementById('activeEffects').appendChild(row));
+    const inventoryButtons = [...document.querySelectorAll('.inventory-slot')];
     const itemChoices = [...document.querySelectorAll('.item-choice')];
     const itemTray = document.getElementById('itemTray');
     const netStatus = document.getElementById('netStatus');
@@ -1640,6 +1686,7 @@
     let selectedRewardLevel = 1;
     let itemChoicesOpen = false;
     let activeItems = [];
+    const storedItems = [null, null, null];
     let currentItemChoices = [];
     let gameStarted = false;
     let stageEnemyTotal = 30;
@@ -2374,7 +2421,7 @@
 
       gaugeRewardButtons.forEach((button) => {
         const level = Number(button.dataset.level);
-        button.classList.toggle('visible', isItemGaugeReady(level) && !itemChoicesOpen);
+        button.classList.toggle('visible', isItemGaugeReady(level) && !itemChoicesOpen && storedItems.includes(null));
       });
       itemGaugeLevel.textContent = `${currentLevel}`;
       itemGaugePercent.textContent = `${totalPercent}%`;
@@ -2475,10 +2522,6 @@
         fill.style.width = `${percent}%`;
         text.textContent = `${Math.ceil(percent)}%`;
       });
-      const visibleEffectCount = activeEffectCount();
-      itemTray.classList.toggle('raised-1', itemChoicesOpen && visibleEffectCount === 1);
-      itemTray.classList.toggle('raised-2', itemChoicesOpen && visibleEffectCount === 2);
-      itemTray.classList.toggle('raised-3', itemChoicesOpen && visibleEffectCount >= 3);
     }
 
     function applyTimedItemStartEffect(item) {
@@ -2497,8 +2540,7 @@
       }
     }
 
-    function startTimedItem(item) {
-      const level = rewardLevel();
+    function startTimedItem(item, level = rewardLevel()) {
       const durationMs = itemDurationByRewardLevel[level];
       const now = gameRuntime.now();
       const nextItem = {
@@ -2525,7 +2567,6 @@
       sortActiveItems();
 
       applyTimedItemStartEffect(nextItem);
-      spendItemGauge(level);
       renderActiveItems();
     }
 
@@ -2552,16 +2593,39 @@
     }
 
     function selectItem(item) {
-      setItemChoicesOpen(false);
+      if (!gameStarted || stageEnded || gameRuntime.paused || !itemChoicesOpen) return;
+      const slot = storedItems.indexOf(null);
       const level = rewardLevel();
+      if (slot < 0 || !isItemGaugeReady(level)) return;
+      storedItems[slot] = { ...item, level };
+      setItemChoicesOpen(false);
+      spendItemGauge(level);
+      renderInventory();
+    }
+
+    function renderInventory() {
+      inventoryButtons.forEach((button, index) => {
+        const item = storedItems[index];
+        button.disabled = !item || stageEnded;
+        button.innerHTML = item ? `<img src="${item.icon}" alt=""><span>Lv.${item.level}</span>` : '';
+        button.setAttribute('aria-label', item ? `Use ${item.name}, level ${item.level}` : `empty item slot ${index + 1}`);
+      });
+      updateItemGauge();
+    }
+
+    function useStoredItem(index) {
+      if (!gameStarted || stageEnded || floorTransition || gameRuntime.paused) return;
+      const item = storedItems[index];
+      if (!item) return;
+      storedItems[index] = null;
       announceItem(item);
       if (item.id === 'medkit') {
         hp = Math.min(100, hp + 20);
         updateHp();
-        spendItemGauge(level);
-        return;
+      } else {
+        startTimedItem(item, item.level);
       }
-      startTimedItem(item);
+      renderInventory();
     }
 
     function spendItemGauge(level) {
@@ -2739,6 +2803,7 @@
       });
       gaugeRewardButtons.forEach((button) => { button.disabled = true; });
       itemChoices.forEach((button) => { button.disabled = true; });
+      inventoryButtons.forEach((button) => { button.disabled = true; });
       stage.classList.remove('shake');
       document.getElementById('exitGame').hidden = true;
     }
@@ -3398,10 +3463,10 @@
     gaugeRewardButtons.forEach((button) => {
       button.addEventListener('pointerdown', (event) => {
         event.preventDefault();
-        if (!gameStarted) return;
+        if (!gameStarted || stageEnded || gameRuntime.paused) return;
         resumeBgm();
         const level = Number(button.dataset.level);
-        if (!isItemGaugeReady(level) || itemChoicesOpen) return;
+        if (!isItemGaugeReady(level) || itemChoicesOpen || !storedItems.includes(null)) return;
         selectedRewardLevel = level;
         openItemChoices();
       });
@@ -3415,6 +3480,15 @@
         const item = itemDefs.find((entry) => entry.id === button.dataset.itemId);
         if (!item) return;
         selectItem(item);
+      });
+    });
+
+    inventoryButtons.forEach((button, index) => {
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        if (gameRuntime.paused) return;
+        resumeBgm();
+        useStoredItem(index);
       });
     });
 
