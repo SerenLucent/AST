@@ -17,6 +17,11 @@
 .tutorial-copy strong { display: block; color: #ffe168; font-size: 17px; margin-bottom: 6px; }
 .tutorial-copy p { margin: 0 0 8px; }
 .tutorial-instruction { color: #ffe168; font-weight: 800; }
+.tutorial-color { font-weight: 900; }
+.tutorial-color[data-color="b"] { color: #69a8ff; }
+.tutorial-color[data-color="y"] { color: #ffd629; }
+.tutorial-color[data-color="r"] { color: #ff6b68; }
+.tutorial-color[data-color="g"] { color: #72ff98; }
 .tutorial-enemy { position: absolute; left: 50%; bottom: 24%; height: 26%; transform: translateX(-50%); }
 .tutorial-enemy-body { height: 100%; width: auto; display: block; }
 .tutorial-reticle { position: absolute; left: 43%; top: 27%; }

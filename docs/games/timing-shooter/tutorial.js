@@ -64,9 +64,21 @@ class TutorialSequence {
     this.stage.querySelectorAll('.tutorial-cue').forEach(button => button.classList.remove('tutorial-cue'));
   }
 
+  setText(element, text) {
+    const colors = { '파란색': 'b', '노란색': 'y', '붉은색': 'r', '빨간색': 'r', '녹색': 'g' };
+    element.replaceChildren(...text.split(/(파란색|노란색|붉은색|빨간색|녹색)/).map(word => {
+      if (!colors[word]) return document.createTextNode(word);
+      const span = document.createElement('span');
+      span.className = 'tutorial-color';
+      span.dataset.color = colors[word];
+      span.textContent = word;
+      return span;
+    }));
+  }
+
   cue() {
     this.phase = 'waiting';
-    this.instruction.textContent = `지금! ${this.names[this.color]} 버튼을 눌러보세요.`;
+    this.setText(this.instruction, `지금! ${this.names[this.color]} 버튼을 눌러보세요.`);
     this.stage.querySelector(`.pad-button[data-color="${this.color}"]`).classList.add('tutorial-cue');
   }
 
@@ -103,9 +115,9 @@ class TutorialSequence {
     this.dodge.clear();
     const shooting = this.index < 4;
     this.heading.textContent = `${shooting ? '사격' : '회피'} 연습 ${this.index % 4 + 1} / 4`;
-    this.copy.textContent = shooting
+    this.setText(this.copy, shooting
       ? `${this.hints[this.color]} 큰 원이 줄어들어 작은 원과 겹치면 같은 색 버튼으로 쏴요.`
-      : `${this.hints[this.color]} 안쪽 사각형이 커져 바깥 사각형과 겹치면 같은 색 버튼으로 피해요.`;
+      : `${this.hints[this.color]} 안쪽 사각형이 커져 바깥 사각형과 겹치면 같은 색 버튼으로 피해요.`);
     this.instruction.textContent = '정확히 겹치면 멈춰줄게요. 먼저 모양을 지켜보세요.';
     if (shooting) {
       this.setReticle(this.color);
@@ -133,7 +145,7 @@ class TutorialSequence {
     }
     if (this.phase !== 'waiting') return true;
     if (color !== this.color) {
-      this.instruction.textContent = `${this.names[this.color]} 버튼이에요. 반짝이는 버튼을 눌러보세요!`;
+      this.setText(this.instruction, `${this.names[this.color]} 버튼이에요. 반짝이는 버튼을 눌러보세요!`);
       return true;
     }
     this.phase = 'feedback';
