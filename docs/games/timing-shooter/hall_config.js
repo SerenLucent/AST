@@ -6,6 +6,7 @@
       stairsMale: 'backgrounds/cutscenes/stairs_left_male_v1.png',
       stairsFemale: 'backgrounds/cutscenes/stairs_right_female_v1.png',
       enemyTotal: 20,
+      transitionDelayMs: 3000,
       loadingHoldMs: 2000,
       camera: 1,
       riseMs: 420,

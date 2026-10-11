@@ -1513,7 +1513,7 @@
   <script src="judgement_config.js?v=combat-pacing-6"></script>
   <script src="opening_config.js"></script>
   <script src="opening.js?v=pause-2"></script>
-  <script src="hall_config.js?v=fountain-rise-4"></script>
+  <script src="hall_config.js?v=stairs-delay-5"></script>
   <script src="hall.js?v=game-over-3"></script>
   <script src="dodge.js?v=pause-7"></script>
   <script src="ast_integration.js"></script>
@@ -2773,6 +2773,7 @@
       clearActiveTargets();
       setItemChoicesOpen(false);
       const config = window.TIMING_SHOOTER_HALL.upperFloor;
+      await waitMs(config.transitionDelayMs ?? 3000);
       const screen = document.getElementById('floorLoading');
       const image = document.getElementById('floorLoadingImage');
       document.getElementById('floorLoadingCaption').textContent = 'HOLD YOUR FIRE';
