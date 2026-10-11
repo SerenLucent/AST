@@ -1409,6 +1409,7 @@
     }
   </style>
   <link rel="stylesheet" href="opening.css?v=open-fire-2">
+  <link rel="stylesheet" href="tutorial.css?v=lesson-1">
   <link rel="stylesheet" href="hall.css?v=game-over-5">
   <link rel="stylesheet" href="dodge.css?v=thick-flash-7">
 </head>
@@ -1560,6 +1561,7 @@
   <script src="hall_config.js?v=upper-spawn-6"></script>
   <script src="hall.js?v=game-over-3"></script>
   <script src="dodge.js?v=pause-7"></script>
+  <script src="tutorial.js?v=lesson-1"></script>
   <script src="ast_integration.js"></script>
   <script>
     const stage = document.getElementById('stage');
@@ -1619,6 +1621,7 @@
       target.counterResolved = true;
       return hasActiveItem('armor_vest') ? 0 : damage;
     }, scheduleCounterRetries);
+    const tutorial = new TutorialSequence(stage, window.TIMING_SHOOTER_CONFIG.dodge, (src) => playPooledEffect(src, 0.8));
 
     const colors = {
       y: { target: 'target_y.png', perfect: 'perfect_target_y.png', circle: 'circle_y.png', judge: 'judge_y.png' },
@@ -2129,7 +2132,7 @@
       showLoading('Now Loading...');
       stopBgm();
       const unlockDone = unlockBgm();
-      const assetsReady = Promise.all([opening.prepare(), warmStageMusic(), waitMs(350)]);
+      const assetsReady = Promise.all([opening.prepare(), prepareCombatAssets(), warmStageMusic(), waitMs(350)]);
       const fadeDone = runFadeTransition({
         fadeOutMs: 500,
         fadeInMs: 400,
@@ -2138,22 +2141,24 @@
           titleScreen.classList.add('hidden');
           modeScreen.classList.add('hidden');
           hideLoading();
-          opening.play({
-            mode: selectedMode,
-            onBreach: () => prepareCombatAssets().catch((error) => console.warn('[Stage] Preload failed:', error)),
-            onShot: () => {
-              playOneShot(gunSound);
-              playBgmSequence('stage1', 'sound/stage1_1.mp3', 'sound/stage1_2.mp3');
-            },
-            onComplete: enterStageAfterOpening
-          }).catch((error) => {
-            console.error('[Opening] Scene failed:', error);
-            enterStageAfterOpening();
-          });
+          tutorial.start();
         }
       });
       try {
         await Promise.all([unlockDone, fadeDone]);
+        await tutorial.done;
+        opening.play({
+          mode: selectedMode,
+          onBreach: () => prepareCombatAssets().catch((error) => console.warn('[Stage] Preload failed:', error)),
+          onShot: () => {
+            playOneShot(gunSound);
+            playBgmSequence('stage1', 'sound/stage1_1.mp3', 'sound/stage1_2.mp3');
+          },
+          onComplete: enterStageAfterOpening
+        }).catch((error) => {
+          console.error('[Opening] Scene failed:', error);
+          enterStageAfterOpening();
+        });
       } catch (error) {
         console.error('[Opening] Could not load scene:', error);
         screenFade.classList.remove('visible');
@@ -3325,6 +3330,7 @@
 
     function judgePressed(color) {
       if (stageEnded || gameRuntime.paused) return;
+      if (tutorial.press(color)) return;
       if (opening.active) {
         opening.shoot(color);
         return;
@@ -3435,7 +3441,7 @@
       button.addEventListener('pointerdown', (event) => {
         event.preventDefault();
         if (gameRuntime.paused) return;
-        if (!gameStarted && !opening.canShoot) return;
+        if (!gameStarted && !opening.canShoot && !tutorial.active) return;
         resumeBgm();
         updateButtonPress(button);
         judgePressed(button.dataset.color);
@@ -3526,7 +3532,7 @@
         return;
       }
       if (!color) return;
-      if (!gameStarted && !opening.canShoot) return;
+      if (!gameStarted && !opening.canShoot && !tutorial.active) return;
       event.preventDefault();
       resumeBgm();
       const button = buttons.find((item) => item.dataset.color === color);

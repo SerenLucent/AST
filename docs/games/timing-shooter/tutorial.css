@@ -1,0 +1,31 @@
+#stage.tutorial-running .hall-world { display: block; }
+#stage.tutorial-running::before { background: none; }
+#stage.tutorial-running #pad { display: block; }
+.tutorial-layer { position: absolute; inset: 0; z-index: 10; display: none; pointer-events: none; }
+.tutorial-layer.visible { display: block; }
+.tutorial-heading { position: absolute; top: 28px; left: 16px; color: #ffe168; font-size: 20px; font-weight: 900; }
+.tutorial-skip {
+  position: absolute; top: 12px; right: 12px; width: 196px; height: 56px;
+  border: 2px solid #ffe168; border-radius: 6px; background: #111820f2;
+  color: #fff; font-size: 16px; font-weight: 800; pointer-events: auto; cursor: pointer;
+}
+.tutorial-copy {
+  position: absolute; left: 16px; right: 16px; top: 86px; min-height: 144px;
+  padding: 14px; background: #0c1119ed; border: 1px solid #ffffff40; border-radius: 6px;
+  color: #fff; line-height: 1.5; font-size: 15px;
+}
+.tutorial-copy strong { display: block; color: #ffe168; font-size: 17px; margin-bottom: 6px; }
+.tutorial-copy p { margin: 0 0 8px; }
+.tutorial-instruction { color: #ffe168; font-weight: 800; }
+.tutorial-enemy { position: absolute; left: 50%; bottom: 24%; height: 26%; transform: translateX(-50%); }
+.tutorial-enemy-body { height: 100%; width: auto; display: block; }
+.tutorial-reticle { position: absolute; left: 43%; top: 27%; }
+.tutorial-reticle img { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); }
+.tutorial-target { width: 36px; height: 36px; }
+.tutorial-perfect { width: 52px; height: 52px; }
+.tutorial-ring { width: 120px; height: 120px; }
+.tutorial-result { position: absolute; top: 40%; left: 0; width: 100%; text-align: center; color: #ffe168; font-size: 30px; font-weight: 900; text-shadow: 0 2px 4px #000; }
+#stage.tutorial-running .dodge-result { top: 40%; }
+#stage.tutorial-running .dodge-ammo { top: 32%; }
+.pad-button.tutorial-cue { outline: 3px solid #fff; outline-offset: 3px; animation: tutorial-button-pulse 650ms ease-in-out infinite; }
+@keyframes tutorial-button-pulse { 50% { outline-color: #ffe168; filter: drop-shadow(0 0 14px #fff); } }
