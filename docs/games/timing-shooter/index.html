@@ -2943,6 +2943,7 @@
 
       const finishedTarget = target;
       finishedTarget.judged = true;
+      drainEnemyHp(finishedTarget, 100);
       nextWaveReadyAt = gameRuntime.now() + randomBetween(config.respawnDelayMs?.min ?? 2000, config.respawnDelayMs?.max ?? 3000);
       defeatedEnemies = Math.min(stageEnemyTotal, defeatedEnemies + 1);
       enemiesRemaining.textContent = String(stageEnemyTotal - defeatedEnemies);
@@ -3247,7 +3248,7 @@
       const gaugeBonus = registerComboHit();
       showJudgement(text, colorText, target.x, judgementYFor(target));
       showDamage(damage, target.x, target.y + 3);
-      drainEnemyHp(target, keepAlive ? 18 : 100);
+      drainEnemyHp(target, keepAlive ? 100 / machineGunMaxShots : 100);
       addScore(damage);
       addItemGaugeFor(text, gaugeBonus);
       sendJudgement(text, target);
@@ -3299,7 +3300,7 @@
       const damage = damageForJudgement(state.result.text);
       showDamage(damage, target.x, target.y + 3);
       addScore(state.lastScore);
-      drainEnemyHp(target, 12);
+      drainEnemyHp(target, 100 / machineGunMaxShots);
       setEnemySprite(target, state.result.text === 'Bad' ? enemySprites.graze : enemySprites.hit, true);
       gameRuntime.setTimeout(() => {
         if (target.element.isConnected && !target.judged) {
