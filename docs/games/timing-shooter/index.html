@@ -2781,6 +2781,7 @@
       target.judged = false;
       target.countering = false;
       target.counterResolved = false;
+      if (hasActiveItem('magnum')) setTargetColor(target, 'r');
       target.machineGunHit = false;
       target.machineGunState = null;
       target.visualHp = 100;
@@ -3260,15 +3261,19 @@
       return { text: 'Miss', colorText: '#ff3434' };
     }
 
+    function setTargetColor(target, color) {
+      const sprite = colors[color];
+      target.color = color;
+      target.target.src = `sprites/${sprite.target}`;
+      target.perfect.src = `sprites/${sprite.perfect}`;
+      target.circle.src = `sprites/${sprite.circle}`;
+      target.judge.src = `sprites/${sprite.judge}`;
+    }
+
     function applyMagnumToActiveTargets() {
       activeTargets.forEach((target) => {
-        if (target.judged || target.color === 'r') return;
-        const sprite = colors.r;
-        target.color = 'r';
-        target.target.src = `sprites/${sprite.target}`;
-        target.perfect.src = `sprites/${sprite.perfect}`;
-        target.circle.src = `sprites/${sprite.circle}`;
-        target.judge.src = `sprites/${sprite.judge}`;
+        if ((target.judged && !target.countering) || target.color === 'r') return;
+        setTargetColor(target, 'r');
       });
     }
 
