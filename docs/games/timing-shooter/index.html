@@ -1561,6 +1561,7 @@
     const dodge = new DodgeSequence(stage, window.TIMING_SHOOTER_CONFIG.dodge, (target, damage, judgement) => {
       if (!target.element.isConnected) return 0;
       showEnemyMuzzleFlash(target);
+      playPooledEffect('sound/gun.mp3', 0.8);
       if (damage > 0 && !hasActiveItem('armor_vest')) {
         if (judgement === 'bad' || judgement === 'miss') shakeStage();
         damagePlayer(damage);
