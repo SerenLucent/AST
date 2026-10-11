@@ -13,7 +13,7 @@
       slots: [
         { id: 'upper_small_door', worldX: 0.665, footY: 0.29, heightRatio: 0.105 },
         { id: 'upper_fountain_back', worldX: 0.575, footY: 0.50, heightRatio: 0.14 },
-        { id: 'upper_stairs_front', worldX: 0.863, footY: 0.465, heightRatio: 0.145 }
+        { id: 'upper_stairs_front', worldX: 0.927, footY: 0.425, heightRatio: 0.14 }
       ],
       occluders: [
         { id: 'upper_fountain', polygon: '49% 35%, 51% 35%, 53% 39%, 56% 41%, 58% 43%, 64% 46%, 67% 51%, 67% 59%, 63% 64%, 55% 66%, 45% 66%, 37% 64%, 33% 59%, 33% 51%, 36% 46%, 42% 43%, 44% 41%, 47% 39%' }
@@ -41,6 +41,10 @@
       { id: 'balcony', polygon: '27% 27%, 73% 27%, 73% 34%, 27% 34%' }
     ]
   };
+  config.upperFloor.camera2p = 0;
+  config.upperFloor.slots2p = config.upperFloor.slots.map((slot) => ({
+    ...slot, id: `${slot.id}_2p`, worldX: 1 - slot.worldX
+  }));
   if (typeof module !== 'undefined' && module.exports) module.exports = config;
   else root.TIMING_SHOOTER_HALL = config;
 })(typeof window !== 'undefined' ? window : globalThis);

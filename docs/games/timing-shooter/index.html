@@ -1557,7 +1557,7 @@
   <script src="judgement_config.js?v=dodge-speed-7"></script>
   <script src="opening_config.js"></script>
   <script src="opening.js?v=pause-2"></script>
-  <script src="hall_config.js?v=stairs-delay-5"></script>
+  <script src="hall_config.js?v=upper-spawn-6"></script>
   <script src="hall.js?v=game-over-3"></script>
   <script src="dodge.js?v=pause-7"></script>
   <script src="ast_integration.js"></script>
@@ -3129,8 +3129,9 @@
 
       if (wave) {
         activeWaveId = wave.waveId;
+        const upperSlots = currentFloor === 2 ? shuffleItems(spawnSlots) : [];
         wave.targets.slice(0, stageEnemyTotal - defeatedEnemies).forEach((target, index) => {
-          makeTarget(target.color, currentFloor === 2 ? spawnSlots[index % spawnSlots.length] : slotById(target.slotId), {
+          makeTarget(target.color, currentFloor === 2 ? upperSlots[index % upperSlots.length] : slotById(target.slotId), {
             id: target.id,
             duration: target.duration,
             startAt: wave.startAt
