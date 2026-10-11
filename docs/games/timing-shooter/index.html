@@ -1621,6 +1621,7 @@
 
     let activeTargets = [];
     let nextSpawnTimer = 0;
+    let nextWaveReadyAt = 0;
     let bgmMode = '';
     let bgmSequenceToken = 0;
     let audioStatusTimer = 0;
@@ -2489,7 +2490,7 @@
           const elapsed = Math.max(0, now - target.startTime);
           const progress = Math.min(elapsed / target.duration, 0.72);
           target.duration = randomBetween(4000, 5000);
-          target.startTime = now - (target.duration * progress);
+          if (now >= target.startTime) target.startTime = now - (target.duration * progress);
           target.perfectTime = target.startTime + (target.duration * perfectProgress);
         });
       }
@@ -2701,6 +2702,7 @@
       const shotDelay = judgementHoldMs + 120 + missCounterDelayAfterTextMs;
       target.counterReadyAt = gameRuntime.now() + shotDelay;
       startDodgeTurnWhenReady();
+
     }
 
     function startDodgeTurnWhenReady() {
@@ -2793,6 +2795,7 @@
         currentFloor = 2;
         stageEnemyTotal = config.enemyTotal;
         defeatedEnemies = 0;
+        nextWaveReadyAt = 0;
         enemiesRemaining.textContent = String(stageEnemyTotal);
         activeItems.forEach((item) => { item.endsAt += gameRuntime.now() - startedAt; });
         floorTransition = false;
@@ -2868,11 +2871,12 @@
       });
     });
 
-    function finishTarget(target, spawnDelay = 260, reaction = 'hit') {
+    function finishTarget(target, reaction = 'hit') {
       if (stageEnded || floorTransition || !target || target.judged || !target.element.isConnected) return;
 
       const finishedTarget = target;
       finishedTarget.judged = true;
+      nextWaveReadyAt = gameRuntime.now() + randomBetween(config.respawnDelayMs?.min ?? 2000, config.respawnDelayMs?.max ?? 3000);
       defeatedEnemies = Math.min(stageEnemyTotal, defeatedEnemies + 1);
       enemiesRemaining.textContent = String(stageEnemyTotal - defeatedEnemies);
       if (defeatedEnemies === stageEnemyTotal) {
@@ -2887,26 +2891,22 @@
         setEnemySprite(finishedTarget, enemySprites[reaction] ?? enemySprites.hit, reaction === 'hit' || reaction === 'graze');
       }
       startDodgeTurnWhenReady();
+      if (serverMode && !hasActiveOrCounteringTargets()) {
+        sendSocket({ type: 'waveCleared', waveId: activeWaveId });
+      }
 
       gameRuntime.setTimeout(() => {
         if (finishedTarget.element.isConnected) {
           finishedTarget.element.remove();
         }
         activeTargets = activeTargets.filter((item) => item !== finishedTarget);
-        if (!stageEnded && !hasActiveOrCounteringTargets()) {
-          if (serverMode) {
-            sendSocket({
-              type: 'waveCleared',
-              waveId: activeWaveId
-            });
-          } else {
-            scheduleSpawn(spawnDelay);
-          }
+        if (!stageEnded && !serverMode && !hasActiveOrCounteringTargets()) {
+          scheduleSpawn(Math.max(0, nextWaveReadyAt - gameRuntime.now()));
         }
       }, judgementHoldMs);
     }
 
-    function scheduleSpawn(delay = 520) {
+    function scheduleSpawn(delay = randomBetween(config.respawnDelayMs?.min ?? 2000, config.respawnDelayMs?.max ?? 3000)) {
       if (stageEnded || floorTransition) return;
       gameRuntime.clearTimeout(nextSpawnTimer);
       nextSpawnTimer = gameRuntime.setTimeout(spawnWave, delay);
@@ -2979,7 +2979,7 @@
 
       const now = gameRuntime.now();
       const riseMs = slot.rise ? hall.config.riseMs : 0;
-      const startTime = (options.startAt ? Math.max(now, now + (options.startAt - Date.now())) : now) + riseMs;
+      const startTime = (options.startAt ? Math.max(now, now + (options.startAt - Date.now())) : now) + (config.targetRevealDelayMs ?? 700);
       if (riseMs) {
         enemyMotion.animate([
           { transform: `translateY(${enemyHeight * 0.5}px)`, opacity: 0 },
@@ -3011,6 +3011,7 @@
         duration,
         perfectTime: 0,
         judged: false,
+        aimingPending: true,
         countering: false,
         machineGunHit: false,
         machineGunState: null,
@@ -3018,6 +3019,7 @@
       };
       newTarget.perfectTime = newTarget.startTime + (newTarget.duration * perfectProgress);
       activeTargets.push(newTarget);
+      setTargetAimingVisible(newTarget, false);
       positionHallTarget(newTarget);
     }
 
@@ -3046,6 +3048,11 @@
 
     function spawnWave(wave = null) {
       if (stageEnded || floorTransition) return;
+      if (gameRuntime.now() < nextWaveReadyAt) {
+        gameRuntime.clearTimeout(nextSpawnTimer);
+        nextSpawnTimer = gameRuntime.setTimeout(() => spawnWave(wave), nextWaveReadyAt - gameRuntime.now());
+        return;
+      }
       clearActiveTargets();
 
       if (wave) {
@@ -3105,13 +3112,13 @@
         return color === 'r' ? mostUrgentTarget() : null;
       }
       return activeTargets
-        .filter((target) => target.color === color && !target.judged)
+        .filter((target) => target.color === color && !target.judged && gameRuntime.now() >= target.startTime)
         .sort((a, b) => a.perfectTime - b.perfectTime)[0] || null;
     }
 
     function mostUrgentTarget() {
       return activeTargets
-        .filter((target) => !target.judged)
+        .filter((target) => !target.judged && gameRuntime.now() >= target.startTime)
         .sort((a, b) => a.perfectTime - b.perfectTime)[0] || null;
     }
 
@@ -3189,7 +3196,7 @@
         return damage;
       }
 
-      finishTarget(target, 260, text === 'Bad' ? 'graze' : 'hit');
+      finishTarget(target, text === 'Bad' ? 'graze' : 'hit');
     }
 
     function startMachineGunRoute(target, result, firstScore) {
@@ -3207,7 +3214,7 @@
       setMachinePromptVisible(target, false);
       gameRuntime.setTimeout(() => {
         if (target.element.isConnected && !target.judged && target.machineGunState) {
-          finishTarget(target, 260, 'hit');
+          finishTarget(target, 'hit');
         }
       }, machineGunHoldMs);
     }
@@ -3233,7 +3240,7 @@
         }
       }, 90);
       if (state.shotsFired === machineGunMaxShots) {
-        finishTarget(target, 260, 'hit');
+        finishTarget(target, 'hit');
       }
     }
 
@@ -3257,6 +3264,7 @@
       if (!hasUnjudgedTargets()) {
         return;
       }
+      if (!mostUrgentTarget()) return;
 
       const target = targetForColor(color);
       if (!target) {
@@ -3308,11 +3316,16 @@
       dodge.update(gameRuntime.now());
       activeTargets.forEach((target) => {
         if (target.judged) return;
+        if (gameRuntime.now() < target.startTime) return;
+        if (target.aimingPending) {
+          target.aimingPending = false;
+          setTargetAimingVisible(target, true);
+        }
 
         if (target.machineGunState) {
           const now = gameRuntime.now();
           if (now >= target.machineGunState.endsAt) {
-            finishTarget(target, 260, 'hit');
+            finishTarget(target, 'hit');
             return;
           }
           setMachinePromptVisible(target, now - target.machineGunState.lastInputAt >= machineGunPromptIdleMs);
@@ -3336,7 +3349,7 @@
 
         if (expiredByMachineGun || expiredNormally) {
           if (expiredByMachineGun && target.machineGunHit) {
-            finishTarget(target, 260, 'hit');
+            finishTarget(target, 'hit');
           } else {
             applyHitResult(target, { text: 'Miss', colorText: '#ff3434' });
           }
@@ -3493,7 +3506,7 @@
         serverMode = false;
         setNetStatus('LOCAL');
         if (!hasActiveOrCounteringTargets()) {
-          runAfterFirstWaveDelay(() => scheduleSpawn(600));
+          runAfterFirstWaveDelay(() => scheduleSpawn());
         }
       });
 

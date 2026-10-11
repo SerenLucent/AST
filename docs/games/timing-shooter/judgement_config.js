@@ -4,6 +4,8 @@ window.TIMING_SHOOTER_CONFIG = {
     max: 5000
   },
   waveTargets: 2,
+  targetRevealDelayMs: 700,
+  respawnDelayMs: { min: 2000, max: 3000 },
   judgementMs: {
     perfect: 80,
     great: 180,
@@ -23,10 +25,10 @@ window.TIMING_SHOOTER_CONFIG = {
   },
   autoMissMs: 440,
   dodge: {
-    durationMs: { min: 1600, max: 2800 },
+    durationMs: { min: 1600, max: 3200 },
     judgementMs: { perfect: 120, great: 260, good: 400, bad: 560 },
     damage: { perfect: 0, great: 0, good: 2, bad: 5, miss: 10 },
-    startMarginPx: 48,
+    startMarginPx: 88,
     marginPx: 8,
     resultHoldMs: 500
   },
