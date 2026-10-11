@@ -3297,8 +3297,7 @@
       setMachinePromptVisible(target, false);
       playJudgementSound(state.result.text);
       showBulletEffect(target.x, target.y);
-      const damage = damageForJudgement(state.result.text);
-      showDamage(damage, target.x, target.y + 3);
+      showDamage(state.lastScore, target.x, target.y + 3);
       addScore(state.lastScore);
       drainEnemyHp(target, 100 / machineGunMaxShots);
       setEnemySprite(target, state.result.text === 'Bad' ? enemySprites.graze : enemySprites.hit, true);
