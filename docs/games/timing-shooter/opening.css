@@ -104,6 +104,10 @@
   z-index: 3;
 }
 
+.opening-ready .opening-caption {
+  font-size: 40px;
+}
+
 .opening-caption.game-start {
   top: 38%;
   font-size: 34px;
