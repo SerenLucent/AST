@@ -1,8 +1,8 @@
-name: Timing Shooter Pages
+name: AST Games Pages
 on:
   push:
     branches: [main]
-    paths: ['docs/games/timing-shooter/**', '.github/workflows/timing-shooter-pages.yml']
+    paths: ['docs/games/**', '.github/workflows/timing-shooter-pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
