@@ -109,6 +109,31 @@
 
     #loadingScreen[hidden] { display: none; }
 
+    #floorLoading {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      background: #000;
+    }
+    #floorLoading[hidden] { display: none; }
+    #floorLoading img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 30% center;
+    }
+    #floorLoadingCaption {
+      position: absolute;
+      top: 15%;
+      width: 100%;
+      padding: 0 12px;
+      color: #ffe28b;
+      font-size: 24px;
+      font-weight: 900;
+      text-align: center;
+      text-shadow: 0 2px 4px #000;
+    }
+
     #titleScreen {
       align-items: center;
       justify-content: flex-start;
@@ -1354,6 +1379,10 @@
 <body>
   <main id="stage">
     <div id="loadingScreen" role="status" aria-live="polite">게임을 실행중입니다</div>
+    <section id="floorLoading" aria-label="Ascending stairs" hidden>
+      <img id="floorLoadingImage" alt="Police officer ascending the stairs">
+      <div id="floorLoadingCaption">HOLD YOUR FIRE</div>
+    </section>
     <section id="titleScreen" class="front-screen hidden" aria-label="title screen">
       <div class="tap-to-start">TAP TO START</div>
     </section>
@@ -1523,7 +1552,7 @@
     const missSound = document.getElementById('missSound');
     const config = window.TIMING_SHOOTER_CONFIG;
     const opening = new OpeningSequence(stage, window.TIMING_SHOOTER_OPENING);
-    const hall = new HallScene(stage, window.TIMING_SHOOTER_HALL);
+    let hall = new HallScene(stage, window.TIMING_SHOOTER_HALL);
     hall.onCameraChange = () => activeTargets.forEach(positionHallTarget);
     let counterRetryTimer = null;
     let dodgeTurnTimer = null;
@@ -1551,7 +1580,7 @@
       graze: 'sprites/enemies/mafia_gunman_graze_01.png'
     };
 
-    const spawnSlots = window.TIMING_SHOOTER_HALL.slots;
+    let spawnSlots = window.TIMING_SHOOTER_HALL.slots;
 
     const targetSize = 36;
     const perfectSize = 52;
@@ -1609,7 +1638,9 @@
     let activeItems = [];
     let currentItemChoices = [];
     let gameStarted = false;
-    const stageEnemyTotal = 30;
+    let stageEnemyTotal = 30;
+    let currentFloor = 1;
+    let floorTransition = false;
     let defeatedEnemies = 0;
     let stageCleared = false;
     let stageEnded = false;
@@ -2510,9 +2541,9 @@
     }
 
     function runAfterFirstWaveDelay(callback) {
-      if (stageEnded) return;
+      if (stageEnded || floorTransition) return;
       const remainingMs = Math.max(0, firstWaveReadyAt - gameRuntime.now());
-      gameRuntime.setTimeout(() => { if (!stageEnded) callback(); }, remainingMs);
+      gameRuntime.setTimeout(() => { if (!stageEnded && !floorTransition) callback(); }, remainingMs);
     }
 
     function selectItem(item) {
@@ -2708,10 +2739,67 @@
 
     function completeStage() {
       if (stageEnded) return;
+      if (currentFloor === 1) {
+        enterUpperFloor().catch((error) => {
+          console.error('[Upper floor] Could not prepare scene:', error);
+          document.getElementById('floorLoadingCaption').textContent = 'LOADING FAILED · TAP TO RETRY';
+          document.getElementById('floorLoading').addEventListener('pointerdown', () => {
+            floorTransition = false;
+            completeStage();
+          }, { once: true });
+        });
+        return;
+      }
       stageCleared = true;
       stopCombat();
       stageClearScreen.hidden = false;
       animateClearResults();
+    }
+
+    async function enterUpperFloor() {
+      if (floorTransition || stageEnded) return;
+      floorTransition = true;
+      const startedAt = gameRuntime.now();
+      const clearedWave = activeWaveId;
+      gameStarted = false;
+      gameRuntime.clearTimeout(nextSpawnTimer);
+      gameRuntime.clearTimeout(localFallbackTimer);
+      clearActiveTargets();
+      setItemChoicesOpen(false);
+      const config = window.TIMING_SHOOTER_HALL.upperFloor;
+      const screen = document.getElementById('floorLoading');
+      const image = document.getElementById('floorLoadingImage');
+      document.getElementById('floorLoadingCaption').textContent = 'HOLD YOUR FIRE';
+      image.src = config.stairsMale;
+      screen.hidden = false;
+      await image.decode();
+      stage.classList.remove('game-running');
+      const nextHall = new HallScene(stage, config);
+      try {
+        await Promise.all([nextHall.prepare(), waitMs(config.loadingHoldMs)]);
+      } catch (error) {
+        nextHall.destroy();
+        throw error;
+      }
+      await runFadeTransition({ fadeOutMs: 350, fadeInMs: 350, swap: () => {
+        hall.destroy();
+        hall = nextHall;
+        hall.onCameraChange = () => activeTargets.forEach(positionHallTarget);
+        hall.setCamera(config.camera);
+        spawnSlots = config.slots;
+        currentFloor = 2;
+        stageEnemyTotal = config.enemyTotal;
+        defeatedEnemies = 0;
+        enemiesRemaining.textContent = String(stageEnemyTotal);
+        activeItems.forEach((item) => { item.endsAt += gameRuntime.now() - startedAt; });
+        floorTransition = false;
+        gameStarted = true;
+        stage.classList.add('game-running');
+        screen.hidden = true;
+        firstWaveReadyAt = gameRuntime.now() + 350 + firstWaveDelayMs;
+      } });
+      if (serverMode) sendSocket({ type: 'waveCleared', waveId: clearedWave });
+      else runAfterFirstWaveDelay(spawnWave);
     }
 
     async function animateClearResults() {
@@ -2778,7 +2866,7 @@
     });
 
     function finishTarget(target, spawnDelay = 260, reaction = 'hit') {
-      if (stageEnded || !target || target.judged || !target.element.isConnected) return;
+      if (stageEnded || floorTransition || !target || target.judged || !target.element.isConnected) return;
 
       const finishedTarget = target;
       finishedTarget.judged = true;
@@ -2816,7 +2904,7 @@
     }
 
     function scheduleSpawn(delay = 520) {
-      if (stageEnded) return;
+      if (stageEnded || floorTransition) return;
       gameRuntime.clearTimeout(nextSpawnTimer);
       nextSpawnTimer = gameRuntime.setTimeout(spawnWave, delay);
     }
@@ -2834,7 +2922,7 @@
     }
 
     function makeTarget(color, slot, options = {}) {
-      if (stageEnded) return;
+      if (stageEnded || floorTransition) return;
       const effectiveColor = hasActiveItem('magnum') ? 'r' : color;
       const sprite = colors[effectiveColor];
       const element = document.createElement('div');
@@ -2954,13 +3042,13 @@
     }
 
     function spawnWave(wave = null) {
-      if (stageEnded) return;
+      if (stageEnded || floorTransition) return;
       clearActiveTargets();
 
       if (wave) {
         activeWaveId = wave.waveId;
-        wave.targets.slice(0, stageEnemyTotal - defeatedEnemies).forEach((target) => {
-          makeTarget(target.color, slotById(target.slotId), {
+        wave.targets.slice(0, stageEnemyTotal - defeatedEnemies).forEach((target, index) => {
+          makeTarget(target.color, currentFloor === 2 ? spawnSlots[index % spawnSlots.length] : slotById(target.slotId), {
             id: target.id,
             duration: target.duration,
             startAt: wave.startAt
@@ -3209,6 +3297,10 @@
 
     function tick() {
       if (stageEnded) return;
+      if (floorTransition) {
+        gameRuntime.requestAnimationFrame(tick);
+        return;
+      }
       updateActiveItemGauge();
       dodge.update(gameRuntime.now());
       activeTargets.forEach((target) => {

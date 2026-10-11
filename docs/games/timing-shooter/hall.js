@@ -51,6 +51,13 @@ class HallScene {
 
   screenX(worldX) { return (worldX * 2 - this.camera) * this.stage.clientWidth; }
 
+  destroy() {
+    this.observer.disconnect();
+    this.background.remove();
+    this.foreground.remove();
+    this.frontColumns.remove();
+  }
+
   setDefeatOrigin() {
     const focusX = ((this.camera + 0.5) / 2) * 100;
     this.images.forEach((image) => { image.style.transformOrigin = `${focusX}% 100%`; });

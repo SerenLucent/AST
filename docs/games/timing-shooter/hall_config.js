@@ -1,6 +1,23 @@
 (function (root) {
   const config = {
     background: 'backgrounds/mafia_fountain_hall_v1.png',
+    upperFloor: {
+      background: 'backgrounds/mafia_fountain_balcony_down_v1.png',
+      stairsMale: 'backgrounds/cutscenes/stairs_left_male_v1.png',
+      stairsFemale: 'backgrounds/cutscenes/stairs_right_female_v1.png',
+      enemyTotal: 20,
+      loadingHoldMs: 2000,
+      camera: 1,
+      riseMs: 420,
+      slots: [
+        { id: 'upper_small_door', worldX: 0.665, footY: 0.29, heightRatio: 0.105 },
+        { id: 'upper_fountain_back', worldX: 0.575, footY: 0.50, heightRatio: 0.14 },
+        { id: 'upper_stairs_front', worldX: 0.863, footY: 0.465, heightRatio: 0.145 }
+      ],
+      occluders: [
+        { id: 'upper_fountain', polygon: '49% 35%, 51% 35%, 53% 39%, 56% 41%, 58% 43%, 64% 46%, 67% 51%, 67% 59%, 63% 64%, 55% 66%, 45% 66%, 37% 64%, 33% 59%, 33% 51%, 36% 46%, 42% 43%, 44% 41%, 47% 39%' }
+      ]
+    },
     riseMs: 420,
     slots: [
       { id: 'fountain_left', worldX: 0.41, footY: 0.59, heightRatio: 0.20, rise: true, clipBottomY: 0.602 },
