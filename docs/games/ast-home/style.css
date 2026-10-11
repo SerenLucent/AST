@@ -6,3 +6,5 @@
 dialog{max-height:90dvh;overflow:hidden}#catalog{max-height:55dvh;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;padding:3px 8px 8px 3px;scrollbar-gutter:stable}.card{flex-shrink:0}
 
 #furnitureDetails{font-size:12px;max-width:260px;align-self:center}#actions{flex-wrap:wrap;justify-content:center;width:max-content;max-width:94%}
+
+.card.insufficient{background:#d5d0c7;color:#777068;border-color:#a59d90;box-shadow:0 3px 0 #aaa296;opacity:.65}.card.insufficient canvas,.card.insufficient .ast-coin{filter:grayscale(.75) brightness(.65)}.card.insufficient:hover{background:#d5d0c7}
