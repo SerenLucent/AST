@@ -63,21 +63,28 @@ class HallScene {
     // End views always lean toward the other half of the shared map.
     const inward = this.camera === 1 ? -1 : this.camera === 0 ? 1 : Math.sign(direction);
     this.dodgeMotion = { start: gameRuntime.now(), from: this.dodgeOffset,
-      peak: Math.max(-this.camera, Math.min(1 - this.camera, inward * 0.045)) };
+      peak: Math.max(-this.camera, Math.min(1 - this.camera, inward * 0.09)) };
   }
 
   updateDodge(now) {
     const motion = this.dodgeMotion;
     if (!motion) return;
     const elapsed = Math.max(0, now - motion.start);
-    const outMs = 180;
-    const backMs = 320;
-    const progress = Math.min(1, elapsed < outMs ? elapsed / outMs : (elapsed - outMs) / backMs);
-    const eased = progress * progress * (3 - 2 * progress);
-    this.dodgeOffset = elapsed < outMs
-      ? motion.from + (motion.peak - motion.from) * eased
-      : motion.peak * (1 - eased);
-    if (elapsed >= outMs + backMs) {
+    const outMs = 80;
+    const holdMs = 90;
+    const backMs = 330;
+    if (elapsed < outMs) {
+      const progress = elapsed / outMs;
+      const eased = 1 - (1 - progress) ** 3;
+      this.dodgeOffset = motion.from + (motion.peak - motion.from) * eased;
+    } else if (elapsed < outMs + holdMs) {
+      this.dodgeOffset = motion.peak;
+    } else {
+      const progress = Math.min(1, (elapsed - outMs - holdMs) / backMs);
+      const eased = progress * progress * (3 - 2 * progress);
+      this.dodgeOffset = motion.peak * (1 - eased);
+    }
+    if (elapsed >= outMs + holdMs + backMs) {
       this.dodgeOffset = 0;
       this.dodgeMotion = null;
     }
