@@ -1814,11 +1814,6 @@
 
     const itemGaugeMax = 100;
     const itemGaugeCap = 300;
-    const itemChoiceCountByRewardLevel = {
-      1: 2,
-      2: 4,
-      3: 6
-    };
     const itemDurationByRewardLevel = {
       1: 20000,
       2: 35000,
@@ -2575,10 +2570,10 @@
     }
 
     function openItemChoices() {
-      const count = itemChoiceCountByRewardLevel[rewardLevel()];
-      const medkit = itemDefs.find((item) => item.id === 'medkit');
-      const others = shuffleItems(itemDefs.filter((item) => item.id !== 'medkit')).slice(0, count - 1);
-      currentItemChoices = shuffleItems([medkit, ...others]);
+      const guns = shuffleItems(itemDefs.filter((item) => gunItemIds.has(item.id))).slice(0, 2);
+      const support = ['power_up', 'slow_down', 'medkit', 'armor_vest']
+        .map((id) => itemDefs.find((item) => item.id === id));
+      currentItemChoices = [...guns, ...support];
       itemChoices.forEach((button, index) => {
         const item = currentItemChoices[index];
         button.innerHTML = item ? `<img src="${item.icon}" alt="${item.name}">` : '';
