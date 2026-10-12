@@ -1446,6 +1446,7 @@
   <link rel="stylesheet" href="opening.css?v=open-fire-2">
   <link rel="stylesheet" href="tutorial.css?v=lesson-color-2">
   <link rel="stylesheet" href="hall.css?v=game-over-5">
+  <link rel="stylesheet" href="hostage.css?v=hostage-1">
   <link rel="stylesheet" href="dodge.css?v=thick-flash-7">
 </head>
 <body>
@@ -1593,8 +1594,9 @@
   <script src="judgement_config.js?v=dodge-speed-9"></script>
   <script src="opening_config.js"></script>
   <script src="opening.js?v=pause-2"></script>
-  <script src="hall_config.js?v=dining-room-1"></script>
+  <script src="hall_config.js?v=dining-hostage-1"></script>
   <script src="hall.js?v=dodge-camera-2"></script>
+  <script src="hostage.js?v=hostage-1"></script>
   <script src="dodge.js?v=pause-7"></script>
   <script src="tutorial.js?v=lesson-color-2"></script>
   <script src="ast_integration.js"></script>
@@ -1638,7 +1640,10 @@
     const config = window.TIMING_SHOOTER_CONFIG;
     const opening = new OpeningSequence(stage, window.TIMING_SHOOTER_OPENING);
     let hall = new HallScene(stage, window.TIMING_SHOOTER_HALL);
-    hall.onCameraChange = () => activeTargets.forEach(positionHallTarget);
+    hall.onCameraChange = () => {
+      activeTargets.forEach(positionHallTarget);
+      hostage.position();
+    };
     let counterRetryTimer = null;
     let dodgeTurnTimer = null;
     const dodge = new DodgeSequence(stage, window.TIMING_SHOOTER_CONFIG.dodge, (target, damage, judgement) => {
@@ -1671,6 +1676,32 @@
       hit: 'sprites/enemies/mafia_gunman_hit_01.png',
       graze: 'sprites/enemies/mafia_gunman_graze_01.png'
     };
+
+    const hostage = new Hostage(stage, () => hall, (civilian) => {
+      playJudgementSound('Good');
+      showBulletEffect(civilian.x, civilian.y);
+      clearActiveItem();
+      storedItems.fill(null);
+      setItemChoicesOpen(false);
+      renderInventory();
+      resetCombo();
+      document.querySelectorAll('.combo-popup, .item-name-popup').forEach(popup => popup.remove());
+      const warning = document.createElement('div');
+      warning.className = 'hostage-warning';
+      warning.textContent = 'OH NO!';
+      stage.append(warning);
+      gameRuntime.setTimeout(() => warning.remove(), 1000);
+    });
+
+    function updateHostageInput() {
+      hostage.setEnabled(gameStarted && !stageEnded && !floorTransition && !dodge.current && !dodge.queue.length
+        && hasUnjudgedTargets() && !activeTargets.some(target => target.countering));
+    }
+
+    function refreshHostageColor(change = true) {
+      const magnum = hasActiveItem('magnum');
+      hostage.refreshColor(activeTargets, magnum ? false : change, magnum ? ['r'] : []);
+    }
 
     let spawnSlots = window.TIMING_SHOOTER_HALL.slots;
 
@@ -2837,6 +2868,8 @@
     }
 
     function stopCombat() {
+      hostage.clear();
+      document.querySelectorAll('.hostage-warning').forEach(popup => popup.remove());
       hall.cancelDodge();
       stageEnded = true;
       gameStarted = false;
@@ -2907,7 +2940,7 @@
       stage.classList.remove('game-running');
       const nextHall = new HallScene(stage, config);
       try {
-        await Promise.all([nextHall.prepare(), waitMs(config.loadingHoldMs)]);
+        await Promise.all([nextHall.prepare(), config.hostage ? hostage.prepare(config.hostage) : Promise.resolve(), waitMs(config.loadingHoldMs)]);
       } catch (error) {
         nextHall.destroy();
         throw error;
@@ -2915,10 +2948,14 @@
       await runFadeTransition({ fadeOutMs: 350, fadeInMs: 350, swap: () => {
         hall.destroy();
         hall = nextHall;
-        hall.onCameraChange = () => activeTargets.forEach(positionHallTarget);
+        hall.onCameraChange = () => {
+          activeTargets.forEach(positionHallTarget);
+          hostage.position();
+        };
         hall.setCamera(config.camera);
         spawnSlots = config.slots;
         currentFloor = nextFloor;
+        hostage.enter(config.hostage);
         stageEnemyTotal = config.enemyTotal;
         defeatedEnemies = 0;
         nextWaveReadyAt = 0;
@@ -3192,6 +3229,8 @@
             startAt: wave.startAt
           });
         });
+        refreshHostageColor();
+        updateHostageInput();
         return;
       }
 
@@ -3207,6 +3246,8 @@
       }
       waveColors.sort(() => Math.random() - 0.5);
       waveColors.forEach((color, index) => makeTarget(color, availableSlots[index]));
+      refreshHostageColor();
+      updateHostageInput();
     }
 
     function judgementYFor(target) {
@@ -3289,6 +3330,7 @@
         if ((target.judged && !target.countering) || target.color === 'r') return;
         setTargetColor(target, 'r');
       });
+      refreshHostageColor(false);
     }
 
     function applyHitResult(target, result, options = {}) {
@@ -3393,6 +3435,8 @@
         return;
       }
       if (dodge.press(color)) return;
+      updateHostageInput();
+      if (hostage.press(color)) return;
       if (!hasUnjudgedTargets()) {
         return;
       }
@@ -3447,6 +3491,7 @@
       updateActiveItemGauge();
       dodge.update(gameRuntime.now());
       hall.updateDodge(gameRuntime.now());
+      updateHostageInput();
       activeTargets.forEach((target) => {
         if (target.judged) return;
         if (gameRuntime.now() < target.startTime) return;

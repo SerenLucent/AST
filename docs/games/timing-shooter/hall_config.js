@@ -29,6 +29,13 @@
       loadingHoldMs: 2000,
       camera: 0,
       riseMs: 420,
+      hostage: {
+        crouch: 'sprites/hostages/hostage_crouch_v1.png',
+        fallen: 'sprites/hostages/hostage_fallen_v1.png',
+        hitHoldMs: 1000,
+        slot: { worldX: 0.395, footY: 0.71, heightRatio: 0.20 },
+        slot2p: { worldX: 0.675, footY: 0.71, heightRatio: 0.20 }
+      },
       slots: [
         { id: 'dining_left_aisle', worldX: 0.095, footY: 0.60, heightRatio: 0.25, depth: 3 },
         { id: 'dining_left_door', worldX: 0.247, footY: 0.45, heightRatio: 0.20 },

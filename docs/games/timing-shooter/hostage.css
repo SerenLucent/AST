@@ -1,0 +1,75 @@
+.hostage {
+  position: absolute;
+  z-index: 4;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+#stage:not(.game-running) .hostage { display: none; }
+.hostage-body {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.hostage-reticle {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 68px;
+  height: 68px;
+  transform: translate(-50%, -50%);
+}
+.hostage-reticle img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.hostage-circle { width: 68px; height: 68px; }
+.hostage-perfect_target { width: 52px; height: 52px; }
+.hostage-target { width: 36px; height: 36px; }
+.hostage-fallen .hostage-body {
+  inset: auto;
+  left: -20%;
+  bottom: -22%;
+  width: 140%;
+  height: 140%;
+}
+.hostage-cross {
+  position: absolute;
+  left: 50%;
+  top: 70%;
+  width: 58px;
+  height: 58px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 3px #fff);
+}
+.hostage-cross::before, .hostage-cross::after {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 0;
+  width: 10px;
+  height: 58px;
+  border-radius: 3px;
+  background: #ff2626;
+}
+.hostage-cross::before { transform: rotate(45deg); }
+.hostage-cross::after { transform: rotate(-45deg); }
+.hostage-warning {
+  position: absolute;
+  z-index: 30;
+  top: 38%;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 900;
+  color: #ff3434;
+  -webkit-text-stroke: 2px #fff;
+  paint-order: stroke fill;
+  text-shadow: 0 3px 8px #000;
+  pointer-events: none;
+}
