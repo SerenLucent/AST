@@ -3,7 +3,7 @@
   "game": "timing-shooter",
   "timeZone": "Asia/Seoul",
   "weekStart": "2026-10-11T15:00:00.000Z",
-  "updatedAt": "2026-10-11T23:21:57.126Z",
+  "updatedAt": "2026-10-12T01:49:19.334Z",
   "players": [
     {
       "playerKey": "575daf8565118d25e1f06ad13c1bea6006ffebcdbbb3b52ccc9904bafc04a3f7",
@@ -22,6 +22,25 @@
         "hpScore": 10000,
         "totalScore": 14836,
         "savedAt": "2026-10-11T23:21:57.126Z"
+      }
+    },
+    {
+      "playerKey": "1a59130811ddece1f4decf5962933ff8e7ea3f139bd141be1bbcc7c3935179a5",
+      "bestScore": 13837,
+      "clears": 1,
+      "recentRunIds": [
+        "307e25b0-4233-45bc-8874-6a80909fa14d"
+      ],
+      "nickname": "현규",
+      "lastResult": {
+        "runId": "307e25b0-4233-45bc-8874-6a80909fa14d",
+        "stageId": "stage1",
+        "revision": 1,
+        "shootScore": 3837,
+        "remainingHp": 100,
+        "hpScore": 10000,
+        "totalScore": 13837,
+        "savedAt": "2026-10-12T01:49:19.334Z"
       }
     }
   ]
