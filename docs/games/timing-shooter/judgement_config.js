@@ -25,8 +25,8 @@ window.TIMING_SHOOTER_CONFIG = {
   },
   autoMissMs: 440,
   dodge: {
-    durationMs: { min: 1000, max: 5000 },
-    judgementMs: { perfect: 120, great: 260, good: 400, bad: 560 },
+    durationMs: { min: 650, max: 2200 },
+    judgementMs: { perfect: 80, great: 160, good: 260, bad: 380 },
     damage: { perfect: 0, great: 0, good: 2, bad: 5, miss: 10 },
     startMarginPx: 88,
     marginPx: 8,

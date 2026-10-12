@@ -1590,11 +1590,11 @@
     window.TIMING_SHOOTER_CONFIG = window.TIMING_SHOOTER_CONFIG || {};
   </script>
   <script src="game_runtime.js"></script>
-  <script src="judgement_config.js?v=dodge-speed-7"></script>
+  <script src="judgement_config.js?v=dodge-speed-8"></script>
   <script src="opening_config.js"></script>
   <script src="opening.js?v=pause-2"></script>
   <script src="hall_config.js?v=upper-spawn-6"></script>
-  <script src="hall.js?v=game-over-3"></script>
+  <script src="hall.js?v=dodge-camera-1"></script>
   <script src="dodge.js?v=pause-7"></script>
   <script src="tutorial.js?v=lesson-color-2"></script>
   <script src="ast_integration.js"></script>
@@ -1645,6 +1645,7 @@
       if (!target.element.isConnected) return 0;
       showEnemyMuzzleFlash(target);
       if (['perfect', 'great', 'good'].includes(judgement)) {
+        hall.playDodge(currentFloor === 2 ? -1 : 1);
         playPooledEffect('sound/miss.mp3', 0.8);
       } else {
         playPooledEffect('sound/gun.mp3', 0.8);
@@ -2836,6 +2837,7 @@
     }
 
     function stopCombat() {
+      hall.cancelDodge();
       stageEnded = true;
       gameStarted = false;
       gameRuntime.clearTimeout(nextSpawnTimer);
@@ -3432,6 +3434,7 @@
       }
       updateActiveItemGauge();
       dodge.update(gameRuntime.now());
+      hall.updateDodge(gameRuntime.now());
       activeTargets.forEach((target) => {
         if (target.judged) return;
         if (gameRuntime.now() < target.startTime) return;
