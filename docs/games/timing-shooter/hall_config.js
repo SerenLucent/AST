@@ -19,6 +19,25 @@
         { id: 'upper_fountain', polygon: '49% 35%, 51% 35%, 53% 39%, 56% 41%, 58% 43%, 64% 46%, 67% 51%, 67% 59%, 63% 64%, 55% 66%, 45% 66%, 37% 64%, 33% 59%, 33% 51%, 36% 46%, 42% 43%, 44% 41%, 47% 39%' }
       ]
     },
+    diningRoom: {
+      background: 'backgrounds/mafia_dining_room_v1.png',
+      entryMale: 'backgrounds/cutscenes/dining_door_male_v2.png',
+      entryCoop: 'backgrounds/cutscenes/dining_door_coop_v1.png',
+      captionInImage: true,
+      enemyTotal: 20,
+      transitionDelayMs: 3000,
+      loadingHoldMs: 2000,
+      camera: 0,
+      riseMs: 420,
+      slots: [
+        { id: 'dining_left_aisle', worldX: 0.095, footY: 0.60, heightRatio: 0.25, depth: 3 },
+        { id: 'dining_left_door', worldX: 0.247, footY: 0.45, heightRatio: 0.20 },
+        { id: 'dining_left_table_back', worldX: 0.435, footY: 0.46, heightRatio: 0.19 }
+      ],
+      occluders: [
+        { id: 'dining_table', polygon: '40% 38%, 60% 38%, 62% 40%, 68.5% 47.4%, 68.5% 49%, 62% 50%, 60% 61%, 42% 61%, 31% 49%, 31% 47.4%, 38% 40%' }
+      ]
+    },
     riseMs: 420,
     slots: [
       { id: 'fountain_left', worldX: 0.41, footY: 0.59, heightRatio: 0.20, rise: true, clipBottomY: 0.602 },
@@ -44,6 +63,10 @@
   config.upperFloor.camera2p = 0;
   config.upperFloor.slots2p = config.upperFloor.slots.map((slot) => ({
     ...slot, id: `${slot.id}_2p`, worldX: 1 - slot.worldX
+  }));
+  config.diningRoom.camera2p = 1;
+  config.diningRoom.slots2p = config.diningRoom.slots.map((slot) => ({
+    ...slot, id: slot.id.replace('_left_', '_right_'), worldX: 1 - slot.worldX
   }));
   if (typeof module !== 'undefined' && module.exports) module.exports = config;
   else root.TIMING_SHOOTER_HALL = config;

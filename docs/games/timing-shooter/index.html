@@ -1593,7 +1593,7 @@
   <script src="judgement_config.js?v=dodge-speed-9"></script>
   <script src="opening_config.js"></script>
   <script src="opening.js?v=pause-2"></script>
-  <script src="hall_config.js?v=upper-spawn-6"></script>
+  <script src="hall_config.js?v=dining-room-1"></script>
   <script src="hall.js?v=dodge-camera-2"></script>
   <script src="dodge.js?v=pause-7"></script>
   <script src="tutorial.js?v=lesson-color-2"></script>
@@ -2857,9 +2857,14 @@
 
     function completeStage() {
       if (stageEnded) return;
-      if (currentFloor === 1) {
-        enterUpperFloor().catch((error) => {
-          console.error('[Upper floor] Could not prepare scene:', error);
+      if (currentFloor < 3) {
+        const nextFloor = currentFloor + 1;
+        const nextConfig = nextFloor === 2 ? window.TIMING_SHOOTER_HALL.upperFloor : window.TIMING_SHOOTER_HALL.diningRoom;
+        enterNextRoom(nextConfig, nextFloor).catch((error) => {
+          console.error('[Room] Could not prepare scene:', error);
+          const screen = document.getElementById('floorLoading');
+          screen.hidden = false;
+          document.getElementById('floorLoadingCaption').hidden = false;
           document.getElementById('floorLoadingCaption').textContent = 'LOADING FAILED · TAP TO RETRY';
           document.getElementById('floorLoading').addEventListener('pointerdown', () => {
             floorTransition = false;
@@ -2874,22 +2879,29 @@
       animateClearResults();
     }
 
-    async function enterUpperFloor() {
+    async function enterNextRoom(config, nextFloor) {
       if (floorTransition || stageEnded) return;
       floorTransition = true;
       const startedAt = gameRuntime.now();
       const clearedWave = activeWaveId;
       gameStarted = false;
+      hall.cancelDodge();
       gameRuntime.clearTimeout(nextSpawnTimer);
       gameRuntime.clearTimeout(localFallbackTimer);
       clearActiveTargets();
       setItemChoicesOpen(false);
-      const config = window.TIMING_SHOOTER_HALL.upperFloor;
       await waitMs(config.transitionDelayMs ?? 3000);
       const screen = document.getElementById('floorLoading');
       const image = document.getElementById('floorLoadingImage');
       document.getElementById('floorLoadingCaption').textContent = 'HOLD YOUR FIRE';
-      image.src = config.stairsMale;
+      document.getElementById('floorLoadingCaption').hidden = Boolean(config.captionInImage);
+      screen.setAttribute('aria-label', nextFloor === 3 ? 'Entering dining room' : 'Ascending stairs');
+      image.alt = nextFloor === 3 ? 'Police entering the dining room' : 'Police ascending the stairs';
+      image.style.objectFit = config.captionInImage ? 'contain' : 'cover';
+      image.style.objectPosition = config.captionInImage ? 'center' : '30% center';
+      image.src = nextFloor === 3
+        ? (selectedMode === '2p' ? config.entryCoop : config.entryMale)
+        : config.stairsMale;
       screen.hidden = false;
       await image.decode();
       stage.classList.remove('game-running');
@@ -2906,7 +2918,7 @@
         hall.onCameraChange = () => activeTargets.forEach(positionHallTarget);
         hall.setCamera(config.camera);
         spawnSlots = config.slots;
-        currentFloor = 2;
+        currentFloor = nextFloor;
         stageEnemyTotal = config.enemyTotal;
         defeatedEnemies = 0;
         nextWaveReadyAt = 0;
@@ -3172,9 +3184,9 @@
 
       if (wave) {
         activeWaveId = wave.waveId;
-        const upperSlots = currentFloor === 2 ? shuffleItems(spawnSlots) : [];
+        const roomSlots = currentFloor > 1 ? shuffleItems(spawnSlots) : [];
         wave.targets.slice(0, stageEnemyTotal - defeatedEnemies).forEach((target, index) => {
-          makeTarget(target.color, currentFloor === 2 ? upperSlots[index % upperSlots.length] : slotById(target.slotId), {
+          makeTarget(target.color, currentFloor > 1 ? roomSlots[index % roomSlots.length] : slotById(target.slotId), {
             id: target.id,
             duration: target.duration,
             startAt: wave.startAt
