@@ -8,3 +8,4 @@ dialog{max-height:90dvh;overflow:hidden}#catalog{max-height:55dvh;overflow-y:aut
 #furnitureDetails{font-size:12px;max-width:260px;align-self:center}#actions{flex-wrap:wrap;justify-content:center;width:max-content;max-width:94%}
 
 .card.insufficient{background:#eee0c7;color:#57371e;border-color:#ba9564;box-shadow:0 3px 0 #ba9564;opacity:1}.card.insufficient canvas{filter:brightness(.68)}.card.insufficient .ast-coin{filter:none}.card.insufficient:hover{background:#eee0c7}
+header{flex-wrap:wrap}header>div{flex-wrap:wrap;justify-content:flex-end;min-width:0}
