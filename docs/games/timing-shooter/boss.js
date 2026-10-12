@@ -1,7 +1,7 @@
 class BossBattle {
   constructor(config) {
     this.config = config;
-    this.maxHp = config.hitsToDefeat;
+    this.maxHp = config.maxHp;
     this.hp = this.maxHp;
     this.turn = 0;
   }

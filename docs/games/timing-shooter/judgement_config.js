@@ -19,6 +19,8 @@ window.TIMING_SHOOTER_CONFIG = {
     bad: { min: 0, max: 40 },
     miss: { min: 0, max: 0 }
   },
+  hpDamageByJudgement: { bad: 1, good: 2, great: 3, perfect: 4, miss: 0 },
+  powerUpHpBonus: 1,
   judgeCueMs: {
     showBeforePerfect: 100,
     hideAfterPerfect: 80

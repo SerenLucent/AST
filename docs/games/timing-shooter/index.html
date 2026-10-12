@@ -1591,14 +1591,14 @@
     window.TIMING_SHOOTER_CONFIG = window.TIMING_SHOOTER_CONFIG || {};
   </script>
   <script src="game_runtime.js"></script>
-  <script src="judgement_config.js?v=dodge-speed-9"></script>
+  <script src="judgement_config.js?v=hp-damage-1"></script>
   <script src="opening_config.js"></script>
   <script src="opening.js?v=pause-2"></script>
-  <script src="hall_config.js?v=boss-room-1"></script>
+  <script src="hall_config.js?v=boss-hp-50"></script>
   <script src="hall.js?v=dodge-camera-2"></script>
   <script src="hostage.js?v=hostage-1"></script>
   <script src="dodge.js?v=boss-dodge-1"></script>
-  <script src="boss.js?v=boss-1"></script>
+  <script src="boss.js?v=boss-hp-50"></script>
   <script src="tutorial.js?v=lesson-color-2"></script>
   <script src="ast_integration.js"></script>
   <script>
@@ -2401,6 +2401,17 @@
       return Math.round(randomInt(range.min, range.max) * multiplier);
     }
 
+    function hpDamageForJudgement(judgementName) {
+      const base = config.hpDamageByJudgement[judgementName.toLowerCase()] ?? 0;
+      return base > 0 ? base + (hasActiveItem('power_up') ? config.powerUpHpBonus : 0) : 0;
+    }
+
+    function applyEnemyHpDamage(target, amount) {
+      if (target.isBoss) bossBattle.hit(amount);
+      else target.hp = Math.max(0, target.hp - amount);
+      drainEnemyHp(target, 0);
+    }
+
     function formatScore(value) {
       return Math.floor(value).toLocaleString('en-US');
     }
@@ -2733,7 +2744,8 @@
 
     function drainEnemyHp(target, amount = 100) {
       if (!target?.enemyHpFill) return;
-      target.visualHp = target.isBoss ? bossBattle.percent : Math.max(0, target.visualHp - amount);
+      target.hp = target.isBoss ? bossBattle.hp : Math.max(0, target.hp - target.maxHp * amount / 100);
+      target.visualHp = target.isBoss ? bossBattle.percent : target.hp / target.maxHp * 100;
       target.enemyHpFill.style.width = `${(enemyHpBarMaxWidth * target.visualHp) / 100}px`;
     }
 
@@ -2822,6 +2834,7 @@
       if (hasActiveItem('magnum')) setTargetColor(target, 'r');
       target.machineGunHit = false;
       target.machineGunState = null;
+      target.hp = target.isBoss ? bossBattle.hp : target.maxHp;
       target.visualHp = target.isBoss ? bossBattle.percent : 100;
       target.enemyHpFill.style.width = `${(enemyHpBarMaxWidth * target.visualHp) / 100}px`;
       setMachinePromptVisible(target, false);
@@ -3207,6 +3220,8 @@
         countering: false,
         machineGunHit: false,
         machineGunState: null,
+        hp: options.isBoss ? bossBattle.hp : 1,
+        maxHp: options.isBoss ? bossBattle.maxHp : 1,
         visualHp: 100
       };
       newTarget.perfectTime = newTarget.startTime + (newTarget.duration * perfectProgress);
@@ -3454,8 +3469,7 @@
       const gaugeBonus = registerComboHit();
       showJudgement(text, colorText, target.x, judgementYFor(target));
       showDamage(damage, target.x, target.y + 3);
-      if (target.isBoss) bossBattle.hit(1);
-      drainEnemyHp(target, 100);
+      applyEnemyHpDamage(target, hpDamageForJudgement(text));
       addScore(scoreForHit(damage, target));
       addItemGaugeFor(text, gaugeBonus);
       sendJudgement(text, target);
@@ -3487,6 +3501,7 @@
         result,
         shotsFired: 1,
         lastScore: firstScore,
+        hpDamage: hpDamageForJudgement(result.text),
         startedAt: now,
         endsAt: now + machineGunHoldMs,
         lastInputAt: now
@@ -3512,8 +3527,7 @@
       showBulletEffect(target.x, target.y);
       showDamage(state.lastScore, target.x, target.y + 3);
       addScore(scoreForHit(state.lastScore, target));
-      if (target.isBoss) bossBattle.hit(hall.config.boss.machineGunRepeatDamage);
-      drainEnemyHp(target, 100 / machineGunMaxShots);
+      if (target.isBoss) applyEnemyHpDamage(target, state.hpDamage * hall.config.boss.machineGunRepeatMultiplier);
       if (target.isBoss && bossBattle.hp === 0) {
         enemiesRemaining.textContent = '0';
         completeStage();
