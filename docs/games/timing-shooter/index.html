@@ -1495,7 +1495,7 @@
     <div id="netStatus" hidden><span id="netLabel">LOCAL</span></div>
     <div id="activeEffects" aria-label="active items"></div>
     <button id="exitGame" type="button">나가기</button>
-    <div id="enemyCounter" aria-label="remaining enemies"><span class="enemy-face"><img src="sprites/enemies/mafia_gunman_aim_01.png" alt=""></span><span id="enemiesRemaining">30</span></div>
+    <div id="enemyCounter" aria-label="remaining enemies"><span class="enemy-face"><img src="sprites/enemies/mafia_gunman_aim_01.png" alt=""></span><span id="enemiesRemaining">22</span></div>
     <div id="exitConfirm" role="dialog" aria-modal="true" aria-labelledby="exitQuestion" hidden>
       <div class="exit-dialog">
         <h2 id="exitQuestion">포기하시겠습니까?</h2>
@@ -1594,10 +1594,11 @@
   <script src="judgement_config.js?v=dodge-speed-9"></script>
   <script src="opening_config.js"></script>
   <script src="opening.js?v=pause-2"></script>
-  <script src="hall_config.js?v=dining-hostage-1"></script>
+  <script src="hall_config.js?v=boss-room-1"></script>
   <script src="hall.js?v=dodge-camera-2"></script>
   <script src="hostage.js?v=hostage-1"></script>
-  <script src="dodge.js?v=pause-7"></script>
+  <script src="dodge.js?v=boss-dodge-1"></script>
+  <script src="boss.js?v=boss-1"></script>
   <script src="tutorial.js?v=lesson-color-2"></script>
   <script src="ast_integration.js"></script>
   <script>
@@ -1648,6 +1649,7 @@
     let dodgeTurnTimer = null;
     const dodge = new DodgeSequence(stage, window.TIMING_SHOOTER_CONFIG.dodge, (target, damage, judgement) => {
       if (!target.element.isConnected) return 0;
+      target.dodgeTurns = Math.min(2, (target.dodgeTurns ?? 0) + 1);
       showEnemyMuzzleFlash(target);
       if (['perfect', 'great', 'good'].includes(judgement)) {
         hall.playDodge(currentFloor === 2 ? -1 : 1);
@@ -1763,8 +1765,9 @@
     const storedItems = [null, null, null];
     let currentItemChoices = [];
     let gameStarted = false;
-    let stageEnemyTotal = 30;
+    let stageEnemyTotal = window.TIMING_SHOOTER_HALL.enemyTotal;
     let currentFloor = 1;
+    let bossBattle = null;
     let floorTransition = false;
     let defeatedEnemies = 0;
     let stageCleared = false;
@@ -2437,6 +2440,12 @@
       animateScoreTo(score, value);
     }
 
+    function scoreForHit(damage, target) {
+      const comboMultiplier = 1 + Math.floor(combo / 5) * 0.05;
+      const retryMultiplier = 1 - Math.min(2, target.dodgeTurns ?? 0) * 0.2;
+      return Math.round(damage * comboMultiplier * retryMultiplier);
+    }
+
     function showCombo() {
       if (combo < 5) return;
       document.querySelectorAll('.combo-popup').forEach((popup) => popup.remove());
@@ -2729,7 +2738,7 @@
 
     function drainEnemyHp(target, amount = 100) {
       if (!target?.enemyHpFill) return;
-      target.visualHp = Math.max(0, target.visualHp - amount);
+      target.visualHp = target.isBoss ? bossBattle.percent : Math.max(0, target.visualHp - amount);
       target.enemyHpFill.style.width = `${(enemyHpBarMaxWidth * target.visualHp) / 100}px`;
     }
 
@@ -2798,7 +2807,7 @@
     }
 
     function setEnemySprite(target, sprite, reaction = false) {
-      target.enemy.src = sprite;
+      target.enemy.src = target.isBoss ? hall.config.boss.sprite : sprite;
       target.enemy.classList.toggle('reaction', reaction);
     }
 
@@ -2816,8 +2825,8 @@
       if (hasActiveItem('magnum')) setTargetColor(target, 'r');
       target.machineGunHit = false;
       target.machineGunState = null;
-      target.visualHp = 100;
-      target.enemyHpFill.style.width = `${enemyHpBarMaxWidth}px`;
+      target.visualHp = target.isBoss ? bossBattle.percent : 100;
+      target.enemyHpFill.style.width = `${(enemyHpBarMaxWidth * target.visualHp) / 100}px`;
       setMachinePromptVisible(target, false);
       setEnemySprite(target, enemySprites.aim, false);
       target.circle.style.transform = `translate(-50%, -50%) scale(${startScale})`;
@@ -2829,7 +2838,13 @@
       if (dodge.current || activeTargets.some((target) => target.countering && !target.counterResolved)) return;
       counterRetryTimer = gameRuntime.setTimeout(() => {
         if (dodge.current || activeTargets.some((target) => target.countering && !target.counterResolved)) return;
-        activeTargets.filter((target) => target.countering).forEach(restartTargetTiming);
+        activeTargets.filter((target) => target.countering).forEach((target) => {
+          if (target.isBoss) {
+            target.countering = false;
+            target.counterResolved = false;
+          } else restartTargetTiming(target);
+        });
+        if (currentFloor === 4) advanceBossTurnWhenReady();
       }, targetRetryAfterCounterMs);
     }
 
@@ -2890,9 +2905,10 @@
 
     function completeStage() {
       if (stageEnded) return;
-      if (currentFloor < 3) {
+      if (currentFloor < 4) {
         const nextFloor = currentFloor + 1;
-        const nextConfig = nextFloor === 2 ? window.TIMING_SHOOTER_HALL.upperFloor : window.TIMING_SHOOTER_HALL.diningRoom;
+        const rooms = window.TIMING_SHOOTER_HALL;
+        const nextConfig = nextFloor === 2 ? rooms.upperFloor : nextFloor === 3 ? rooms.diningRoom : rooms.bossRoom;
         enterNextRoom(nextConfig, nextFloor).catch((error) => {
           console.error('[Room] Could not prepare scene:', error);
           const screen = document.getElementById('floorLoading');
@@ -2928,11 +2944,11 @@
       const image = document.getElementById('floorLoadingImage');
       document.getElementById('floorLoadingCaption').textContent = 'HOLD YOUR FIRE';
       document.getElementById('floorLoadingCaption').hidden = Boolean(config.captionInImage);
-      screen.setAttribute('aria-label', nextFloor === 3 ? 'Entering dining room' : 'Ascending stairs');
-      image.alt = nextFloor === 3 ? 'Police entering the dining room' : 'Police ascending the stairs';
-      image.style.objectFit = config.captionInImage ? 'contain' : 'cover';
-      image.style.objectPosition = config.captionInImage ? 'center' : '30% center';
-      image.src = nextFloor === 3
+      screen.setAttribute('aria-label', nextFloor === 4 ? 'Entering boss room' : nextFloor === 3 ? 'Entering dining room' : 'Ascending stairs');
+      image.alt = nextFloor === 4 ? 'Police entering the small door behind the dining table' : nextFloor === 3 ? 'Police entering the dining room' : 'Police ascending the stairs';
+      image.style.objectFit = config.entryFit ?? (config.captionInImage ? 'contain' : 'cover');
+      image.style.objectPosition = config.entryPosition ?? (config.captionInImage ? 'center' : '30% center');
+      image.src = nextFloor >= 3
         ? (selectedMode === '2p' ? config.entryCoop : config.entryMale)
         : config.stairsMale;
       screen.hidden = false;
@@ -2940,7 +2956,9 @@
       stage.classList.remove('game-running');
       const nextHall = new HallScene(stage, config);
       try {
-        await Promise.all([nextHall.prepare(), config.hostage ? hostage.prepare(config.hostage) : Promise.resolve(), waitMs(config.loadingHoldMs)]);
+        const bossImage = new Image();
+        if (config.boss) bossImage.src = config.boss.sprite;
+        await Promise.all([nextHall.prepare(), config.boss ? bossImage.decode() : Promise.resolve(), config.hostage ? hostage.prepare(config.hostage) : Promise.resolve(), waitMs(config.loadingHoldMs)]);
       } catch (error) {
         nextHall.destroy();
         throw error;
@@ -2955,6 +2973,7 @@
         hall.setCamera(config.camera);
         spawnSlots = config.slots;
         currentFloor = nextFloor;
+        bossBattle = config.boss ? new BossBattle(config.boss) : null;
         hostage.enter(config.hostage);
         stageEnemyTotal = config.enemyTotal;
         defeatedEnemies = 0;
@@ -3036,16 +3055,23 @@
 
     function finishTarget(target, reaction = 'hit') {
       if (stageEnded || floorTransition || !target || target.judged || !target.element.isConnected) return;
+      if (target.isBoss) {
+        finishBossTurnTarget(target);
+        return;
+      }
 
       const finishedTarget = target;
       finishedTarget.judged = true;
       drainEnemyHp(finishedTarget, 100);
       nextWaveReadyAt = gameRuntime.now() + randomBetween(config.respawnDelayMs?.min ?? 2000, config.respawnDelayMs?.max ?? 3000);
-      defeatedEnemies = Math.min(stageEnemyTotal, defeatedEnemies + 1);
-      enemiesRemaining.textContent = String(stageEnemyTotal - defeatedEnemies);
-      if (defeatedEnemies === stageEnemyTotal) {
-        completeStage();
-        return;
+      if (currentFloor === 4) updateBossEnemyCount();
+      else {
+        defeatedEnemies = Math.min(stageEnemyTotal, defeatedEnemies + 1);
+        enemiesRemaining.textContent = String(stageEnemyTotal - defeatedEnemies);
+        if (defeatedEnemies === stageEnemyTotal) {
+          completeStage();
+          return;
+        }
       }
       finishedTarget.machineGunState = null;
       setMachinePromptVisible(finishedTarget, false);
@@ -3094,6 +3120,7 @@
       const sprite = colors[effectiveColor];
       const element = document.createElement('div');
       const enemy = makeImage('enemy-img', 'enemies/mafia_gunman_aim_01.png');
+      if (options.isBoss) enemy.src = hall.config.boss.sprite;
       const enemyMotion = document.createElement('div');
       enemyMotion.className = 'enemy-motion';
       enemyMotion.style.zIndex = slot.depth ?? 1;
@@ -3151,6 +3178,8 @@
         ], { duration: riseMs, easing: 'ease-out' });
       }
       const newTarget = {
+        isBoss: Boolean(options.isBoss),
+        dodgeDurationMs: options.isBoss ? hall.config.boss.dodgeDurationMs : undefined,
         color: effectiveColor,
         originalColor: color,
         slotId: slot.id,
@@ -3185,6 +3214,8 @@
       activeTargets.push(newTarget);
       setTargetAimingVisible(newTarget, false);
       positionHallTarget(newTarget);
+      if (newTarget.isBoss) drainEnemyHp(newTarget, 0);
+      return newTarget;
     }
 
     function positionHallTarget(target) {
@@ -3215,6 +3246,10 @@
       if (gameRuntime.now() < nextWaveReadyAt) {
         gameRuntime.clearTimeout(nextSpawnTimer);
         nextSpawnTimer = gameRuntime.setTimeout(() => spawnWave(wave), nextWaveReadyAt - gameRuntime.now());
+        return;
+      }
+      if (currentFloor === 4) {
+        spawnBossWave(wave);
         return;
       }
       clearActiveTargets();
@@ -3248,6 +3283,73 @@
       waveColors.forEach((color, index) => makeTarget(color, availableSlots[index]));
       refreshHostageColor();
       updateHostageInput();
+    }
+
+    function updateBossEnemyCount() {
+      enemiesRemaining.textContent = String((bossBattle.hp > 0 ? 1 : 0)
+        + activeTargets.filter(target => !target.isBoss && !target.judged).length);
+    }
+
+    function advanceBossTurnWhenReady() {
+      if (stageEnded || floorTransition || bossBattle?.advanceQueued || hasActiveOrCounteringTargets()
+          || dodge.current || dodge.queue.length) return;
+      bossBattle.advanceQueued = true;
+      if (serverMode) sendSocket({ type: 'waveCleared', waveId: activeWaveId });
+      else scheduleSpawn(Math.max(0, nextWaveReadyAt - gameRuntime.now()));
+    }
+
+    function finishBossTurnTarget(target) {
+      target.judged = true;
+      target.countering = false;
+      target.machineGunState = null;
+      setMachinePromptVisible(target, false);
+      setTargetAimingVisible(target, false);
+      drainEnemyHp(target, 0);
+      setEnemySprite(target, hall.config.boss.sprite, true);
+      nextWaveReadyAt = gameRuntime.now() + randomBetween(config.respawnDelayMs.min, config.respawnDelayMs.max);
+      startDodgeTurnWhenReady();
+      advanceBossTurnWhenReady();
+      gameRuntime.setTimeout(() => {
+        if (target.element.isConnected && target.judged) setEnemySprite(target, hall.config.boss.sprite, false);
+      }, judgementHoldMs);
+    }
+
+    function spawnBossWave(wave) {
+      if (!bossBattle || bossBattle.hp === 0 || hasActiveOrCounteringTargets()) return;
+      const existingBoss = activeTargets.find(target => target.isBoss);
+      gameRuntime.clearTimeout(dodgeTurnTimer);
+      gameRuntime.clearTimeout(counterRetryTimer);
+      dodge.clear();
+      activeTargets.filter(target => target !== existingBoss).forEach(target => target.element.remove());
+      activeTargets = existingBoss ? [existingBoss] : [];
+      const turn = bossBattle.nextTurn();
+      bossBattle.advanceQueued = false;
+      activeWaveId = wave?.waveId ?? `boss_${bossBattle.turn}_${Date.now()}`;
+      let target = existingBoss;
+      if (target) {
+        restartTargetTiming(target);
+        setTargetColor(target, hasActiveItem('magnum') ? 'r' : turn.color);
+        if (!hasActiveItem('slow_down') && wave?.targets[0]?.duration) target.duration = wave.targets[0].duration;
+        target.startTime = gameRuntime.now() + Math.max(0, (wave?.startAt ?? Date.now()) - Date.now()) + config.targetRevealDelayMs;
+        target.perfectTime = target.startTime + target.duration * perfectProgress;
+        target.aimingPending = true;
+        setTargetAimingVisible(target, false);
+      } else target = makeTarget(turn.color, spawnSlots[0], {
+        isBoss: true, id: 'mafia_boss', duration: wave?.targets[0]?.duration, startAt: wave?.startAt
+      });
+      target.bossFlipColor = turn.flipColor;
+      target.bossColorChanged = false;
+      turn.guardColors.forEach((color, index) => makeTarget(color, spawnSlots[index + 1], {
+        id: `boss_guard_${bossBattle.turn}_${index}`, duration: wave?.targets[index + 1]?.duration, startAt: wave?.startAt
+      }));
+      updateBossEnemyCount();
+    }
+
+    function updateBossTargetColor(target) {
+      if (!target.isBoss || target.judged || target.machineGunState || target.bossColorChanged
+          || hasActiveItem('magnum') || gameRuntime.now() < target.startTime + target.duration * hall.config.boss.colorChangeProgress) return;
+      target.bossColorChanged = true;
+      setTargetColor(target, target.bossFlipColor);
     }
 
     function judgementYFor(target) {
@@ -3323,6 +3425,7 @@
       target.perfect.src = `sprites/${sprite.perfect}`;
       target.circle.src = `sprites/${sprite.circle}`;
       target.judge.src = `sprites/${sprite.judge}`;
+      target.machinePromptButton.src = `sprites/${sprite.target}`;
     }
 
     function applyMagnumToActiveTargets() {
@@ -3354,10 +3457,16 @@
       const gaugeBonus = registerComboHit();
       showJudgement(text, colorText, target.x, judgementYFor(target));
       showDamage(damage, target.x, target.y + 3);
+      if (target.isBoss) bossBattle.hit(1);
       drainEnemyHp(target, 100);
-      addScore(damage);
+      addScore(scoreForHit(damage, target));
       addItemGaugeFor(text, gaugeBonus);
       sendJudgement(text, target);
+      if (target.isBoss && bossBattle.hp === 0) {
+        enemiesRemaining.textContent = '0';
+        completeStage();
+        return damage;
+      }
 
       if (keepAlive) {
         target.machineGunHit = true;
@@ -3374,6 +3483,7 @@
     }
 
     function startMachineGunRoute(target, result, firstScore) {
+      if (stageEnded || target.judged || !target.element.isConnected) return;
       const now = gameRuntime.now();
       target.machineGunHit = true;
       target.machineGunState = {
@@ -3404,8 +3514,14 @@
       playJudgementSound(state.result.text);
       showBulletEffect(target.x, target.y);
       showDamage(state.lastScore, target.x, target.y + 3);
-      addScore(state.lastScore);
+      addScore(scoreForHit(state.lastScore, target));
+      if (target.isBoss) bossBattle.hit(hall.config.boss.machineGunRepeatDamage);
       drainEnemyHp(target, 100 / machineGunMaxShots);
+      if (target.isBoss && bossBattle.hp === 0) {
+        enemiesRemaining.textContent = '0';
+        completeStage();
+        return;
+      }
       setEnemySprite(target, state.result.text === 'Bad' ? enemySprites.graze : enemySprites.hit, true);
       gameRuntime.setTimeout(() => {
         if (target.element.isConnected && !target.judged) {
@@ -3440,6 +3556,7 @@
       if (!hasUnjudgedTargets()) {
         return;
       }
+      activeTargets.forEach(updateBossTargetColor);
       if (!mostUrgentTarget()) return;
 
       const target = targetForColor(color);
@@ -3495,6 +3612,7 @@
       activeTargets.forEach((target) => {
         if (target.judged) return;
         if (gameRuntime.now() < target.startTime) return;
+        updateBossTargetColor(target);
         if (target.aimingPending) {
           target.aimingPending = false;
           setTargetAimingVisible(target, true);

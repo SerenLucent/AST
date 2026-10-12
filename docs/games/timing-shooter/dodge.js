@@ -55,7 +55,7 @@ class DodgeSequence {
     const colors = Object.keys(this.colors);
     const color = colors[Math.floor(Math.random() * colors.length)];
     const { min, max } = this.config.durationMs;
-    const duration = min + Math.random() * (max - min);
+    const duration = target.dodgeDurationMs ?? (min + Math.random() * (max - min));
     this.current = { target, color, duration, perfectTime: gameRuntime.now() + duration, resolved: false };
     this.layer.style.setProperty('--dodge-color', this.colors[color]);
     this.result.textContent = '';

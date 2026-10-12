@@ -1,11 +1,12 @@
 (function (root) {
   const config = {
     background: 'backgrounds/mafia_fountain_hall_v1.png',
+    enemyTotal: 22,
     upperFloor: {
       background: 'backgrounds/mafia_fountain_balcony_down_v1.png',
       stairsMale: 'backgrounds/cutscenes/stairs_left_male_v1.png',
       stairsFemale: 'backgrounds/cutscenes/stairs_right_female_v1.png',
-      enemyTotal: 20,
+      enemyTotal: 16,
       transitionDelayMs: 3000,
       loadingHoldMs: 2000,
       camera: 1,
@@ -24,7 +25,7 @@
       entryMale: 'backgrounds/cutscenes/dining_door_male_v2.png',
       entryCoop: 'backgrounds/cutscenes/dining_door_coop_v1.png',
       captionInImage: true,
-      enemyTotal: 20,
+      enemyTotal: 18,
       transitionDelayMs: 3000,
       loadingHoldMs: 2000,
       camera: 0,
@@ -44,6 +45,32 @@
       occluders: [
         { id: 'dining_table', polygon: '40% 38%, 60% 38%, 62% 40%, 68.5% 47.4%, 68.5% 49%, 62% 50%, 60% 61%, 42% 61%, 31% 49%, 31% 47.4%, 38% 40%' }
       ]
+    },
+    bossRoom: {
+      background: 'backgrounds/mafia_boss_study_v1.png',
+      entryMale: 'backgrounds/cutscenes/boss_door_male_v1.png',
+      entryCoop: 'backgrounds/cutscenes/boss_door_coop_v1.png',
+      entryFit: 'contain',
+      entryPosition: 'center',
+      enemyTotal: 1,
+      transitionDelayMs: 3000,
+      loadingHoldMs: 2000,
+      camera: 0.5,
+      riseMs: 420,
+      boss: {
+        sprite: 'sprites/enemies/mafia_boss_aim_v1.png',
+        hitsToDefeat: 20,
+        guardsEveryTurns: 3,
+        colorChangeProgress: 0.5,
+        dodgeDurationMs: 650,
+        machineGunRepeatDamage: 0.25
+      },
+      slots: [
+        { id: 'boss_center', worldX: 0.5, footY: 0.60, heightRatio: 0.30 },
+        { id: 'boss_guard_left', worldX: 0.37, footY: 0.60, heightRatio: 0.23 },
+        { id: 'boss_guard_right', worldX: 0.63, footY: 0.60, heightRatio: 0.23 }
+      ],
+      occluders: []
     },
     riseMs: 420,
     slots: [
