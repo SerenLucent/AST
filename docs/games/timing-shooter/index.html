@@ -3527,7 +3527,12 @@
       showBulletEffect(target.x, target.y);
       showDamage(state.lastScore, target.x, target.y + 3);
       addScore(scoreForHit(state.lastScore, target));
-      if (target.isBoss) applyEnemyHpDamage(target, state.hpDamage * hall.config.boss.machineGunRepeatMultiplier);
+      if (target.isBoss) {
+        const repeatDamage = state.hpDamage * hall.config.boss.machineGunRepeatMultiplier;
+        const previousTotal = Math.floor(repeatDamage * (state.shotsFired - 2));
+        const nextTotal = Math.floor(repeatDamage * (state.shotsFired - 1));
+        applyEnemyHpDamage(target, nextTotal - previousTotal);
+      }
       if (target.isBoss && bossBattle.hp === 0) {
         enemiesRemaining.textContent = '0';
         completeStage();
