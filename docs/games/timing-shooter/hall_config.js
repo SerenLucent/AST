@@ -59,6 +59,7 @@
       riseMs: 420,
       boss: {
         sprite: 'sprites/enemies/mafia_boss_aim_v1.png',
+        hitSprite: 'sprites/enemies/mafia_boss_hit_v1.png',
         hitsToDefeat: 20,
         guardsEveryTurns: 3,
         colorChangeProgress: 0.5,
