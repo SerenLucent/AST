@@ -26,7 +26,7 @@
   top: 50%;
   transform: translate(-50%, -50%);
 }
-.hostage-circle { width: 68px; height: 68px; }
+.hostage-circle { width: 52px; height: 52px; }
 .hostage-perfect_target { width: 52px; height: 52px; }
 .hostage-target { width: 36px; height: 36px; }
 .hostage-fallen .hostage-body {
