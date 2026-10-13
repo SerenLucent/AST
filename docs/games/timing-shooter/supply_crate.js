@@ -5,6 +5,7 @@ class SupplyCrate {
     this.onHit = onHit;
     this.onReward = onReward;
     this.atlasSrc = 'sprites/items/supply_crate_atlas_v1.png';
+    this.maxHits = 10;
     this.resetRoom(22, 2);
   }
 
@@ -18,8 +19,12 @@ class SupplyCrate {
     this.clear();
     this.turn = 0;
     this.lastSpawnTurn = Math.ceil(enemyTotal / enemiesPerTurn) - 3;
-    this.spawnTurn = this.lastSpawnTurn >= 3
-      ? 3 + Math.floor(Math.random() * (this.lastSpawnTurn - 2)) : Infinity;
+    const pairs = [];
+    for (let first = 2; first <= this.lastSpawnTurn - 3; first++) {
+      for (let second = first + 3; second <= this.lastSpawnTurn; second++) pairs.push([first, second]);
+    }
+    this.spawnTurns = pairs.length ? pairs[Math.floor(Math.random() * pairs.length)]
+      : this.lastSpawnTurn >= 2 ? [2] : [];
   }
 
   nextTurn(targets, excluded = []) {
@@ -28,17 +33,8 @@ class SupplyCrate {
     const used = new Set([...targets.map(target => target.color), ...excluded]);
     // Reserve a non-red color so equipping Magnum cannot conflict with the crate.
     const choices = ['b', 'g', 'y'].filter(color => !used.has(color));
-    if (this.element) {
-      if (used.has(this.color) && choices.length) {
-        this.color = choices[Math.floor(Math.random() * choices.length)];
-        [...this.reticle.children].forEach((image, index) => {
-          image.src = `sprites/${['circle', 'perfect_target', 'target'][index]}_${this.color}.png`;
-        });
-        this.prompt.querySelector('img').src = `sprites/target_${this.color}.png`;
-      }
-      return;
-    }
-    if (this.turn !== this.spawnTurn) return;
+    if (this.element) return;
+    if (!this.spawnTurns.includes(this.turn)) return;
     if (!choices.length) return;
     this.color = choices[Math.floor(Math.random() * choices.length)];
     this.hits = 0;
@@ -93,7 +89,7 @@ class SupplyCrate {
   }
 
   renderDamage() {
-    const frame = Math.min(4, Math.floor(this.hits / 5));
+    const frame = Math.min(4, Math.floor(this.hits * 4 / this.maxHits));
     this.body.dataset.frame = frame;
     this.body.style.backgroundPosition = `${(frame % 3) * 50}% ${Math.floor(frame / 3) * 100}%`;
     const outlines = [
@@ -108,22 +104,22 @@ class SupplyCrate {
 
   setEnabled(enabled) {
     this.enabled = Boolean(enabled);
-    if (this.reticle) this.reticle.hidden = !this.enabled || this.hits >= 20;
+    if (this.reticle) this.reticle.hidden = !this.enabled || this.hits >= this.maxHits;
     if (this.prompt) {
-      this.prompt.hidden = !this.enabled || this.hits >= 20;
+      this.prompt.hidden = !this.enabled || this.hits >= this.maxHits;
       this.prompt.classList.toggle('rapid', gameRuntime.now() < (this.promptUntil ?? 0));
     }
-    if (this.cue) this.cue.hidden = !this.enabled || this.hits >= 20;
+    if (this.cue) this.cue.hidden = !this.enabled || this.hits >= this.maxHits;
   }
 
   press(color) {
-    if (this.element && this.hits >= 20 && color === this.color) return true;
-    if (!this.element || !this.enabled || this.hits >= 20 || color !== this.color) return false;
+    if (this.element && this.hits >= this.maxHits && color === this.color) return true;
+    if (!this.element || !this.enabled || this.hits >= this.maxHits || color !== this.color) return false;
     this.hits++;
     this.promptUntil = gameRuntime.now() + 2000;
     this.renderDamage();
     this.onHit(this);
-    if (this.hits === 20) {
+    if (this.hits === this.maxHits) {
       this.setEnabled(false);
       this.onReward({ x: this.x, y: this.y });
       this.removeTimer = gameRuntime.setTimeout(() => this.clear(), 350);

@@ -1462,7 +1462,7 @@
   </style>
   <link rel="stylesheet" href="opening.css?v=full-cutscene-4">
   <link rel="stylesheet" href="tutorial.css?v=knockdown-3">
-  <link rel="stylesheet" href="supply_crate.css?v=crate-cue-3">
+  <link rel="stylesheet" href="supply_crate.css?v=crate-two-4">
   <link rel="stylesheet" href="hall.css?v=game-over-5">
   <link rel="stylesheet" href="hostage.css?v=hostage-ring-2">
   <link rel="stylesheet" href="dodge.css?v=thick-flash-7">
@@ -1615,7 +1615,7 @@
   <script src="hall_config.js?v=full-cutscene-2"></script>
   <script src="hall.js?v=dodge-camera-2"></script>
   <script src="hostage.js?v=hostage-1"></script>
-  <script src="supply_crate.js?v=crate-cue-3"></script>
+  <script src="supply_crate.js?v=crate-two-4"></script>
   <script src="dodge.js?v=boss-dodge-1"></script>
   <script src="boss.js?v=boss-hp-50"></script>
   <script src="tutorial.js?v=knockdown-3"></script>
@@ -1926,6 +1926,17 @@
     function pickRandomColor() {
       const keys = Object.keys(colors).filter(color => color !== supplyCrate.color);
       return keys[Math.floor(Math.random() * keys.length)];
+    }
+
+    function colorForEnemy(color, target = null) {
+      if (!supplyCrate.color || color !== supplyCrate.color) return color;
+      const used = new Set(activeTargets.filter(enemy => enemy !== target && (!enemy.judged || enemy.countering))
+        .map(enemy => enemy.color));
+      if (hostage.element && !hostage.hit) used.add(hostage.color);
+      const available = Object.keys(colors).filter(key => key !== supplyCrate.color);
+      const distinct = available.filter(key => !used.has(key));
+      const choices = distinct.length ? distinct : available;
+      return choices[Math.floor(Math.random() * choices.length)];
     }
 
     function setNetStatus(text) {
@@ -3243,7 +3254,7 @@
 
     function makeTarget(color, slot, options = {}) {
       if (stageEnded || floorTransition) return;
-      const effectiveColor = hasActiveItem('magnum') ? 'r' : color;
+      const effectiveColor = colorForEnemy(hasActiveItem('magnum') ? 'r' : color);
       const sprite = colors[effectiveColor];
       const element = document.createElement('div');
       const enemy = makeImage('enemy-img', 'enemies/mafia_gunman_aim_01.png');
@@ -3547,6 +3558,7 @@
     }
 
     function setTargetColor(target, color) {
+      color = colorForEnemy(color, target);
       const sprite = colors[color];
       target.color = color;
       target.target.src = `sprites/${sprite.target}`;

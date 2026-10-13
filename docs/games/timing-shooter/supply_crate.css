@@ -1,6 +1,6 @@
 .supply-crate { position:absolute; z-index:5; transform:translate(-50%,-50%); pointer-events:none; }
-.supply-crate-body { position:absolute; inset:0; background-size:300% 200%; background-repeat:no-repeat; }
-.supply-crate-reticle { position:absolute; left:50%; top:48%; }
+.supply-crate-body { position:absolute; inset:0; background-size:300% 200%; background-repeat:no-repeat; filter:brightness(1.4) saturate(.82); }
+.supply-crate-reticle { position:absolute; left:50%; top:66%; }
 .supply-crate-reticle img { position:absolute; left:0; top:0; transform:translate(-50%,-50%); }
 .supply-crate-circle, .supply-crate-perfect_target { width:52px; height:52px; }
 .supply-crate-target { width:36px; height:36px; }
