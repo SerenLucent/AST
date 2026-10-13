@@ -67,6 +67,23 @@
 
 .opening-guard-body { height: 100%; width: auto; display: block; }
 
+.opening-guard-knockdown {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 100%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  background-size: 400% 200%;
+  background-position: 0% 0%;
+  background-repeat: no-repeat;
+}
+
+.opening-guard.shot { transition: none; }
+.opening-guard.shot .opening-guard-body { visibility: hidden; }
+.opening-guard.shot .opening-guard-knockdown { display: block; }
+
 .opening-reticle {
   position: absolute;
   left: 50%;

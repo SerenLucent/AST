@@ -1,0 +1,19 @@
+.supply-crate { position:absolute; z-index:5; transform:translate(-50%,-50%); pointer-events:none; }
+.supply-crate-body { position:absolute; inset:0; background-size:300% 200%; background-repeat:no-repeat; }
+.supply-crate-reticle { position:absolute; left:50%; top:48%; }
+.supply-crate-reticle img { position:absolute; left:0; top:0; transform:translate(-50%,-50%); }
+.supply-crate-circle, .supply-crate-perfect_target { width:52px; height:52px; }
+.supply-crate-target { width:36px; height:36px; }
+.supply-crate-cue { position:absolute; left:50%; bottom:94%; width:146px; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:3px; color:#ffe168; text-shadow:0 2px 3px #000, 0 0 12px #ffac32; }
+.supply-crate-cue strong { font-size:22px; line-height:26px; font-weight:900; white-space:nowrap; -webkit-text-stroke:.5px #552500; }
+.supply-crate-arrow { width:22px; height:24px; background:#ffe168; clip-path:polygon(32% 0, 68% 0, 68% 48%, 100% 48%, 50% 100%, 0 48%, 32% 48%); animation:crate-arrow 550ms ease-in-out infinite alternate; }
+.supply-crate-prompt { position:absolute; left:50%; top:86%; transform:translateX(-50%); display:flex; align-items:center; gap:5px; color:#fff; font-size:15px; line-height:30px; text-shadow:0 2px 3px #000; white-space:nowrap; }
+.supply-crate-prompt img { width:30px; height:30px; animation:crate-push 550ms ease-in-out infinite alternate; }
+.supply-crate-prompt.rapid img { animation-duration:180ms; }
+.supply-crate-prompt[hidden], .supply-crate-reticle[hidden], .supply-crate-cue[hidden] { display:none; }
+.crate-reward-flight { position:absolute; z-index:110; width:62px; height:62px; box-sizing:border-box; padding:4px; border:1px solid #ffe0a0; border-radius:8px; background:linear-gradient(#ffdb9d, #d98e48); box-shadow:0 4px 0 #52290f94, 0 0 16px #ffb45066; pointer-events:none; }
+.crate-reward-flight img { display:block; width:100%; height:100%; object-fit:contain; }
+.crate-reward-flight span { position:absolute; right:3px; bottom:2px; font-size:10px; font-weight:900; color:#23150b; }
+@keyframes crate-push { to { transform:scale(.76); filter:brightness(1.5); } }
+@keyframes crate-arrow { to { transform:translateY(5px); } }
+@media (prefers-reduced-motion:reduce) { .supply-crate-arrow, .supply-crate-prompt img { animation:none; } }

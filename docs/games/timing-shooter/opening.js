@@ -25,6 +25,12 @@ class OpeningSequence {
     this.scenery = this.layer.querySelector('.opening-scenery');
     this.guard = this.layer.querySelector('.opening-guard');
     this.guardBody = this.layer.querySelector('.opening-guard-body');
+    this.guardKnockdown = document.createElement('div');
+    this.guardKnockdown.className = 'opening-guard-knockdown';
+    this.guard.append(this.guardKnockdown);
+    this.knockdownImage = new Image();
+    this.knockdownImage.src = 'sprites/enemies/mafia_knockdown_atlas_v1.png';
+    this.guardKnockdown.style.backgroundImage = `url("${this.knockdownImage.src}")`;
     this.reticle = this.layer.querySelector('.opening-reticle');
     this.caption = this.layer.querySelector('.opening-caption');
     this.flash = this.layer.querySelector('.opening-shot-flash');
@@ -69,7 +75,7 @@ class OpeningSequence {
 
   async prepare() {
     if (!this.assetsReady) {
-      this.assetsReady = Promise.all([...this.frames, this.coverImage, this.guardBody, ...this.breachImages].map((image) => image.decode()));
+      this.assetsReady = Promise.all([...this.frames, this.coverImage, this.guardBody, this.knockdownImage, ...this.breachImages].map((image) => image.decode()));
     }
     try {
       await this.assetsReady;
@@ -154,6 +160,8 @@ class OpeningSequence {
     this.onComplete = onComplete;
     this.onBreach = onBreach;
     this.mode = mode;
+    this.guard.classList.remove('shot', 'visible');
+    this.guardKnockdown.style.backgroundPosition = '0% 0%';
     this.breachImages.forEach((image) => image.classList.remove('visible'));
     this.caption.classList.remove('game-start');
     this.phase = 'approach';
@@ -210,10 +218,19 @@ class OpeningSequence {
     gameRuntime.setTimeout(() => { impact.src = 'sprites/effects/bullet_effect_2.png'; }, 55);
     gameRuntime.setTimeout(() => { impact.src = 'sprites/effects/bullet_effect_3.png'; }, 110);
     gameRuntime.setTimeout(() => impact.remove(), 230);
-    this.animate(this.guard, [
-      { transform: 'translate(-50%, -100%) rotate(0deg)', opacity: 1 },
-      { transform: 'translate(-50%, -84%) rotate(-9deg)', opacity: 0 }
-    ], { duration: 520, easing: 'ease-in', fill: 'forwards' });
+    this.guard.classList.add('shot');
+    const guardScreenX = this.guard.getBoundingClientRect().left + this.guard.clientWidth / 2;
+    const stageRect = this.stage.getBoundingClientRect();
+    const facing = guardScreenX > stageRect.left + stageRect.width / 2 ? -1 : 1;
+    this.guardKnockdown.style.transform = `translateX(-50%) scaleX(${facing})`;
+    for (let frame = 1; frame < 4; frame++) {
+      gameRuntime.setTimeout(() => {
+        if (this.phase === 'shot') this.guardKnockdown.style.backgroundPosition = `${frame * 100 / 3}% 0%`;
+      }, frame * 100);
+    }
+    gameRuntime.setTimeout(() => {
+      if (this.phase === 'shot') this.guard.classList.remove('visible');
+    }, 520);
     this.enterMansion().catch((error) => {
       console.error('[Opening] Door entry failed:', error);
       this.onComplete();

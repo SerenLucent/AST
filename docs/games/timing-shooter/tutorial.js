@@ -24,6 +24,10 @@ class TutorialSequence {
     stage.append(this.layer);
     this.enemy = this.layer.querySelector('.tutorial-enemy');
     this.body = this.layer.querySelector('.tutorial-enemy-body');
+    this.knockdown = document.createElement('div');
+    this.knockdown.className = 'tutorial-enemy-knockdown';
+    this.knockdown.style.backgroundImage = 'url("sprites/enemies/mafia_knockdown_atlas_v1.png")';
+    this.enemy.append(this.knockdown);
     this.reticle = this.layer.querySelector('.tutorial-reticle');
     this.heading = this.layer.querySelector('.tutorial-copy strong');
     this.copy = this.layer.querySelector('.tutorial-copy p');
@@ -112,6 +116,7 @@ class TutorialSequence {
     this.clearCue();
     this.result.textContent = '';
     this.body.src = 'sprites/enemies/mafia_gunman_aim_01.png';
+    this.enemy.classList.remove('shot');
     this.dodge.clear();
     const shooting = this.index < 4;
     this.heading.textContent = `${shooting ? '사격' : '회피'} 연습 ${this.index % 4 + 1} / 4`;
@@ -152,7 +157,13 @@ class TutorialSequence {
     this.clearCue();
     if (this.index < 4) {
       this.playSound('sound/gun.mp3');
-      this.body.src = 'sprites/enemies/mafia_gunman_hit_01.png';
+      this.enemy.classList.add('shot');
+      this.knockdown.style.backgroundPosition = '0% 0%';
+      for (let frame = 1; frame < 4; frame++) {
+        this.later(() => {
+          this.knockdown.style.backgroundPosition = `${frame * 100 / 3}% 0%`;
+        }, frame * 100);
+      }
       this.reticle.hidden = true;
       this.result.textContent = 'Perfect!';
       this.later(() => this.nextLesson(), 900);
@@ -170,6 +181,7 @@ class TutorialSequence {
       this.phase = 'demo';
       this.result.textContent = '';
       this.body.src = 'sprites/enemies/mafia_gunman_aim_01.png';
+      this.enemy.classList.remove('shot');
       this.heading.textContent = '적을 격추하지 못했다면?';
       this.copy.textContent = '이번에는 쏘지 않고 기다려볼게요. 타이밍을 놓치면 적이 살아남아 반격해요.';
       this.instruction.textContent = '잠시 지켜보세요. 다음은 탄환을 피하는 연습이에요.';
@@ -203,6 +215,7 @@ class TutorialSequence {
     this.dodge.clear();
     this.clearCue();
     this.layer.classList.remove('visible');
+    this.enemy.classList.remove('shot');
     this.stage.classList.remove('tutorial-running');
     this.resolveDone();
   }

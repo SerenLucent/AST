@@ -24,6 +24,20 @@
 .tutorial-color[data-color="g"] { color: #72ff98; }
 .tutorial-enemy { position: absolute; left: 50%; bottom: 24%; height: 26%; transform: translateX(-50%); }
 .tutorial-enemy-body { height: 100%; width: auto; display: block; }
+.tutorial-enemy-knockdown {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 100%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  background-size: 400% 200%;
+  background-position: 0% 0%;
+  background-repeat: no-repeat;
+}
+.tutorial-enemy.shot .tutorial-enemy-body { visibility: hidden; }
+.tutorial-enemy.shot .tutorial-enemy-knockdown { display: block; }
 .tutorial-reticle { position: absolute; left: 43%; top: 27%; }
 .tutorial-reticle img { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); }
 .tutorial-target { width: 36px; height: 36px; }

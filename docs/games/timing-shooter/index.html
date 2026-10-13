@@ -330,6 +330,18 @@
       transform: translate(-50%, -50%) scale(0.9);
     }
 
+    .enemy-knockdown {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 1;
+      transform: translate(-50%, -50%);
+      background-size: 400% 200%;
+      background-repeat: no-repeat;
+      pointer-events: none;
+      filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.6));
+    }
+
     .target-img {
       z-index: 2;
       width: var(--target-size);
@@ -1443,8 +1455,9 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="opening.css?v=open-fire-2">
-  <link rel="stylesheet" href="tutorial.css?v=lesson-color-2">
+  <link rel="stylesheet" href="opening.css?v=guard-knockdown-3">
+  <link rel="stylesheet" href="tutorial.css?v=knockdown-3">
+  <link rel="stylesheet" href="supply_crate.css?v=crate-cue-3">
   <link rel="stylesheet" href="hall.css?v=game-over-5">
   <link rel="stylesheet" href="hostage.css?v=hostage-ring-2">
   <link rel="stylesheet" href="dodge.css?v=thick-flash-7">
@@ -1593,13 +1606,14 @@
   <script src="game_runtime.js"></script>
   <script src="judgement_config.js?v=hp-damage-1"></script>
   <script src="opening_config.js"></script>
-  <script src="opening.js?v=pause-2"></script>
+  <script src="opening.js?v=guard-knockdown-3"></script>
   <script src="hall_config.js?v=boss-hp-50"></script>
   <script src="hall.js?v=dodge-camera-2"></script>
   <script src="hostage.js?v=hostage-1"></script>
+  <script src="supply_crate.js?v=crate-cue-3"></script>
   <script src="dodge.js?v=boss-dodge-1"></script>
   <script src="boss.js?v=boss-hp-50"></script>
-  <script src="tutorial.js?v=lesson-color-2"></script>
+  <script src="tutorial.js?v=knockdown-3"></script>
   <script src="ast_integration.js"></script>
   <script>
     const stage = document.getElementById('stage');
@@ -1644,6 +1658,7 @@
     hall.onCameraChange = () => {
       activeTargets.forEach(positionHallTarget);
       hostage.position();
+      supplyCrate.position();
     };
     let counterRetryTimer = null;
     let dodgeTurnTimer = null;
@@ -1676,7 +1691,8 @@
     const enemySprites = {
       aim: 'sprites/enemies/mafia_gunman_aim_01.png',
       hit: 'sprites/enemies/mafia_gunman_hit_01.png',
-      graze: 'sprites/enemies/mafia_gunman_graze_01.png'
+      graze: 'sprites/enemies/mafia_gunman_graze_01.png',
+      knockdown: 'sprites/enemies/mafia_knockdown_atlas_v1.png'
     };
 
     const hostage = new Hostage(stage, () => hall, (civilian) => {
@@ -1702,7 +1718,26 @@
 
     function refreshHostageColor(change = true) {
       const magnum = hasActiveItem('magnum');
-      hostage.refreshColor(activeTargets, magnum ? false : change, magnum ? ['r'] : []);
+      hostage.refreshColor(activeTargets, magnum ? false : change,
+        [...(magnum ? ['r'] : []), ...(supplyCrate.color ? [supplyCrate.color] : [])]);
+    }
+
+    const supplyCrate = new SupplyCrate(stage, () => hall, (crate) => {
+      playJudgementSound('Good');
+      showBulletEffect(crate.x, crate.y);
+    }, deliverCrateReward);
+
+    function updateCrateInput() {
+      supplyCrate.setEnabled(gameStarted && !stageEnded && !floorTransition && !dodge.current
+        && !dodge.queue.length && !activeTargets.some(target => target.countering));
+    }
+
+    function beginCrateTurn() {
+      if (currentFloor === 4) return;
+      supplyCrate.nextTurn(activeTargets);
+      refreshHostageColor();
+      updateHostageInput();
+      updateCrateInput();
     }
 
     let spawnSlots = window.TIMING_SHOOTER_HALL.slots;
@@ -1884,7 +1919,7 @@
     }
 
     function pickRandomColor() {
-      const keys = Object.keys(colors);
+      const keys = Object.keys(colors).filter(color => color !== supplyCrate.color);
       return keys[Math.floor(Math.random() * keys.length)];
     }
 
@@ -2246,7 +2281,7 @@
     const combatPreloads = [];
     function prepareCombatAssets() {
       if (combatAssetsReady) return combatAssetsReady;
-      const sources = [...Object.values(enemySprites), 'sprites/UI/hp_frame.png',
+      const sources = [...Object.values(enemySprites), 'sprites/items/supply_crate_atlas_v1.png', 'sprites/UI/hp_frame.png',
         'sprites/effects/hit_blood_overlay.png',
         ...[1, 2, 3].map((frame) => `sprites/effects/bullet_effect_${frame}.png`),
         ...['b', 'g', 'r', 'y'].flatMap((color) =>
@@ -2697,8 +2732,8 @@
     function renderInventory() {
       inventoryButtons.forEach((button, index) => {
         const item = storedItems[index];
-        button.disabled = !item || stageEnded;
-        button.innerHTML = item ? `<img src="${item.icon}" alt=""><span>Lv.${item.level}</span>` : '';
+        button.disabled = !item || item.arriving || stageEnded;
+        button.innerHTML = item && !item.arriving ? `<img src="${item.icon}" alt=""><span>Lv.${item.level}</span>` : '';
         button.setAttribute('aria-label', item ? `Use ${item.name}, level ${item.level}` : `empty item slot ${index + 1}`);
       });
       updateItemGauge();
@@ -2707,7 +2742,7 @@
     function useStoredItem(index) {
       if (!gameStarted || stageEnded || floorTransition || gameRuntime.paused) return;
       const item = storedItems[index];
-      if (!item) return;
+      if (!item || item.arriving) return;
       storedItems[index] = null;
       announceItem(item);
       if (item.id === 'medkit') {
@@ -2717,6 +2752,52 @@
         startTimedItem(item, item.level);
       }
       renderInventory();
+    }
+
+    function deliverCrateReward(origin) {
+      const slot = storedItems.indexOf(null);
+      const item = slot < 0 ? itemDefs.find(item => item.id === 'medkit')
+        : itemDefs[Math.floor(Math.random() * itemDefs.length)];
+      const stored = { ...item, level: 1, arriving: true };
+      if (slot >= 0) {
+        storedItems[slot] = stored;
+        renderInventory();
+      }
+      const image = document.createElement('div');
+      image.className = 'crate-reward-flight';
+      const icon = new Image();
+      icon.src = item.icon;
+      icon.alt = '';
+      const label = document.createElement('span');
+      label.textContent = slot < 0 ? '+20' : 'Lv.1';
+      image.append(icon, label);
+      stage.append(image);
+      const startedAt = gameRuntime.now();
+      const duration = 800;
+      const targetElement = slot < 0 ? hpFill : inventoryButtons[slot];
+      const advance = now => {
+        if (!image.isConnected || stageEnded) { image.remove(); return; }
+        const progress = Math.min(1, (now - startedAt) / duration);
+        const rect = targetElement.getBoundingClientRect();
+        const stageRect = stage.getBoundingClientRect();
+        const x = rect.left - stageRect.left + rect.width / 2;
+        const y = rect.top - stageRect.top + rect.height / 2;
+        const travel = Math.max(0, (progress - 0.25) / 0.75);
+        const eased = travel * travel;
+        image.style.left = `${origin.x + (x - origin.x) * eased - 31}px`;
+        image.style.top = `${origin.y + (y - origin.y) * eased - Math.sin(progress * Math.PI) * 65 - 31}px`;
+        image.style.transform = `scale(${1.15 - travel * 0.15})`;
+        if (progress < 1) { gameRuntime.requestAnimationFrame(advance); return; }
+        image.remove();
+        if (slot < 0) {
+          hp = Math.min(100, hp + 20);
+          updateHp();
+        } else if (storedItems[slot] === stored) {
+          delete stored.arriving;
+          renderInventory();
+        }
+      };
+      gameRuntime.requestAnimationFrame(advance);
     }
 
     function spendItemGauge(level) {
@@ -2893,6 +2974,8 @@
     }
 
     function stopCombat() {
+      supplyCrate.clear();
+      document.querySelectorAll('.crate-reward-flight').forEach(image => image.remove());
       hostage.clear();
       document.querySelectorAll('.hostage-warning').forEach(popup => popup.remove());
       hall.cancelDodge();
@@ -2941,6 +3024,7 @@
     async function enterNextRoom(config, nextFloor) {
       if (floorTransition || stageEnded) return;
       floorTransition = true;
+      supplyCrate.clear();
       const startedAt = gameRuntime.now();
       const clearedWave = activeWaveId;
       gameStarted = false;
@@ -2981,6 +3065,7 @@
         hall.onCameraChange = () => {
           activeTargets.forEach(positionHallTarget);
           hostage.position();
+          supplyCrate.position();
         };
         hall.setCamera(config.camera);
         spawnSlots = config.slots;
@@ -2988,6 +3073,7 @@
         bossBattle = config.boss ? new BossBattle(config.boss) : null;
         hostage.enter(config.hostage);
         stageEnemyTotal = config.enemyTotal;
+        supplyCrate.resetRoom(stageEnemyTotal, window.TIMING_SHOOTER_CONFIG.waveTargets ?? 2);
         defeatedEnemies = 0;
         nextWaveReadyAt = 0;
         enemiesRemaining.textContent = String(stageEnemyTotal);
@@ -3065,6 +3151,27 @@
       });
     });
 
+    function playEnemyKnockdown(target) {
+      if (target.isBoss || !['Perfect', 'Great'].includes(target.hitJudgement)) return;
+      const sprite = document.createElement('div');
+      sprite.className = 'enemy-knockdown';
+      sprite.style.backgroundImage = `url("${enemySprites.knockdown}")`;
+      sprite.style.width = sprite.style.height = `${target.enemyHeight}px`;
+      // Fall toward the visible play area instead of beyond its nearest edge.
+      const facing = target.x > stage.clientWidth / 2 ? -1 : 1;
+      sprite.style.transform = `translate(-50%, -50%) scaleX(${facing})`;
+      const row = target.hitJudgement === 'Perfect' ? '0%' : '100%';
+      sprite.style.backgroundPosition = `0% ${row}`;
+      target.enemy.style.visibility = 'hidden';
+      target.enemy.parentElement.append(sprite);
+      target.knockdownSprite = sprite;
+      for (let frame = 1; frame < 4; frame++) {
+        gameRuntime.setTimeout(() => {
+          if (sprite.isConnected) sprite.style.backgroundPosition = `${frame * 100 / 3}% ${row}`;
+        }, frame * (target.hitJudgement === 'Perfect' ? 100 : 85));
+      }
+    }
+
     function finishTarget(target, reaction = 'hit') {
       if (stageEnded || floorTransition || !target || target.judged || !target.element.isConnected) return;
       if (target.isBoss) {
@@ -3091,6 +3198,7 @@
       finishedTarget.judge.classList.remove('visible');
       if (reaction !== 'none') {
         setEnemySprite(finishedTarget, enemySprites[reaction] ?? enemySprites.hit, reaction === 'hit' || reaction === 'graze');
+        playEnemyKnockdown(finishedTarget);
       }
       startDodgeTurnWhenReady();
       if (serverMode && !hasActiveOrCounteringTargets()) {
@@ -3243,6 +3351,9 @@
       target.element.style.left = `${target.x - circleBaseSize / 2}px`;
       target.element.style.top = `${centerY - circleBaseSize / 2}px`;
       target.enemy.style.height = `${height}px`;
+      if (target.knockdownSprite) {
+        target.knockdownSprite.style.width = target.knockdownSprite.style.height = `${height}px`;
+      }
       if (target.enemyCover) {
         // This mask stays still while the character rises behind the fountain.
         const bottomInset = centerY + circleBaseSize / 2 - stage.clientHeight * slot.clipBottomY;
@@ -3278,8 +3389,7 @@
             startAt: wave.startAt
           });
         });
-        refreshHostageColor();
-        updateHostageInput();
+        beginCrateTurn();
         return;
       }
 
@@ -3295,8 +3405,7 @@
       }
       waveColors.sort(() => Math.random() - 0.5);
       waveColors.forEach((color, index) => makeTarget(color, availableSlots[index]));
-      refreshHostageColor();
-      updateHostageInput();
+      beginCrateTurn();
     }
 
     function updateBossEnemyCount() {
@@ -3465,6 +3574,7 @@
       }
 
       showBulletEffect(target.x, target.y);
+      target.hitJudgement = text;
       const damage = damageForJudgement(text);
       const gaugeBonus = registerComboHit();
       showJudgement(text, colorText, target.x, judgementYFor(target));
@@ -3567,6 +3677,8 @@
         return;
       }
       if (dodge.press(color)) return;
+      updateCrateInput();
+      if (supplyCrate.press(color)) return;
       updateHostageInput();
       if (hostage.press(color)) return;
       if (!hasUnjudgedTargets()) {
@@ -3625,6 +3737,7 @@
       dodge.update(gameRuntime.now());
       hall.updateDodge(gameRuntime.now());
       updateHostageInput();
+      updateCrateInput();
       activeTargets.forEach((target) => {
         if (target.judged) return;
         if (gameRuntime.now() < target.startTime) return;
