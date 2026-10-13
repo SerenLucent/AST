@@ -3,13 +3,14 @@
   "game": "timing-shooter",
   "timeZone": "Asia/Seoul",
   "weekStart": "2026-10-11T15:00:00.000Z",
-  "updatedAt": "2026-10-13T01:48:10.023Z",
+  "updatedAt": "2026-10-13T02:10:33.957Z",
   "players": [
     {
       "playerKey": "575daf8565118d25e1f06ad13c1bea6006ffebcdbbb3b52ccc9904bafc04a3f7",
       "bestScore": 15212,
-      "clears": 4,
+      "clears": 5,
       "recentRunIds": [
+        "0d6b3e42-61cc-4bcc-8fd7-92f344cfc05c",
         "e56a401a-9a3c-4922-9076-99eb1ffb2627",
         "75b9602f-8045-4939-88d3-a7becb7b7d0e",
         "210bc54d-28de-4706-b6c3-bfadbecefa29",
@@ -17,14 +18,14 @@
       ],
       "nickname": "경식",
       "lastResult": {
-        "runId": "e56a401a-9a3c-4922-9076-99eb1ffb2627",
+        "runId": "0d6b3e42-61cc-4bcc-8fd7-92f344cfc05c",
         "stageId": "stage1",
         "revision": 1,
-        "shootScore": 7022,
-        "remainingHp": 3,
-        "hpScore": 300,
-        "totalScore": 7322,
-        "savedAt": "2026-10-13T01:48:10.023Z"
+        "shootScore": 6461,
+        "remainingHp": 46,
+        "hpScore": 4600,
+        "totalScore": 11061,
+        "savedAt": "2026-10-13T02:10:33.957Z"
       }
     },
     {
