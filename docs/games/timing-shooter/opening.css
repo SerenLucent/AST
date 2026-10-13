@@ -146,6 +146,7 @@
 }
 
 .opening-breach-image.visible { display: block; }
+.opening-breach-image.visible ~ .opening-caption { top: 6%; }
 
 .opening-shot-flash {
   position: absolute;
