@@ -125,6 +125,11 @@
       object-fit: cover;
       object-position: 30% center;
     }
+    #floorLoading img.baked-caption {
+      position: absolute;
+      top: -10%;
+      height: 110%;
+    }
     #floorLoadingCaption {
       position: absolute;
       top: 15%;
@@ -1455,7 +1460,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="opening.css?v=guard-knockdown-3">
+  <link rel="stylesheet" href="opening.css?v=full-cutscene-4">
   <link rel="stylesheet" href="tutorial.css?v=knockdown-3">
   <link rel="stylesheet" href="supply_crate.css?v=crate-cue-3">
   <link rel="stylesheet" href="hall.css?v=game-over-5">
@@ -1607,7 +1612,7 @@
   <script src="judgement_config.js?v=hp-damage-1"></script>
   <script src="opening_config.js"></script>
   <script src="opening.js?v=guard-knockdown-3"></script>
-  <script src="hall_config.js?v=boss-hp-50"></script>
+  <script src="hall_config.js?v=full-cutscene-2"></script>
   <script src="hall.js?v=dodge-camera-2"></script>
   <script src="hostage.js?v=hostage-1"></script>
   <script src="supply_crate.js?v=crate-cue-3"></script>
@@ -3037,11 +3042,13 @@
       const screen = document.getElementById('floorLoading');
       const image = document.getElementById('floorLoadingImage');
       document.getElementById('floorLoadingCaption').textContent = 'HOLD YOUR FIRE';
-      document.getElementById('floorLoadingCaption').hidden = Boolean(config.captionInImage);
+      document.getElementById('floorLoadingCaption').hidden = false;
       screen.setAttribute('aria-label', nextFloor === 4 ? 'Entering boss room' : nextFloor === 3 ? 'Entering dining room' : 'Ascending stairs');
       image.alt = nextFloor === 4 ? 'Police entering the small door behind the dining table' : nextFloor === 3 ? 'Police entering the dining room' : 'Police ascending the stairs';
-      image.style.objectFit = config.entryFit ?? (config.captionInImage ? 'contain' : 'cover');
-      image.style.objectPosition = config.entryPosition ?? (config.captionInImage ? 'center' : '30% center');
+      // Crop baked-in lettering out, then use the common caption without clipping its text.
+      image.classList.toggle('baked-caption', Boolean(config.captionInImage));
+      image.style.objectFit = config.entryFit ?? 'cover';
+      image.style.objectPosition = config.entryPosition ?? '30% center';
       image.src = nextFloor >= 3
         ? (selectedMode === '2p' ? config.entryCoop : config.entryMale)
         : config.stairsMale;
