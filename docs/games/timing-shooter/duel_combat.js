@@ -16,9 +16,9 @@
       this.root = document.createElement('div');
       this.root.className = 'duel-combat';
       this.root.hidden = true;
-      this.root.innerHTML = `<div class="duel-hp">${[1, 2].map(player => `<div class="duel-hp-row"><span>${player}P</span><div class="duel-hp-track" role="progressbar" aria-label="${player}P HP" aria-valuemin="0" aria-valuemax="${cfg.initialHp}"><div class="duel-hp-fill"></div></div><strong class="duel-hp-value">${cfg.initialHp}</strong></div>`).join('')}</div>
+      this.root.innerHTML = `<div class="duel-hp">${[1, 2].map(player => `<div class="duel-hp-row" data-player="${player}"><span>${player}P</span><div class="duel-hp-track" role="progressbar" aria-label="${player}P HP" aria-valuemin="0" aria-valuemax="${cfg.initialHp}"><div class="duel-hp-well"><div class="duel-hp-fill"></div></div></div><strong class="duel-hp-value">${cfg.initialHp}</strong></div>`).join('')}</div>
         <section class="duel-pattern"><div class="duel-count"></div>
-          <table><thead></thead><tbody></tbody></table><button class="duel-ok" type="button">OK</button></section>
+          <div class="duel-table-scroll"><table><thead></thead><tbody></tbody></table></div><button class="duel-ok" type="button">OK</button></section>
         <div class="duel-cue" role="status"></div>
         <div class="duel-shot-target" hidden><img class="duel-perfect" alt=""><img class="duel-ring" alt=""><img class="duel-center" alt=""></div>
         <div class="duel-evade" hidden><div class="duel-evade-fixed"></div><div class="duel-evade-moving"></div></div>`;

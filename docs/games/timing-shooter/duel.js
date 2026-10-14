@@ -40,7 +40,7 @@
           <button class="duel-exit" type="button" aria-label="Exit VS Mode">나가기</button>
         </header>
         <div class="duel-status" role="status" aria-live="polite">
-          <span class="duel-turn"></span><strong class="duel-role"></strong>
+          <strong class="duel-role"></strong><span class="duel-turn"></span>
         </div>
         <footer class="duel-footer">
           <button class="duel-next" type="button">다음 턴</button>
@@ -48,6 +48,7 @@
         <div class="duel-intro" role="status" aria-label="MATCH START" hidden>
           <div class="duel-intro-letters" aria-hidden="true"></div>
         </div>
+        <div class="duel-turn-banner" role="status" hidden></div>
         <section class="duel-lobby" aria-label="VS room lobby">
           <h1>VS MODE</h1>
           <div class="duel-room-entry">
@@ -238,6 +239,7 @@
 
     applyRoom(room) {
       if (room.revision < this.revision) return;
+      const changedTurn = this.turn !== room.turn;
       this.revision = room.revision;
       this.attacker = room.attacker;
       this.turn = room.turn;
@@ -272,7 +274,7 @@
       if (!this.matchStarted) {
         this.matchStarted = true;
         this.playIntro();
-      }
+      } else if (changedTurn && !this.introActive) this.showRoleBanner();
       this.root.querySelector('.duel-status').hidden = this.introActive;
       this.combat.update(room);
     }
@@ -313,19 +315,34 @@
     playIntro() {
       this.cancelIntro();
       this.introActive = true;
+      this.introMusicStarted = false;
       const intro = this.root.querySelector('.duel-intro');
       intro.hidden = false;
       void intro.offsetWidth;
       intro.classList.add('playing');
+      const startMusic = () => {
+        if (!this.active || !this.matchStarted || this.introMusicStarted) return;
+        this.introMusicStarted = true;
+        this.onMatchStart?.();
+      };
+      // The tenth letter finishes entering at 9 * 70 + 370 = 1000 ms.
+      this.introMusicTimer = setTimeout(startMusic,
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1000);
       this.root.querySelector('.duel-next').disabled = true;
       this.introTimer = setTimeout(() => {
         this.cancelIntro();
-        if (this.active && this.matchStarted) this.onMatchStart?.();
+        if (this.active && this.matchStarted) {
+          this.showRoleBanner();
+          if (this.combat.room) this.combat.update(this.combat.room);
+        }
       }, 2150);
     }
 
     cancelIntro() {
       clearTimeout(this.introTimer);
+      clearTimeout(this.introMusicTimer);
+      clearTimeout(this.roleBannerTimer);
+      this.root.querySelector('.duel-turn-banner').hidden = true;
       this.introTimer = null;
       this.introActive = false;
       const intro = this.root.querySelector('.duel-intro');
@@ -333,6 +350,16 @@
       intro.classList.remove('playing');
       this.root.querySelector('.duel-next').disabled = false;
       if (this.matchStarted && this.active) this.root.querySelector('.duel-status').hidden = false;
+    }
+
+    showRoleBanner() {
+      clearTimeout(this.roleBannerTimer);
+      const banner = this.root.querySelector('.duel-turn-banner');
+      const attacking = this.player === this.attacker;
+      banner.textContent = `${this.player}P ${attacking ? 'ATTACK' : 'DEFENSE'}`;
+      banner.dataset.role = attacking ? 'attack' : 'defense';
+      banner.hidden = false;
+      this.roleBannerTimer = setTimeout(() => { banner.hidden = true; }, 1200);
     }
 
     nextTurn() {
@@ -350,7 +377,7 @@
       this.root.dataset.player = String(this.player);
       this.root.dataset.attacker = String(this.attacker);
       this.root.dataset.pose = pose;
-      this.root.querySelector('.duel-turn').textContent = `TURN ${this.turn} · ${this.attacker}P 공격 / ${3 - this.attacker}P 방어`;
+      this.root.querySelector('.duel-turn').textContent = `TURN ${this.turn} / ${this.roomSettings?.deathmatch ? '∞' : this.roomSettings?.turnLimit ?? 10}`;
       this.root.querySelector('.duel-role').textContent = attacking ? 'ATTACK' : 'DEFENSE';
       this.root.querySelector('.duel-role').dataset.role = attacking ? 'attack' : 'defense';
       this.root.dispatchEvent(new CustomEvent('duelturnchange', {
