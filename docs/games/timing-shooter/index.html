@@ -769,6 +769,13 @@
       cursor: pointer;
     }
 
+    #audioControls { position: absolute; left: 12px; bottom: 20px; z-index: 96; display: flex; gap: 6px; }
+    #audioControls[hidden] { display: none; }
+    #audioControls button { width: 52px; height: 36px; border: 1px solid #ffffff70; border-radius: 4px; background: #12171ee6; color: #ffd629; font-size: 12px; font-weight: 700; cursor: pointer; }
+    #audioControls button[aria-pressed="false"] { color: #b6bbc2; text-decoration: line-through; }
+    #stage.game-running #audioControls, #stage.duel-running #audioControls { left: auto; right: 80px; top: 12px; bottom: auto; }
+    #stage.game-running #audioControls button, #stage.duel-running #audioControls button { width: 44px; height: 30px; }
+
     .player-label { color: #fff; font-size: 14px; font-weight: 900; margin-bottom: 3px; }
     #enemyCounter {
       position: absolute; top: 65px; right: 12px; z-index: 30;
@@ -1465,7 +1472,8 @@
   <link rel="stylesheet" href="supply_crate.css?v=crate-two-4">
   <link rel="stylesheet" href="hall.css?v=game-over-5">
   <link rel="stylesheet" href="hostage.css?v=hostage-ring-2">
-  <link rel="stylesheet" href="dodge.css?v=thick-flash-7">
+  <link rel="stylesheet" href="dodge.css?v=gold-bullet-8">
+  <link rel="stylesheet" href="duel.css?v=shot-effects-12">
 </head>
 <body>
   <main id="stage">
@@ -1513,6 +1521,10 @@
     <div id="netStatus" hidden><span id="netLabel">LOCAL</span></div>
     <div id="activeEffects" aria-label="active items"></div>
     <button id="exitGame" type="button">나가기</button>
+    <div id="audioControls" aria-label="소리 설정" hidden>
+      <button id="toggleBgm" type="button" aria-pressed="true" title="배경음 끄기" aria-label="배경음 끄기">BGM</button>
+      <button id="toggleSfx" type="button" aria-pressed="true" title="효과음 끄기" aria-label="효과음 끄기">SFX</button>
+    </div>
     <div id="enemyCounter" aria-label="remaining enemies"><span class="enemy-face"><img src="sprites/enemies/mafia_gunman_aim_01.png" alt=""></span><span id="enemiesRemaining">22</span></div>
     <div id="exitConfirm" role="dialog" aria-modal="true" aria-labelledby="exitQuestion" hidden>
       <div class="exit-dialog">
@@ -1616,10 +1628,15 @@
   <script src="hall.js?v=dodge-camera-2"></script>
   <script src="hostage.js?v=hostage-1"></script>
   <script src="supply_crate.js?v=crate-two-4"></script>
-  <script src="dodge.js?v=boss-dodge-1"></script>
+  <script src="dodge.js?v=gold-bullet-3"></script>
   <script src="boss.js?v=boss-hp-50"></script>
   <script src="tutorial.js?v=knockdown-3"></script>
   <script src="ast_integration.js"></script>
+  <script src="multiplayer_config.js?v=multi-play-2"></script>
+  <script src="multiplayer_client.js?v=multi-play-1"></script>
+  <script src="duel.js?v=multi-play-14"></script>
+  <script src="duel_config.js?v=six-shots-4"></script>
+  <script src="duel_combat.js?v=multi-play-13"></script>
   <script>
     const stage = document.getElementById('stage');
     const titleScreen = document.getElementById('titleScreen');
@@ -1961,6 +1978,37 @@
     let bgmContext = null;
     let bgmGain = null;
     let cueGain = null;
+    const audioPreferences = { bgm: true, sfx: true };
+    try {
+      const saved = JSON.parse(localStorage.getItem('timingShooterAudio') || '{}');
+      for (const kind of ['bgm', 'sfx']) if (typeof saved[kind] === 'boolean') audioPreferences[kind] = saved[kind];
+    } catch (_) {}
+    const managedAudio = new Map();
+    function registerAudio(audio, kind = 'sfx') {
+      managedAudio.set(audio, kind);
+      audio.muted = !audioPreferences[kind];
+      return audio;
+    }
+    function applyAudioPreferences() {
+      if (bgmGain) bgmGain.gain.value = audioPreferences.bgm ? bgmVolume : 0;
+      if (cueGain) cueGain.gain.value = audioPreferences.sfx ? .9 : 0;
+      managedAudio.forEach((kind, audio) => { audio.muted = !audioPreferences[kind]; });
+      for (const [kind, label, id] of [['bgm', '배경음', 'toggleBgm'], ['sfx', '효과음', 'toggleSfx']]) {
+        const button = document.getElementById(id);
+        const title = `${label} ${audioPreferences[kind] ? '끄기' : '켜기'}`;
+        button.setAttribute('aria-pressed', String(audioPreferences[kind]));
+        button.setAttribute('aria-label', title); button.title = title;
+      }
+    }
+    document.querySelectorAll('audio').forEach(audio => registerAudio(audio, audio === bgm ? 'bgm' : 'sfx'));
+    for (const [kind, id] of [['bgm', 'toggleBgm'], ['sfx', 'toggleSfx']]) {
+      document.getElementById(id).addEventListener('click', () => {
+        audioPreferences[kind] = !audioPreferences[kind];
+        applyAudioPreferences();
+        try { localStorage.setItem('timingShooterAudio', JSON.stringify(audioPreferences)); } catch (_) {}
+      });
+    }
+    applyAudioPreferences();
     let bgmUnlocked = false;
     let activeBgmSources = [];
     let activeCueSources = [];
@@ -1984,10 +2032,10 @@
       if (!AudioContextClass) return null;
       bgmContext = new AudioContextClass();
       bgmGain = bgmContext.createGain();
-      bgmGain.gain.value = bgmVolume;
+      bgmGain.gain.value = audioPreferences.bgm ? bgmVolume : 0;
       bgmGain.connect(bgmContext.destination);
       cueGain = bgmContext.createGain();
-      cueGain.gain.value = 0.9;
+      cueGain.gain.value = audioPreferences.sfx ? .9 : 0;
       cueGain.connect(bgmContext.destination);
       return bgmContext;
     }
@@ -2240,6 +2288,102 @@
       transitionLocked = false;
     }
 
+    let rouletteLoopBuffer = null;
+    function startRouletteAudio() {
+      let source = null;
+      let gain = null;
+      const handle = {
+        stopped: false,
+        get source() { return source; },
+        stop() {
+          if (handle.stopped) return;
+          handle.stopped = true;
+          if (source) { try { source.stop(); } catch {} source.disconnect(); }
+          gain?.disconnect();
+        }
+      };
+      handle.ready = (async () => {
+        await unlockBgm();
+        const buffer = await loadAudioCueBuffer('sound/roulette.mp3');
+        if (handle.stopped) return;
+        const context = ensureBgmContext();
+        if (!rouletteLoopBuffer) {
+          let first = buffer.length;
+          let last = 0;
+          for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const samples = buffer.getChannelData(channel);
+            for (let index = 0; index < samples.length; index++) {
+              if (Math.abs(samples[index]) > 0.001) { first = Math.min(first, index); last = Math.max(last, index); }
+            }
+          }
+          if (last <= first) { first = 0; last = buffer.length - 1; }
+          const length = last - first + 1;
+          const overlap = Math.max(1, Math.min(Math.floor(buffer.sampleRate * .01), Math.floor(length / 4)));
+          const loop = context.createBuffer(buffer.numberOfChannels, length, buffer.sampleRate);
+          // Blend the tail into the head; resume after the blended head on every repeat.
+          for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const samples = buffer.getChannelData(channel).subarray(first, last + 1);
+            const output = loop.getChannelData(channel);
+            output.set(samples);
+            for (let index = 0; index < overlap; index++) {
+              const mix = (index + 1) / overlap;
+              output[length - overlap + index] = samples[length - overlap + index] * (1 - mix) + samples[index] * mix;
+            }
+          }
+          rouletteLoopBuffer = { buffer: loop, start: overlap / buffer.sampleRate };
+        }
+        source = context.createBufferSource();
+        source.buffer = rouletteLoopBuffer.buffer;
+        source.loop = true;
+        source.loopStart = rouletteLoopBuffer.start;
+        source.loopEnd = source.buffer.duration;
+        gain = context.createGain(); gain.gain.value = .6;
+        source.connect(gain); gain.connect(cueGain);
+        source.start(0, source.loopStart);
+      })().catch(error => console.warn('[Roulette] Audio loop failed:', error));
+      return handle;
+    }
+
+    const duel = new DuelScene(stage, {
+      onRouletteAudio: startRouletteAudio,
+      onMatchStart: () => playBgmLoop('duel', 'sound/versus.mp3'),
+      onMatchStop: stopBgm,
+      onCombatSound: (grade, defense) => {
+        if (defense) {
+          const src = ['perfect', 'great', 'good'].includes(grade) ? 'sound/miss.mp3' : 'sound/gun.mp3';
+          playPooledEffect(src, 0.8);
+        } else {
+          playOneShot(grade === 'miss' ? missSound : gunSound);
+        }
+      },
+      onExit: () => {
+        modeScreen.classList.remove('hidden');
+        playBgmSequence('select', 'sound/select_1.mp3', 'sound/select_2.mp3');
+      }
+    });
+    registerAudio(duel.combat.roulette); registerAudio(duel.combat.confirm);
+
+    async function startDuelMode() {
+      if (transitionLocked || gameStarted || duel.active) return;
+      transitionLocked = true;
+      startGameButton.disabled = true;
+      showLoading('Now Loading...');
+      try {
+        await Promise.all([duel.prepare(), loadAudioCueBuffer('sound/roulette.mp3')]);
+        stopBgm();
+        titleScreen.classList.add('hidden');
+        modeScreen.classList.add('hidden');
+        duel.start();
+      } catch (error) {
+        console.error('[Duel] Could not load scenes:', error);
+        modeDescription.textContent = '장면을 불러오지 못했습니다. 다시 시작해 주세요.';
+      } finally {
+        hideLoading();
+        transitionLocked = false;
+        startGameButton.disabled = false;
+      }
+    }
+
     async function startGameMode({ fromTitle = false } = {}) {
       if (gameStarted || transitionLocked || opening.active) return;
       transitionLocked = true;
@@ -2354,6 +2498,7 @@
     }
 
     function playOneShot(audio) {
+      registerAudio(audio);
       audio.pause();
       audio.currentTime = 0;
       audio.play().catch(() => {});
@@ -2367,6 +2512,7 @@
       let audio = pool.find((item) => item.paused || item.ended);
       if (!audio) {
         audio = new Audio(src);
+        registerAudio(audio);
         audio.preload = 'auto';
         pool.push(audio);
       }
@@ -3806,6 +3952,11 @@
     buttons.forEach((button) => {
       button.addEventListener('pointerdown', (event) => {
         event.preventDefault();
+        if (duel.active) {
+          updateButtonPress(button);
+          duel.combat.press(button.dataset.color);
+          return;
+        }
         if (gameRuntime.paused) return;
         if (!gameStarted && !opening.canShoot && !tutorial.active) return;
         resumeBgm();
@@ -3816,10 +3967,6 @@
 
     titleScreen.addEventListener('pointerdown', (event) => {
       event.preventDefault();
-      if (window.AST_GAME_CONFIG.embedded) {
-        startGameMode({ fromTitle: true });
-        return;
-      }
       showModeSelect();
     });
 
@@ -3833,7 +3980,14 @@
 
     startGameButton.addEventListener('pointerdown', (event) => {
       event.preventDefault();
-      if (selectedMode !== '1p') return;
+      if (selectedMode === 'vs') {
+        startDuelMode();
+        return;
+      }
+      if (selectedMode === '2p') {
+        window.alert('준비중입니다');
+        return;
+      }
       startGameMode();
     });
 
@@ -3870,6 +4024,9 @@
     });
 
     window.addEventListener('keydown', (event) => {
+      const inputTarget = event.target;
+      if (inputTarget instanceof HTMLElement
+        && (inputTarget.isContentEditable || inputTarget.closest('input, textarea, select'))) return;
       if (gameRuntime.paused) return;
       const keyMap = {
         ArrowUp: 'b',
@@ -3882,6 +4039,15 @@
         KeyD: 'r'
       };
       const color = keyMap[event.code];
+      if (duel.active) {
+        if (color && !event.repeat) {
+          event.preventDefault();
+          const button = buttons.find(item => item.dataset.color === color);
+          if (button) updateButtonPress(button);
+          duel.combat.press(color);
+        }
+        return;
+      }
       if (event.code === 'F2') {
         if (window.AST_GAME_CONFIG.embedded) return;
         if (!gameStarted) return;

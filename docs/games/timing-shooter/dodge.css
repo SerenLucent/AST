@@ -64,38 +64,9 @@
 }
 
 .dodge-cartridge {
-  position: absolute;
-  left: 19px;
-  top: 2px;
-  width: 26px;
-  height: 64px;
-  box-sizing: border-box;
-  transform: rotate(45deg);
-  border: 1px solid #64421b;
-  border-radius: 13px 13px 3px 3px;
-  background: linear-gradient(90deg, #8d581b, #d9a64b 22%, #fff0bd 42%, #e8bf65 60%, #9e6825);
-  box-shadow: inset 2px 0 2px #fff3be80, inset -2px 0 3px #57341270, 2px 3px 5px #000a;
-}
-
-.dodge-cartridge::before {
-  content: '';
-  position: absolute;
-  inset: -1px -1px auto;
-  height: 23px;
-  border: 1px solid #78462c;
-  border-radius: 13px 13px 2px 2px;
-  background: linear-gradient(90deg, #8c4c2f, #dda777 28%, #ffe0ad 44%, #bd7b4b 72%, #82472c);
-  box-shadow: 0 2px 1px #68421c, inset 0 2px 2px #ffe2bb70;
-}
-
-.dodge-cartridge::after {
-  content: '';
-  position: absolute;
-  left: -2px;
-  right: -2px;
-  bottom: -1px;
-  height: 6px;
-  border: 1px solid #6c4416;
-  border-radius: 2px;
-  background: linear-gradient(#fff1b7, #d9a34b 48%, #926022 52%, #e6bd68);
+  display: block;
+  width: 64px;
+  height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px #000b);
 }

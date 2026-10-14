@@ -36,8 +36,11 @@ class DodgeSequence {
     this.ammo.replaceChildren(...Array.from({ length: count }, () => {
       const bullet = document.createElement('span');
       bullet.className = 'dodge-bullet';
-      const cartridge = document.createElement('span');
+      const cartridge = document.createElement('img');
       cartridge.className = 'dodge-cartridge';
+      cartridge.src = 'sprites/UI/dodge_bullet_gold_v2.png';
+      cartridge.alt = '';
+      cartridge.draggable = false;
       bullet.append(cartridge);
       return bullet;
     }));
