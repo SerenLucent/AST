@@ -39,7 +39,11 @@
       min-height: 620px;
       overflow: hidden;
       background: #000 url("backgrounds/mafia_mansion_empty_01.png") center center / cover no-repeat;
+      touch-action: manipulation;
     }
+
+    #stage img { -webkit-touch-callout: none; -webkit-user-drag: none; }
+    #pad { touch-action: none; }
 
     #stage:not(.game-running) #judgement,
     #stage:not(.game-running) #hud,
@@ -1639,6 +1643,24 @@
   <script src="duel_combat.js?v=multi-play-13"></script>
   <script>
     const stage = document.getElementById('stage');
+    let previousGameTap = null;
+    stage.addEventListener('touchend', event => {
+      const target = event.target;
+      const editable = target instanceof Element && target.closest('input, textarea, select, [contenteditable]');
+      const clickControl = target instanceof Element && target.closest('button, a') && !target.closest('#pad');
+      if (editable || clickControl || event.touches.length || event.changedTouches.length !== 1) {
+        previousGameTap = null;
+        return;
+      }
+      const touch = event.changedTouches[0];
+      const now = performance.now();
+      // The pad uses pointerdown; cancelling a repeated touchend preserves firing.
+      if (previousGameTap && now - previousGameTap.time < 350
+        && Math.hypot(touch.clientX - previousGameTap.x, touch.clientY - previousGameTap.y) < 40) {
+        if (event.cancelable) event.preventDefault();
+      }
+      previousGameTap = { time: now, x: touch.clientX, y: touch.clientY };
+    }, { passive: false });
     const titleScreen = document.getElementById('titleScreen');
     const modeScreen = document.getElementById('modeScreen');
     const startGameButton = document.getElementById('startGameButton');
