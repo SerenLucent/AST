@@ -23,6 +23,7 @@
       this.turn = 1;
       this.preparation = null;
       this.session = null;
+      this.draftSettings = null;
       this.pollTimer = null;
       this.busy = false;
       this.generation = 0;
@@ -75,9 +76,9 @@
             <div class="duel-settings">
               <label>결투 턴</label>
               <div class="duel-turn-control">
-                <button class="duel-turn-up" type="button" aria-label="턴 수 늘리기">&#9651;</button>
-                <output class="duel-turn-limit" role="spinbutton" aria-label="결투 턴" aria-valuemin="1" aria-valuemax="100" aria-valuenow="10">10</output>
                 <button class="duel-turn-down" type="button" aria-label="턴 수 줄이기">&#9661;</button>
+                <output class="duel-turn-limit" role="spinbutton" aria-label="결투 턴" aria-valuemin="1" aria-valuemax="100" aria-valuenow="10">10</output>
+                <button class="duel-turn-up" type="button" aria-label="턴 수 늘리기">&#9651;</button>
               </div>
               <button class="duel-deathmatch" type="button" role="switch" aria-checked="false">데스매치</button>
             </div>
@@ -140,6 +141,7 @@
     }
 
     start() {
+      this.draftSettings = null;
       this.player = 1;
       this.attacker = 1;
       this.turn = 1;
@@ -187,6 +189,7 @@
           return;
         }
         this.session = { code: data.room.code, token: data.token };
+        this.draftSettings = null;
         this.player = data.player;
         this.revision = -1;
         this.guestPresent = null;
@@ -199,6 +202,10 @@
         this.busy = false;
         this.root.querySelector('.duel-create').disabled = false;
         this.root.querySelector('.duel-join-form button').disabled = false;
+        if (this.active && generation === this.generation && this.session && !this.matchStarted) {
+          this.renderSettings(this.player === 1 ? this.draftSettings : this.roomSettings);
+          this.root.querySelector('.duel-start').disabled = !this.guestPresent;
+        }
       }
     }
 
@@ -226,7 +233,17 @@
       if (!this.active || !this.session || this.busy) return;
       this.busy = true;
       const generation = this.generation;
+      const settings = action === 'start' && this.player === 1 && this.draftSettings ? { ...this.draftSettings } : null;
+      if (settings) {
+        this.renderSettings(settings);
+        this.root.querySelector('.duel-start').disabled = true;
+      }
       try {
+        if (settings && (settings.turnLimit !== this.roomSettings.turnLimit || settings.deathmatch !== this.roomSettings.deathmatch)) {
+          const saved = await this.request('settings', this.session.code, this.session.token, this.turn, settings);
+          if (!this.active || generation !== this.generation || !this.session) return;
+          this.applyRoom(saved.room);
+        }
         const data = await this.request(action, this.session.code, this.session.token, this.turn, extra);
         if (this.active && generation === this.generation) this.applyRoom(data.room);
       } catch (error) {
@@ -234,7 +251,13 @@
           if (this.matchStarted) this.combat.cue(error.message);
           else this.showLobby(error.message);
         }
-      } finally { this.busy = false; }
+      } finally {
+        this.busy = false;
+        if (this.active && generation === this.generation && this.session && !this.matchStarted) {
+          this.renderSettings(this.player === 1 ? this.draftSettings : this.roomSettings);
+          this.root.querySelector('.duel-start').disabled = !this.guestPresent;
+        }
+      }
     }
 
     applyRoom(room) {
@@ -258,13 +281,15 @@
         seat.setAttribute('aria-label', present ? '2P 마피아' : '2P 대기 중');
         seat.querySelector('.duel-seat-media').hidden = !present;
         seat.querySelector('.duel-seat-name').textContent = present ? 'MAFIA' : 'WAITING';
-        this.renderSettings(room.settings);
+        if (this.player === 1 && !this.draftSettings) this.draftSettings = { ...room.settings };
+        this.renderSettings(this.player === 1 ? this.draftSettings : room.settings);
         const start = this.root.querySelector('.duel-start');
         start.hidden = this.player !== 1;
-        start.disabled = !room.players[1].connected;
+        start.disabled = this.busy || !room.players[1].connected;
         return;
       }
       this.root.querySelector('.duel-lobby').hidden = true;
+      this.draftSettings = null;
       this.root.dataset.view = 'battle';
       this.root.parentElement.classList.add('duel-running');
       this.root.querySelector('.duel-status').hidden = false;
@@ -285,19 +310,20 @@
       output.setAttribute('aria-valuenow', settings.turnLimit);
       output.setAttribute('aria-disabled', String(settings.deathmatch || this.player !== 1));
       this.root.querySelector('.duel-turn-control').classList.toggle('disabled', settings.deathmatch);
-      this.root.querySelector('.duel-turn-up').disabled = this.player !== 1 || settings.deathmatch || settings.turnLimit >= 100;
-      this.root.querySelector('.duel-turn-down').disabled = this.player !== 1 || settings.deathmatch || settings.turnLimit <= 1;
+      this.root.querySelector('.duel-turn-up').disabled = this.busy || this.player !== 1 || settings.deathmatch || settings.turnLimit >= 100;
+      this.root.querySelector('.duel-turn-down').disabled = this.busy || this.player !== 1 || settings.deathmatch || settings.turnLimit <= 1;
       const toggle = this.root.querySelector('.duel-deathmatch');
-      toggle.disabled = this.player !== 1;
+      toggle.disabled = this.busy || this.player !== 1;
       toggle.setAttribute('aria-checked', String(settings.deathmatch));
     }
 
     changeSettings(delta, toggle = false) {
       if (!this.session || this.player !== 1 || this.matchStarted || this.busy) return;
-      const settings = this.roomSettings;
+      const settings = this.draftSettings || this.roomSettings;
       if (!toggle && settings.deathmatch) return;
-      this.command('settings', { turnLimit: Math.max(1, Math.min(100, settings.turnLimit + delta)),
-        deathmatch: toggle ? !settings.deathmatch : settings.deathmatch });
+      this.draftSettings = { turnLimit: Math.max(1, Math.min(100, settings.turnLimit + delta)),
+        deathmatch: toggle ? !settings.deathmatch : settings.deathmatch };
+      this.renderSettings(this.draftSettings);
     }
 
     showHostLeft() {
