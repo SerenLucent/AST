@@ -1756,6 +1756,8 @@
     });
 
     function updateHostageInput() {
+      if (hostage.element && !hostage.hit && (activeTargets.some(target => target.color === hostage.color)
+        || supplyCrate.color === hostage.color)) refreshHostageColor(false);
       hostage.setEnabled(gameStarted && !stageEnded && !floorTransition && !dodge.current && !dodge.queue.length
         && hasUnjudgedTargets() && !activeTargets.some(target => target.countering));
     }
@@ -1963,16 +1965,18 @@
     }
 
     function pickRandomColor() {
-      const keys = Object.keys(colors).filter(color => color !== supplyCrate.color);
+      const keys = Object.keys(colors).filter(color => color !== supplyCrate.color
+        && (!hostage.element || hostage.hit || color !== hostage.color));
       return keys[Math.floor(Math.random() * keys.length)];
     }
 
     function colorForEnemy(color, target = null) {
-      if (!supplyCrate.color || color !== supplyCrate.color) return color;
+      const reserved = new Set([supplyCrate.color, hostage.element && !hostage.hit ? hostage.color : null]);
+      if (!reserved.has(color)) return color;
       const used = new Set(activeTargets.filter(enemy => enemy !== target && (!enemy.judged || enemy.countering))
         .map(enemy => enemy.color));
       if (hostage.element && !hostage.hit) used.add(hostage.color);
-      const available = Object.keys(colors).filter(key => key !== supplyCrate.color);
+      const available = Object.keys(colors).filter(key => !reserved.has(key));
       const distinct = available.filter(key => !used.has(key));
       const choices = distinct.length ? distinct : available;
       return choices[Math.floor(Math.random() * choices.length)];
@@ -2875,6 +2879,7 @@
 
       activeItems.push(nextItem);
       sortActiveItems();
+      stopInactiveMachineGunRoutes();
 
       applyTimedItemStartEffect(nextItem);
       renderActiveItems();
@@ -2882,17 +2887,20 @@
 
     function clearActiveItem() {
       activeItems = [];
+      stopInactiveMachineGunRoutes();
       renderActiveItems();
       updateItemGauge();
     }
 
     function updateActiveItemGauge() {
+      stopInactiveMachineGunRoutes();
       if (activeItems.length === 0) {
         renderActiveItems();
         return;
       }
       const now = gameRuntime.now();
       activeItems = activeItems.filter((item) => item.endsAt > now);
+      stopInactiveMachineGunRoutes();
       renderActiveItems();
     }
 
@@ -3075,7 +3083,19 @@
     }
 
     function setMachinePromptVisible(target, visible) {
-      target.machinePrompt?.classList.toggle('visible', visible);
+      target.machinePrompt?.classList.toggle('visible', Boolean(visible && hasActiveItem('machine_gun')
+        && target.machineGunState && !target.judged));
+    }
+
+    function stopInactiveMachineGunRoutes() {
+      if (hasActiveItem('machine_gun')) return;
+      for (const target of [...activeTargets]) {
+        setMachinePromptVisible(target, false);
+        if (target.machineGunState) {
+          target.machineGunState = null;
+          finishTarget(target, 'hit');
+        }
+      }
     }
 
     function setEnemySprite(target, sprite, reaction = false) {
@@ -3337,8 +3357,8 @@
       });
     });
 
-    function playEnemyKnockdown(target) {
-      if (target.isBoss || !['Perfect', 'Great'].includes(target.hitJudgement)) return;
+    function playEnemyKnockdown(target, force = false) {
+      if (target.isBoss || target.knockdownSprite || (!force && !['Perfect', 'Great'].includes(target.hitJudgement))) return;
       const sprite = document.createElement('div');
       sprite.className = 'enemy-knockdown';
       sprite.style.backgroundImage = `url("${enemySprites.knockdown}")`;
@@ -3382,7 +3402,7 @@
       setMachinePromptVisible(finishedTarget, false);
       finishedTarget.circle.style.opacity = '0';
       finishedTarget.judge.classList.remove('visible');
-      if (reaction !== 'none') {
+      if (reaction !== 'none' && !finishedTarget.knockdownSprite) {
         setEnemySprite(finishedTarget, enemySprites[reaction] ?? enemySprites.hit, reaction === 'hit' || reaction === 'graze');
         playEnemyKnockdown(finishedTarget);
       }
@@ -3422,6 +3442,7 @@
 
     function makeTarget(color, slot, options = {}) {
       if (stageEnded || floorTransition) return;
+      if (hasActiveItem('magnum')) refreshHostageColor(false);
       const effectiveColor = colorForEnemy(hasActiveItem('magnum') ? 'r' : color);
       const sprite = colors[effectiveColor];
       const element = document.createElement('div');
@@ -3554,6 +3575,11 @@
 
     function spawnWave(wave = null) {
       if (stageEnded || floorTransition) return;
+      if (activeTargets.some(target => target.machineGunState && !target.judged)) {
+        gameRuntime.clearTimeout(nextSpawnTimer);
+        nextSpawnTimer = gameRuntime.setTimeout(() => spawnWave(wave), 100);
+        return;
+      }
       if (gameRuntime.now() < nextWaveReadyAt) {
         gameRuntime.clearTimeout(nextSpawnTimer);
         nextSpawnTimer = gameRuntime.setTimeout(() => spawnWave(wave), nextWaveReadyAt - gameRuntime.now());
@@ -3580,7 +3606,9 @@
       }
 
       activeWaveId = `local_${Date.now()}`;
-      const targetCount = Math.min(config.waveTargets ?? 3, stageEnemyTotal - defeatedEnemies);
+      const freeColors = Object.keys(colors).filter(color => color !== supplyCrate.color
+        && (!hostage.element || hostage.hit || color !== hostage.color));
+      const targetCount = Math.min(config.waveTargets ?? 3, stageEnemyTotal - defeatedEnemies, freeColors.length);
       const availableSlots = [...spawnSlots].sort(() => Math.random() - 0.5).slice(0, targetCount);
       const waveColors = [];
       while (waveColors.length < targetCount) {
@@ -3737,6 +3765,7 @@
     }
 
     function applyMagnumToActiveTargets() {
+      refreshHostageColor(false);
       activeTargets.forEach((target) => {
         if ((target.judged && !target.countering) || target.color === 'r') return;
         setTargetColor(target, 'r');
@@ -3766,7 +3795,7 @@
       const gaugeBonus = registerComboHit();
       showJudgement(text, colorText, target.x, judgementYFor(target));
       showDamage(damage, target.x, target.y + 3);
-      applyEnemyHpDamage(target, hpDamageForJudgement(text));
+      applyEnemyHpDamage(target, keepAlive ? 1 : hpDamageForJudgement(text));
       addScore(scoreForHit(damage, target));
       addItemGaugeFor(text, gaugeBonus);
       sendJudgement(text, target);
@@ -3779,8 +3808,9 @@
       if (keepAlive) {
         target.machineGunHit = true;
         setEnemySprite(target, text === 'Bad' ? enemySprites.graze : enemySprites.hit, true);
+        playEnemyKnockdown(target, true);
         gameRuntime.setTimeout(() => {
-          if (target.element.isConnected && !target.judged) {
+          if (target.isBoss && target.element.isConnected && !target.judged) {
             setEnemySprite(target, enemySprites.aim, false);
           }
         }, 120);
@@ -3798,7 +3828,6 @@
         result,
         shotsFired: 1,
         lastScore: firstScore,
-        hpDamage: hpDamageForJudgement(result.text),
         startedAt: now,
         endsAt: now + machineGunHoldMs,
         lastInputAt: now
@@ -3814,7 +3843,7 @@
 
     function applyMachineGunRepeatHit(target) {
       const state = target.machineGunState;
-      if (!state || target.judged || !target.element.isConnected
+      if (!hasActiveItem('machine_gun') || !state || target.judged || !target.element.isConnected
           || state.shotsFired >= machineGunMaxShots || gameRuntime.now() >= state.endsAt) return;
       state.shotsFired += 1;
       state.lastScore = Math.floor(state.lastScore / 2);
@@ -3824,20 +3853,14 @@
       showBulletEffect(target.x, target.y);
       showDamage(state.lastScore, target.x, target.y + 3);
       addScore(scoreForHit(state.lastScore, target));
-      if (target.isBoss) {
-        const repeatDamage = state.hpDamage * hall.config.boss.machineGunRepeatMultiplier;
-        const previousTotal = Math.floor(repeatDamage * (state.shotsFired - 2));
-        const nextTotal = Math.floor(repeatDamage * (state.shotsFired - 1));
-        applyEnemyHpDamage(target, nextTotal - previousTotal);
-      }
       if (target.isBoss && bossBattle.hp === 0) {
         enemiesRemaining.textContent = '0';
         completeStage();
         return;
       }
-      setEnemySprite(target, state.result.text === 'Bad' ? enemySprites.graze : enemySprites.hit, true);
+      if (target.isBoss) setEnemySprite(target, enemySprites.hit, true);
       gameRuntime.setTimeout(() => {
-        if (target.element.isConnected && !target.judged) {
+        if (target.isBoss && target.element.isConnected && !target.judged) {
           setEnemySprite(target, enemySprites.aim, false);
         }
       }, 90);
