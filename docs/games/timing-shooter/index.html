@@ -2395,7 +2395,7 @@
       startGameButton.disabled = true;
       showLoading('Now Loading...');
       try {
-        await Promise.all([duel.prepare(), loadAudioCueBuffer('sound/roulette.mp3')]);
+        await Promise.all([duel.prepare(), loadAudioCueBuffer('sound/roulette.mp3'), loadBgmBuffer('sound/versus.mp3')]);
         stopBgm();
         titleScreen.classList.add('hidden');
         modeScreen.classList.add('hidden');
