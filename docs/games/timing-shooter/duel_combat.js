@@ -259,6 +259,7 @@
       if (!this.activeShots.has(current.index) || this.pending) return;
       const delta = Math.round(now - current.perfectAt);
       const grade = cfg.grade(delta, color === current.shot.color, current.defense, current.shot.speed);
+      if (current.defense && grade !== 'miss') this.showDodgeFlash(current.shot.color);
       if (current.defense && !current.flashed) {
         this.flashMuzzle(current);
       } else if (!current.defense && grade !== 'miss') {
@@ -312,6 +313,21 @@
 
     gradeColor(grade) { return { perfect: '#ffd629', great: '#39ff67', good: '#3d8cff', bad: '#c192ff', miss: '#ff3434' }[grade]; }
 
+    effectLater(callback, delay) {
+      const timer = setTimeout(() => { this.effectTimers.delete(timer); callback(); }, delay);
+      this.effectTimers.add(timer);
+    }
+
+    showDodgeFlash(color) {
+      const flash = document.createElement('div');
+      flash.className = 'duel-dodge-flash';
+      flash.setAttribute('aria-hidden', 'true');
+      flash.style.setProperty('--dodge-color', colors[color]);
+      // Keep each result independent, including the last bullet and overlapping hits.
+      this.root.append(flash);
+      this.effectLater(() => flash.remove(), 280);
+    }
+
     showShotEffect(position, muzzle) {
       const effect = document.createElement('img');
       effect.className = `duel-shot-effect ${muzzle ? 'duel-muzzle-effect' : 'duel-hit-effect'}`;
@@ -319,13 +335,9 @@
       effect.src = 'sprites/effects/bullet_effect_1.png';
       effect.style.left = `${position.x}px`; effect.style.top = `${position.y}px`;
       this.root.append(effect);
-      const later = (callback, delay) => {
-        const timer = setTimeout(() => { this.effectTimers.delete(timer); callback(); }, delay);
-        this.effectTimers.add(timer);
-      };
-      later(() => { effect.src = 'sprites/effects/bullet_effect_2.png'; }, 55);
-      later(() => { effect.src = 'sprites/effects/bullet_effect_3.png'; }, 110);
-      later(() => effect.remove(), muzzle ? 170 : 230);
+      this.effectLater(() => { effect.src = 'sprites/effects/bullet_effect_2.png'; }, 55);
+      this.effectLater(() => { effect.src = 'sprites/effects/bullet_effect_3.png'; }, 110);
+      this.effectLater(() => effect.remove(), muzzle ? 170 : 230);
     }
 
     stopRoulette() {
@@ -341,7 +353,7 @@
       this.activeShots.clear();
       if (clearEffects) {
         this.effectTimers.forEach(timer => clearTimeout(timer)); this.effectTimers.clear();
-        this.root.querySelectorAll('.duel-shot-effect').forEach(effect => effect.remove());
+        this.root.querySelectorAll('.duel-shot-effect, .duel-dodge-flash').forEach(effect => effect.remove());
       }
       clearTimeout(this.timer); cancelAnimationFrame(this.frame);
       this.stopRoulette(); this.current = null; this.pending = null;
