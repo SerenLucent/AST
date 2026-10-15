@@ -8,7 +8,7 @@
     dodgeMultiplier: { perfect: 0, great: 0, good: .2, bad: .5, miss: 1 },
     colors: ['b', 'g', 'y', 'r'],
     shotCount: { min: 3, max: 6 },
-    initialHp: 100, countdownMs: 2000, shotSpawnIntervalMs: 200, maxActiveShots: 2, resultMs: 3000,
+    initialHp: 100, countdownMs: 2000, shotSpawnIntervalMs: 500, maxActiveShots: 2, resultMs: 3000,
     timingWindows(speed, defense = false) {
       const ratio = (this.durationBySpeed[speed] ?? 1000) / (this.judgementReferenceDuration[speed] ?? 1000);
       const base = defense ? this.dodgeJudgementMs : this.judgementMs;

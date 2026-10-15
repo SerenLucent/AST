@@ -229,10 +229,9 @@
     positionTarget() {
       for (const state of this.activeShots.values()) {
         if (state.defense) continue;
-        if (this.scene.player === 2) {
-          const { x, y } = this.scene.policeTargetPosition(state.lane);
-          state.element.style.left = `${x}px`; state.element.style.top = `${y}px`;
-        } else { state.element.style.left = '22%'; state.element.style.top = state.lane === 0 ? '33%' : '50%'; }
+        const { x, y } = this.scene.player === 2
+          ? this.scene.policeTargetPosition(state.lane) : this.scene.mafiaTargetPosition(state.lane);
+        state.element.style.left = `${x}px`; state.element.style.top = `${y}px`;
       }
     }
 

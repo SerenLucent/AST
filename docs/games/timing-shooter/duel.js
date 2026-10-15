@@ -420,6 +420,11 @@
       return this.imagePosition(image, .32, lane === 0 ? .33 : .48);
     }
 
+    mafiaTargetPosition(lane = 0) {
+      const image = this.images.get(scenes.mafia.cover);
+      return this.imagePosition(image, lane === 0 ? .29 : .295, lane === 0 ? .30 : .415);
+    }
+
     muzzlePosition() {
       const police = this.player === 2;
       const image = this.images.get(scenes[police ? 'police' : 'mafia'].aim);
