@@ -1,3 +1,41 @@
+async function animateModeCard(card, slot, reveal, host) {
+  await card.animate([
+    { borderColor: '#ffd84a', boxShadow: '0 0 28px #ffd84a' },
+    { borderColor: 'transparent', boxShadow: 'none' },
+    { borderColor: '#ffd84a', boxShadow: '0 0 28px #ffd84a' }
+  ], { duration: 300, iterations: 2 }).finished;
+  const start = card.getBoundingClientRect();
+  const fly = card.cloneNode(true);
+  fly.removeAttribute('id');
+  fly.disabled = true;
+  fly.className = 'mission-flying-card';
+  const flight = document.createElement('div');
+  flight.className = 'mission-card-flight';
+  flight.append(fly);
+  host.append(flight);
+  reveal();
+  const end = slot.getBoundingClientRect();
+  const parent = host.getBoundingClientRect();
+  Object.assign(flight.style, { left: `${end.left - parent.left}px`, top: `${end.top - parent.top}px`, width: `${end.width}px`, height: `${end.height}px` });
+  const dx = start.left + start.width / 2 - end.left - end.width / 2;
+  const dy = start.top + start.height / 2 - end.top - end.height / 2;
+  const timing = { duration: 850, easing: 'cubic-bezier(.22,.7,.25,1)', fill: 'forwards' };
+  try {
+    // Move the center independently so spinning cannot swing the flight path.
+    await Promise.all([
+      flight.animate([
+        { transform: `translate(${dx}px, ${dy}px) scale(${start.width / end.width}, ${start.height / end.height})` },
+        { transform: 'translate(0, 0) scale(1)' }
+      ], timing).finished,
+      fly.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(360deg)' }], timing).finished
+    ]);
+    const portrait = document.createElement('img');
+    portrait.src = card.querySelector('img').src;
+    portrait.alt = card.getAttribute('aria-label') || '';
+    slot.replaceChildren(portrait);
+  } finally { flight.remove(); }
+}
+
 class MissionBriefing {
   constructor(screen, onLaunch) {
     this.screen = screen;
@@ -35,47 +73,11 @@ class MissionBriefing {
     this.screen.classList.add('mission-transition');
     try {
       const art = this.root.querySelector('img');
-      await Promise.all([
-        art.decode().catch(() => {}),
-        card.animate([
-          { borderColor: '#ffd84a', boxShadow: '0 0 28px #ffd84a' },
-          { borderColor: 'transparent', boxShadow: 'none' },
-          { borderColor: '#ffd84a', boxShadow: '0 0 28px #ffd84a' }
-        ], { duration: 300, iterations: 2 }).finished
-      ]);
-      const start = card.getBoundingClientRect();
-      const fly = card.cloneNode(true);
-      fly.removeAttribute('id');
-      fly.disabled = true;
-      fly.className = 'mission-flying-card';
-      const flight = document.createElement('div');
-      flight.className = 'mission-card-flight';
-      flight.append(fly);
-      this.screen.append(flight);
-      this.root.hidden = false;
-      this.screen.classList.add('mission-open');
-      const end = this.slot.getBoundingClientRect();
-      const parent = this.screen.getBoundingClientRect();
-      Object.assign(flight.style, { left: `${end.left - parent.left}px`, top: `${end.top - parent.top}px`, width: `${end.width}px`, height: `${end.height}px` });
-      const dx = start.left + start.width / 2 - end.left - end.width / 2;
-      const dy = start.top + start.height / 2 - end.top - end.height / 2;
-      const timing = { duration: 850, easing: 'cubic-bezier(.22,.7,.25,1)', fill: 'forwards' };
-      // Move the center independently so spinning cannot swing the flight path.
-      await Promise.all([
-        flight.animate([
-          { transform: `translate(${dx}px, ${dy}px) scale(${start.width / end.width}, ${start.height / end.height})` },
-          { transform: 'translate(0, 0) scale(1)' }
-        ], timing).finished,
-        fly.animate([
-          { transform: 'rotateY(0deg)' },
-          { transform: 'rotateY(360deg)' }
-        ], timing).finished
-      ]);
-      const portrait = document.createElement('img');
-      portrait.src = card.querySelector('img').src;
-      portrait.alt = '1P MODE';
-      this.slot.replaceChildren(portrait);
-      flight.remove();
+      await art.decode().catch(() => {});
+      await animateModeCard(card, this.slot, () => {
+        this.root.hidden = false;
+        this.screen.classList.add('mission-open');
+      }, this.screen);
       this.active = true;
       this.launch.focus({ preventScroll: true });
     } finally {

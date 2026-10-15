@@ -1477,8 +1477,8 @@
   <link rel="stylesheet" href="hall.css?v=game-over-5">
   <link rel="stylesheet" href="hostage.css?v=hostage-ring-2">
   <link rel="stylesheet" href="dodge.css?v=gold-bullet-8">
-  <link rel="stylesheet" href="duel.css?v=dodge-color-flash-18">
-  <link rel="stylesheet" href="mission_briefing.css?v=center-spin-4">
+  <link rel="stylesheet" href="duel.css?v=mode-card-20">
+  <link rel="stylesheet" href="mission_briefing.css?v=vs-card-5">
 </head>
 <body>
   <main id="stage">
@@ -1639,10 +1639,10 @@
   <script src="ast_integration.js"></script>
   <script src="multiplayer_config.js?v=multi-play-2"></script>
   <script src="multiplayer_client.js?v=multi-play-1"></script>
-  <script src="duel.js?v=mafia-target-19"></script>
+  <script src="duel.js?v=mode-card-20"></script>
   <script src="duel_config.js?v=half-second-shots-7"></script>
   <script src="duel_combat.js?v=dodge-color-flash-18"></script>
-  <script src="mission_briefing.js?v=center-spin-4"></script>
+  <script src="mission_briefing.js?v=vs-card-5"></script>
   <script>
     const stage = document.getElementById('stage');
     let previousGameTap = null;
@@ -2398,15 +2398,22 @@
       showLoading('Now Loading...');
       try {
         await Promise.all([duel.prepare(), loadAudioCueBuffer('sound/roulette.mp3'), loadBgmBuffer('sound/versus.mp3')]);
-        stopBgm();
-        titleScreen.classList.add('hidden');
-        modeScreen.classList.add('hidden');
-        duel.start();
+        hideLoading();
+        duel.root.querySelector('.duel-mode-card').replaceChildren();
+        duel.root.inert = true;
+        modeScreen.classList.add('mission-transition');
+        await animateModeCard(modeCards.find(card => card.dataset.mode === 'vs'), duel.root.querySelector('.duel-mode-card'), () => {
+          titleScreen.classList.add('hidden');
+          modeScreen.classList.add('hidden');
+          duel.start();
+        }, stage);
       } catch (error) {
         console.error('[Duel] Could not load scenes:', error);
         modeDescription.textContent = '장면을 불러오지 못했습니다. 다시 시작해 주세요.';
       } finally {
         hideLoading();
+        duel.root.inert = false;
+        modeScreen.classList.remove('mission-transition');
         transitionLocked = false;
         startGameButton.disabled = false;
       }

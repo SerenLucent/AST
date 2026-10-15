@@ -52,6 +52,7 @@
         <div class="duel-turn-banner" role="status" hidden></div>
         <section class="duel-lobby" aria-label="VS room lobby">
           <h1>VS MODE</h1>
+          <div class="duel-mode-card mission-card-slot" aria-label="VS Mode card"></div>
           <div class="duel-room-entry">
             <div class="duel-create-pane">
               <h2>방 만들기</h2>
@@ -171,6 +172,8 @@
       this.root.querySelector('.duel-footer').hidden = true;
       this.root.querySelector('.duel-player').textContent = this.session ? `${this.player}P` : 'VS MODE';
       this.root.querySelector('.duel-room-entry').hidden = Boolean(this.session);
+      this.root.classList.toggle('duel-entry-view', !this.session);
+      this.root.querySelector('.duel-mode-card').hidden = Boolean(this.session);
       this.root.querySelector('.duel-room-wait').hidden = !this.session;
       this.root.querySelector('.duel-message').textContent = message;
     }

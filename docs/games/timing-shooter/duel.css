@@ -67,6 +67,12 @@
 .duel-next { min-width: 140px; padding: 0 24px; }
 .duel-lobby { position: absolute; inset: 0; padding: max(24px, env(safe-area-inset-top)) 20px 20px; background: #101215; overflow-y: auto; }
 .duel-lobby h1 { margin: 0 0 24px; font-size: 28px; line-height: 44px; color: #ffdc57; }
+.duel-mode-card { margin: 0 auto 24px; }
+.duel-entry-view .duel-lobby { background: #101215 url('sprites/Main/background.png') center / cover; }
+.duel-entry-view .duel-lobby::before { content: ''; position: absolute; inset: 0; background: #080b10c9; pointer-events: none; }
+.duel-entry-view .duel-lobby > * { position: relative; }
+.duel-entry-view .duel-room-entry { background: #101215df; padding: 16px 10px; }
+.duel-entry-view .duel-lobby h1 { margin-bottom: 12px; }
 #duelScene[data-view="lobby"] .duel-player { display: none; }
 #duelScene[data-view="lobby"] .duel-header { top: max(24px, env(safe-area-inset-top)); right: 20px; left: auto; }
 .duel-start { width: 100%; }
