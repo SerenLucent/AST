@@ -65,7 +65,7 @@ window.TIMING_SHOOTER_STAGE2 = {
   opening: {
     background: 'backgrounds/stage2_black_wharf/opening_wharf_clean_v1.png',
     idle: 'sprites/enemies/dock_foreman_idle_v1.png',
-    knockdown: 'sprites/enemies/dock_foreman_knockdown_atlas_v1.png',
+    knockdown: 'sprites/enemies/dock_foreman_knockdown_atlas_v2.png',
     entry: 'backgrounds/stage2_black_wharf/hold_0_to_1_wharf_v1.png',
     revealMs: 700, entryHoldMs: 2000,
     frames: [
