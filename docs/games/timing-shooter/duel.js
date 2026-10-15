@@ -53,9 +53,13 @@
         <section class="duel-lobby" aria-label="VS room lobby">
           <h1>VS MODE</h1>
           <div class="duel-room-entry">
-            <button class="duel-create" type="button">방 만들기</button>
+            <div class="duel-create-pane">
+              <h2>방 만들기</h2>
+              <button class="duel-create" type="button" aria-label="방 만들기" title="방 만들기"><span aria-hidden="true">+</span></button>
+            </div>
             <form class="duel-join-form">
-              <label for="duelRoomCode">방 ID</label>
+              <h2>참가하기</h2>
+              <label for="duelRoomCode">방 ID 입력</label>
               <input id="duelRoomCode" maxlength="6" pattern="[a-fA-F0-9]{6}" autocomplete="off" required>
               <button type="submit">참가</button>
             </form>
