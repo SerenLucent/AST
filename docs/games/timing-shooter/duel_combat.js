@@ -247,7 +247,7 @@
         this.renderTable(this.room.shots);
         if (this.roundResults.length < this.room.shots.length) {
           this.pending = null;
-          this.timer = setTimeout(() => this.beginShot(), cfg.betweenShotsMs);
+          this.nextShot();
           return;
         }
         this.pending = { turn: this.room.turn, results: this.roundResults.slice(), requestId: crypto.randomUUID() };
@@ -267,13 +267,18 @@
         this.pending = null;
         this.scene.applyRoom(data.room);
         if (!this.pending && pending.results) return;
-        if (token === this.token) this.timer = setTimeout(() => this.beginShot(), cfg.betweenShotsMs);
+        if (token === this.token) this.nextShot();
       } catch (error) {
         if (token === this.token) this.cue('연결 재시도 중');
       } finally { this.submitting = false; }
     }
 
     gradeColor(grade) { return { perfect: '#ffd629', great: '#39ff67', good: '#3d8cff', bad: '#c192ff', miss: '#ff3434' }[grade]; }
+
+    nextShot() {
+      if (cfg.betweenShotsMs > 0) this.timer = setTimeout(() => this.beginShot(), cfg.betweenShotsMs);
+      else this.beginShot();
+    }
 
     showShotEffect(position, muzzle) {
       const effect = document.createElement('img');
