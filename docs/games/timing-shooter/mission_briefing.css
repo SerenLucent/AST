@@ -1,4 +1,4 @@
-#modeScreen.mission-open > :not(.mission-briefing):not(.mission-flying-card) { visibility: hidden; }
+#modeScreen.mission-open > :not(.mission-briefing):not(.mission-card-flight) { visibility: hidden; }
 #modeScreen.mission-open { gap: 0; }
 .mission-transition .mode-card-row, .mission-transition #startGameButton { pointer-events: none; }
 .mission-briefing[hidden] { display: none; }
@@ -20,7 +20,8 @@
 .mission-card-slot { height: min(24dvh, 190px); aspect-ratio: 1086 / 1448; flex: 0 0 auto; }
 .mission-card-slot img, .mission-flying-card img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .mission-card-slot img { border: 2px solid #ffd84a; border-radius: 6px; box-sizing: border-box; box-shadow: 0 0 18px #ffd84a45; }
-.mission-flying-card { position: absolute; z-index: 5; padding: 0; border: 2px solid #ffd84a; border-radius: 6px; overflow: hidden; background: #101418; transform-origin: top left; backface-visibility: visible; }
+.mission-card-flight { position: absolute; z-index: 5; transform-origin: center center; pointer-events: none; }
+.mission-flying-card { display: block; width: 100%; height: 100%; box-sizing: border-box; margin: 0; padding: 0; border: 2px solid #ffd84a; border-radius: 6px; overflow: hidden; background: #101418; transform-origin: center center; backface-visibility: visible; }
 .mission-board { position: relative; margin: 0; width: 100%; aspect-ratio: 4 / 3; flex: 0 0 auto; }
 .mission-board img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .mission-stage-selected { position: absolute; left: 5.7%; top: 42.1%; width: 17.5%; height: 28.2%; padding: 0; background: transparent; border: 4px solid #ffdc24; border-radius: 0; transform: rotate(1deg); box-shadow: inset 0 0 0 1px #fff, inset 0 0 6px #fff, 0 0 2px #fff, 0 0 10px #ffd624; cursor: pointer; }

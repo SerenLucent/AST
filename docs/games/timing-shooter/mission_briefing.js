@@ -48,21 +48,34 @@ class MissionBriefing {
       fly.removeAttribute('id');
       fly.disabled = true;
       fly.className = 'mission-flying-card';
-      this.screen.append(fly);
+      const flight = document.createElement('div');
+      flight.className = 'mission-card-flight';
+      flight.append(fly);
+      this.screen.append(flight);
       this.root.hidden = false;
       this.screen.classList.add('mission-open');
       const end = this.slot.getBoundingClientRect();
       const parent = this.screen.getBoundingClientRect();
-      Object.assign(fly.style, { left: `${end.left - parent.left}px`, top: `${end.top - parent.top}px`, width: `${end.width}px`, height: `${end.height}px` });
-      await fly.animate([
-        { transform: `translate(${start.left - end.left}px, ${start.top - end.top}px) scale(${start.width / end.width}) rotateY(0deg)` },
-        { transform: 'translate(0, 0) scale(1) rotateY(360deg)' }
-      ], { duration: 850, easing: 'cubic-bezier(.22,.7,.25,1)', fill: 'forwards' }).finished;
+      Object.assign(flight.style, { left: `${end.left - parent.left}px`, top: `${end.top - parent.top}px`, width: `${end.width}px`, height: `${end.height}px` });
+      const dx = start.left + start.width / 2 - end.left - end.width / 2;
+      const dy = start.top + start.height / 2 - end.top - end.height / 2;
+      const timing = { duration: 850, easing: 'cubic-bezier(.22,.7,.25,1)', fill: 'forwards' };
+      // Move the center independently so spinning cannot swing the flight path.
+      await Promise.all([
+        flight.animate([
+          { transform: `translate(${dx}px, ${dy}px) scale(${start.width / end.width}, ${start.height / end.height})` },
+          { transform: 'translate(0, 0) scale(1)' }
+        ], timing).finished,
+        fly.animate([
+          { transform: 'rotateY(0deg)' },
+          { transform: 'rotateY(360deg)' }
+        ], timing).finished
+      ]);
       const portrait = document.createElement('img');
       portrait.src = card.querySelector('img').src;
       portrait.alt = '1P MODE';
       this.slot.replaceChildren(portrait);
-      fly.remove();
+      flight.remove();
       this.active = true;
       this.launch.focus({ preventScroll: true });
     } finally {
