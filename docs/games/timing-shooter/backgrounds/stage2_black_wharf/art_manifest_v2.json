@@ -1,0 +1,159 @@
+{
+  "title": "검은 부두 · 2P 공용 배경 검토",
+  "revision": 2,
+  "status": "art-review-only",
+  "tool": "built-in image_gen",
+  "layout": {
+    "imageAspect": 1,
+    "splitAt": 0.5,
+    "phoneAspect": 0.5,
+    "leftCrop": [
+      0,
+      0,
+      0.5,
+      1
+    ],
+    "rightCrop": [
+      0.5,
+      0,
+      0.5,
+      1
+    ],
+    "note": "각 절반은 독립 세로 화면. 실제 기기 종횡비 차이는 게임 연결 시 안전영역을 재검증할 것."
+  },
+  "unchanged": [
+    "hold_1_to_2_warehouse_v1.png",
+    "hold_2_to_3_customs_v1.png",
+    "hold_3_to_4_office_v1.png"
+  ],
+  "assets": [
+    {
+      "file": "wave_1_wharf_v2.png",
+      "prompt": "EDIT/RECOMPOSE reference into ONE SQUARE 1:1 2048x2048 continuous environment painting for a TWO-PLAYER portrait mobile shooting game. It will be split vertically at EXACT x50% into two adjacent portrait phone viewports, each 1024 wide by2048 high. NOT a diptych, no panel border, no duplicated scenes, no visible dividing line. Maintain reference's Black Wharf identity, same moored black cargo ship LEFT, red brick warehouse with green double sliding doors, pale customs clock tower further RIGHT, pearl-gray dawn just after rain, readable cool teal/silver with tiny warm lamps. Wider dock view, eye level, horizon around35%height. Exact center x50% is the join between the two leaves of the warehouse doors at middle distance: each phone shows HALF of shared doorway. Both halves MUST independently contain gameplay cover in their own interior. LEFT HALF: waist-high timber cargo stack centered x23% y59%, small barrel group x12% y47%, tall bollard/low dock loading post x39% y50%. RIGHT HALF: waist-high iron handcart with rope-bound boxes x75% y59%, barrel and crate group x89% y48%, separate iron post beside customs gate x62% y50%. Distinct readable EMPTY adult standing spaces directly behind each low cover and beside posts at y45-60%; sightlines unobstructed, no cover so tall it consumes phone view. Both halves equally playable, asymmetrical believable dock layout not mirror image. Foreground lower30% open wet cobblestone road for controls. Sky only upper22%, no giant dead sky. Each half sees the shared warehouse plus their own local props; ship and tower stay secondary background. Crisp realistic cinematic painted game environment, stable coherent perspective, no fisheye, no overhead shot. NO people, enemies, police, boss, text, HUD, divider, target or watermark. Square output mandatory. Do not just stretch the old portrait."
+    },
+    {
+      "file": "wave_2_warehouse_v2.png",
+      "prompt": "Recompose image1 warehouse interior into a SINGLE SQUARE 1:1 continuous painting for two portrait phone viewports joined side-by-side: left phone sees x0-50%, right phone sees x50-100%, full image height. No panels or dividing line or split montage. Image2 establishes wider outdoor location continuity only. Same red brick smuggling warehouse, high iron trusses, cargo pulley, clerestory windows, cool pearl-gray after-rain dawn, rusty red and dark green materials, realistic cinematic painted game art. Eye-level frontal camera now aimed at back wall with a large dark green double sliding doorway EXACTLY CENTERED x50%, its center seam on phone boundary. Through doorway glimpse pale stone customs entrance/short steps, keep old architecture continuity. EQUALLY PLAYABLE COVER DISTRIBUTION: remove single central crate obstruction and keep middle passage open. In LEFT phone half, one medium waist-high wooden cargo stack centered x24% y59%, an upright narrow iron column at x12% y47% with clear empty standing zone to its right, smaller rear stack x37% y48%. In RIGHT phone half, one medium waist-high crate-loaded handcart centered x75% y59%, a narrow iron column x88% y47% with clear standing zone to its left, smaller rear barrels x63% y48%. Main covers similar screen height/area, not mirror-copy assets; each is large enough to hide lower half of an adult sprite behind it. EMPTY clear head/torso zones immediately ABOVE each low cover and unobstructed full-body standing zones beside columns. No objects directly along exact center seam except shared doorway. Trusses and some cargo upper sides, no gigantic foreground crate walls swallowing either viewport. Lower30% open worn damp concrete for controls. Floor has scattered damp tracks not indoor lake. Balanced cool daylight with tiny practical lamps. No people, police, enemies, guns, targets, HUD, text, watermark. SQUARE canvas, expanded room width not stretched old image."
+    },
+    {
+      "file": "wave_3_customs_v2.png",
+      "prompt": "EDIT reference customs hall into ONE SQUARE 1:1 continuous two-player portrait-phone game background. Canvas split ONLY conceptually x50% into left portrait viewport and right portrait viewport; do NOT draw dividing line or panels. Preserve old harbor customs architecture, silver-gray predawn through tall windows, worn sea-green panels, gray stone, iron inspection cages, red indicator lamp and dark green upper office double door. Wider FRONTAL eye-level camera, coherent single perspective. Central staircase and upper double door EXACTLY centered at x50%; each player sees HALF the shared stairs and half office door. Crucial combat layout independent in each half: LEFT x20-32% midground a waist-high green inspection counter with empty upper-body emergence area immediately above; farther left x12% a narrow stone pier with visible empty standing space to its right; small rear crates x37% y48%. RIGHT x70-82% midground a low stack of confiscated cargo plus small wheeled inspection trolley, EMPTY upper-body emergence area immediately above; farther right x88% a narrow stone pier with visible standing space to its left; iron cage doorway x65% y48% creates another full-body entrance. All primary playable covers at y54-65%, their top edges clear, no huge column in middle of right viewport. Iron cage bars remain BACKGROUND and must not blanket the clear enemy standing zones. Each half has two or three usable appearance locations and comparable cover sizes/depth, varied not mirror duplicates. Keep exact central seam free except shared staircase and architecture, no main crate or important spawn straddles seam. Lower30% open gray tile floor for controls, slight damp boot tracks but no indoor lake. Moody but readable realistic cinematic illustrated game environment, cold neutral gray and sage-green with very sparse warm lamps, no palace ornamentation. No characters, enemies, police, boss, UI, targets, text or watermark. Square output. Expand/recompose room, do not stretch portrait."
+    },
+    {
+      "file": "wave_4_boss_office_v2.png",
+      "prompt": "Recompose exact harbor boss office reference into a SINGLE SQUARE 1:1 continuous background for TWO adjacent portrait phone screens: left phone shows x0-50%, right phone x50-100%, full height. No divider, panels, labels or mirror duplicates. Same upstairs customs office, sea-green walls, nautical maps, black rotary telephone, old radio, small red warning light and large arched window behind desk showing elevated view DOWN onto red brick warehouse ROOFS, moored black cargo ship, cranes, gray dawn harbor after rain. NO clock tower seen outside because we are inside it. WIDEN the room, eye-level frontal composition. Arched central window split on exact x50% and wide desk centered spans x22-78% at y55-69%. Desk is a shared set piece split evenly across phone boundary; leave desk's upper edge uncluttered. IMPORTANT future enemy slots: BOTH x30% y46% and x70% y46% above desk have broad CLEAR EMPTY head-and-torso spaces, so a boss can later stand fully inside EITHER phone half without being cut at center seam. No high chair back, lamp, radio, giant map or foreground furniture obstruct these two spaces. Desk props restricted near x46 and54% or outer ends. Distinct additional waist-high cover LEFT x12% y61% is a chart cabinet with cargo crate, RIGHT x88% y61% a low metal document trolley beside a closed safe, each with CLEAR standing/upper-body reveal area above or beside it for guards. The radio stays on side wall behind/above safe not directly over spawn. Comparable useful combat area on both halves, asymmetrical office furnishings. Lower28% clear gray tile floor for controls, worn dark rug near desk only. Cool silver daylight dominates, small ivory practical lights, dark green-black wood, rusty red indicator, readable realistic cinematic painted environment, not palace or warm luxury mansion. No characters, no boss baked in, no enemies, no police, no guns, no text/HUD/targets/watermark. Square canvas. Do not merely stretch original."
+    }
+  ],
+  "proposedSpawnAnchors": {
+    "note": "미리 배치한 후보 좌표이며 실제 캐릭터 크기와 가림 마스크 검증은 게임 연결 시 진행. 발 위치, 전체 배경 0~1 좌표.",
+    "wave1": {
+      "left": [
+        [
+          0.18,
+          0.66
+        ],
+        [
+          0.34,
+          0.56
+        ],
+        [
+          0.41,
+          0.55
+        ]
+      ],
+      "right": [
+        [
+          0.85,
+          0.66
+        ],
+        [
+          0.68,
+          0.56
+        ],
+        [
+          0.78,
+          0.56
+        ]
+      ]
+    },
+    "wave2": {
+      "left": [
+        [
+          0.28,
+          0.68
+        ],
+        [
+          0.17,
+          0.57
+        ],
+        [
+          0.36,
+          0.54
+        ]
+      ],
+      "right": [
+        [
+          0.76,
+          0.68
+        ],
+        [
+          0.66,
+          0.57
+        ],
+        [
+          0.9,
+          0.55
+        ]
+      ]
+    },
+    "wave3": {
+      "left": [
+        [
+          0.22,
+          0.64
+        ],
+        [
+          0.36,
+          0.58
+        ],
+        [
+          0.12,
+          0.68
+        ]
+      ],
+      "right": [
+        [
+          0.78,
+          0.64
+        ],
+        [
+          0.66,
+          0.58
+        ],
+        [
+          0.9,
+          0.68
+        ]
+      ]
+    },
+    "wave4": {
+      "bossLeft": [
+        0.35,
+        0.68
+      ],
+      "bossRight": [
+        0.65,
+        0.68
+      ],
+      "guardLeft": [
+        0.15,
+        0.66
+      ],
+      "guardRight": [
+        0.88,
+        0.66
+      ],
+      "note": "보스를 중앙 경계에 고정하지 않고 양쪽 구역 중 하나에 온전히 배치 가능. 동시 등장 보스 수나 이동 규칙은 미구현."
+    }
+  }
+}

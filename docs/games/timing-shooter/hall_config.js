@@ -68,8 +68,8 @@
       },
       slots: [
         { id: 'boss_center', worldX: 0.5, footY: 0.60, heightRatio: 0.30 },
-        { id: 'boss_guard_left', worldX: 0.37, footY: 0.60, heightRatio: 0.23 },
-        { id: 'boss_guard_right', worldX: 0.63, footY: 0.60, heightRatio: 0.23 }
+        { id: 'boss_guard_left', worldX: 0.37, footY: 0.60, heightRatio: 0.28 },
+        { id: 'boss_guard_right', worldX: 0.63, footY: 0.60, heightRatio: 0.28 }
       ],
       occluders: []
     },

@@ -1,0 +1,78 @@
+{
+  "name": "dock_foreman_knockdown",
+  "tool": "built-in image_gen",
+  "image": "dock_foreman_knockdown_atlas_v1.png",
+  "imageSize": {
+    "width": 1254,
+    "height": 1254
+  },
+  "transparent": true,
+  "logicalFrameSize": {
+    "width": 627,
+    "height": 700
+  },
+  "frames": [
+    {
+      "name": "hit_seated",
+      "source": {
+        "x": 0,
+        "y": 0,
+        "width": 627,
+        "height": 700
+      },
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "durationMs": 110
+    },
+    {
+      "name": "slipping_right",
+      "source": {
+        "x": 627,
+        "y": 0,
+        "width": 627,
+        "height": 700
+      },
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "durationMs": 120
+    },
+    {
+      "name": "falling_to_ground",
+      "source": {
+        "x": 0,
+        "y": 760,
+        "width": 627,
+        "height": 494
+      },
+      "offset": {
+        "x": 0,
+        "y": 251
+      },
+      "durationMs": 140
+    },
+    {
+      "name": "lying_on_side",
+      "source": {
+        "x": 627,
+        "y": 760,
+        "width": 627,
+        "height": 494
+      },
+      "offset": {
+        "x": 0,
+        "y": 261
+      },
+      "durationMs": 800
+    }
+  ],
+  "groundY": 637,
+  "loop": false,
+  "holdLastFrame": true,
+  "note": "영역 좌표로 읽는 가변 높이 아틀라스. 균등 2x2 절단 금지. 하단 포즈는 offset으로 논리 프레임 바닥을 맞춘다. 상자와 배경은 포함하지 않는다.",
+  "prompt": "Use case: stylized-concept / sprite animation. Create ONE production-ready FOUR-FRAME KNOCKDOWN SPRITE ATLAS for the EXACT same seated smoking dock foreman in reference1. TRUE TRANSPARENT PNG. A SQUARE canvas arranged as a precise 2x2 grid of FOUR EQUAL SQUARE CELLS. Reading order TOP LEFT=frame1, TOP RIGHT=frame2, BOTTOM LEFT=frame3, BOTTOM RIGHT=frame4. NO drawn grid, no borders, no numbers, no text. Each cell is an independent sequential pose of the SAME man with identical face, black slicked hair, rolled pale-gray sleeves, charcoal waistcoat, loose dark-red necktie, dark trousers, brown pistol belt holster and black boots. Three-quarter front camera same as reference, SAME camera and body scale in all cells, natural anatomy, not mirrored or rotated 2D cutouts. Reference2 is background context ONLY: he is initially seated on the small crate, but DO NOT draw any crate, seat, ground, building or other environment in ANY atlas cell. Character ONLY. An imaginary low crate seat is at cell center-left x42%, y58%; imaginary ground contact is y91% throughout. Sequence: FRAME1 hits/shudders WHILE STILL SEATED, torso recoils slightly, shocked expression, cigarette hand jerks away from mouth, boots still planted. FRAME2 loses balance and SLIDES OFF SEAT TO VIEWER RIGHT, hips shift right and lower, torso tilts right about35 degrees, bent legs follow naturally, arms instinctively reach. FRAME3 continues SAME rightward collapse, hip and shoulder near ground, torso angled about65 degrees, knees fold naturally, one palm near ground, head moving DOWN and right not up. FRAME4 fully collapsed motionless on his SIDE on imaginary ground, head at cell x80% y78%, boots toward cell x15-35% y88%, torso across lower third; NO standing/kneeling/hovering, no propped-up elbow, no recovery. The last pose visibly lies flat. Maintain continuous falling direction and believable center-of-mass progression, full figure including ALL boots/head/hands fits inside each cell with at least5% padding and no overlap adjacent cells. Do not enlarge final lying body to fill tile. Do not include any hats, jackets or drawn guns: this specific man wears waistcoat and rolled sleeves. Entire outside-character areas and between-limb gaps transparent alpha0, clean antialiasing, no backdrop/halo/ground shadow, only small cigarette smoke at frame1. No blood or exposed injuries, non-graphic arcade reaction. Detailed painted game sprite matching reference identity/style, no muzzle flashes, no OPEN FIRE or HOLD YOUR FIRE lettering.",
+  "layoutRevisionPrompt": "Production sprite-sheet layout repair. Reference contains FOUR desired sequential poses of same dock foreman; KEEP all four exact character identities, clothing and pose progression. Re-layout into mathematically EXACT 2 columns x2 rows on SQUARE transparent canvas. Each cell exactly half canvas width and half canvas height. Top-left hit seated; top-right seated slipping right; bottom-left falling right with hand touching ground; bottom-right lying flat on side. CRITICAL: SHRINK and inset EVERY pose enough that ALL head/hands/fingers/boots/cigarette/smoke fit strictly within its OWN cell's inner80% rectangle, from10% to90% of local cell width AND local cell height. There must be a CLEAR FULLY TRANSPARENT horizontal strip spanning the entire sheet around y50%, at least8% of full-sheet height, and a CLEAR FULLY TRANSPARENT vertical strip around x50%, at least8% of full-sheet width. No body/boot/hand/cigarette may cross these empty strips. This is essential for perfect equal-grid slicing, no limb clipping. Reposition poses within cells with sensible common ground baseline localy88% and fixed anatomical scale as closely as possible; final lying body's knees can bend to fit. All four figures wholly visible. EXACTLY four poses, NOT eight, no extra sprites, no frame lines, no numbers, no words. True transparent background all outside silhouette, NO crates/chair/ground/shadows/backdrop. Keep non-graphic no blood. Detailed game sprite look matching reference. No camera changes or mirrored identity."
+}

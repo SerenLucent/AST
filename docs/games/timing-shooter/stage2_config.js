@@ -12,15 +12,15 @@ window.TIMING_SHOOTER_STAGE2 = {
     { id: 'wharf_cart', polygon: '77% 55%, 97% 55%, 97% 69%, 77% 69%' }
   ],
   upperFloor: {
-    name: '밀수품 창고', camera: 1,
+    name: '밀수품 창고', camera: 0,
     background: 'backgrounds/stage2_black_wharf/wave_2_warehouse_v2.png',
     entryMale: 'backgrounds/stage2_black_wharf/hold_1_to_2_warehouse_v1.png',
     bakedEntryCaption: true, entryFit: 'contain', entryPosition: 'center',
     enemyTotal: 10, transitionDelayMs: 1000, loadingHoldMs: 2000, riseMs: 420,
     slots: [
-      { id: 'warehouse_cart', worldX: .76, footY: .69, heightRatio: .25, clipBottomY: .548, rise: true },
-      { id: 'warehouse_rear', worldX: .65, footY: .57, heightRatio: .18 },
-      { id: 'warehouse_column', worldX: .91, footY: .56, heightRatio: .19 }
+      { id: 'warehouse_crates', worldX: .28, footY: .69, heightRatio: .25, clipBottomY: .554, rise: true },
+      { id: 'warehouse_rear', worldX: .39, footY: .57, heightRatio: .18 },
+      { id: 'warehouse_column', worldX: .18, footY: .56, heightRatio: .19 }
     ],
     occluders: [
       { id: 'warehouse_crates', polygon: '21% 55.4%, 37% 55.4%, 37% 69%, 21% 69%' },
@@ -57,22 +57,22 @@ window.TIMING_SHOOTER_STAGE2 = {
     },
     slots: [
       { id: 'whitehair_boss', worldX: .5, footY: .70, heightRatio: .34, clipBottomY: .55 },
-      { id: 'office_guard_left', worldX: .345, footY: .73, heightRatio: .25, clipBottomY: .55 },
-      { id: 'office_guard_right', worldX: .655, footY: .73, heightRatio: .25, clipBottomY: .55 }
+      { id: 'office_guard_left', worldX: .345, footY: .70, heightRatio: .32, clipBottomY: .55 },
+      { id: 'office_guard_right', worldX: .655, footY: .70, heightRatio: .32, clipBottomY: .55 }
     ],
     occluders: [{ id: 'office_desk', polygon: '24% 54.8%, 76% 54.8%, 75% 72%, 25% 72%' }]
   },
   opening: {
-    background: 'backgrounds/stage2_black_wharf/opening_wharf_clean_v1.png',
+    background: 'backgrounds/stage2_black_wharf/opening_wharf_clean_v2.png',
     idle: 'sprites/enemies/dock_foreman_idle_v1.png',
     knockdown: 'sprites/enemies/dock_foreman_knockdown_atlas_v2.png',
     entry: 'backgrounds/stage2_black_wharf/hold_0_to_1_wharf_v1.png',
     revealMs: 700, entryHoldMs: 2000,
     frames: [
-      { rect: [0, 0, 627, 700], offset: 0, durationMs: 110, top: 24 },
-      { rect: [627, 0, 627, 700], offset: 0, durationMs: 120, top: 24 },
-      { rect: [0, 760, 627, 494], offset: 251, durationMs: 140, top: 28 },
-      { rect: [627, 760, 627, 494], offset: 261, durationMs: 800, top: 32 }
+      { rect: [0, 0, 627, 700], offset: 0, durationMs: 110, top: 31.5 },
+      { rect: [627, 0, 627, 700], offset: 0, durationMs: 120, top: 31.5 },
+      { rect: [0, 760, 627, 494], offset: 251, durationMs: 140, top: 33.5 },
+      { rect: [627, 760, 627, 494], offset: 261, durationMs: 800, top: 35.5 }
     ]
   }
 };

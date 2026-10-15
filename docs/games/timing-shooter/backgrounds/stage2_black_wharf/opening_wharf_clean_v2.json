@@ -1,0 +1,6 @@
+{
+  "tool": "built-in image_gen",
+  "image": "opening_wharf_clean_v2.png",
+  "reference": "opening_wharf_clean_v1.png",
+  "prompt": "Keep the exact Black Wharf portrait scene, camera, ship, warehouse, clocktower, cargo and dusk lighting. Move only the isolated foreground seat crate farther toward the warehouse into the middle distance, smaller with its top around 52 percent and bottom around 62 percent. Restore wet cobblestones in its former foreground footprint. No people or lettering. Character and knockdown animation are separate objects."
+}

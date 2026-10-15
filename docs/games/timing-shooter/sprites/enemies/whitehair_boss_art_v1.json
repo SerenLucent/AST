@@ -1,0 +1,15 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "backgrounds/mission_briefing_v3.png (흰머리 보스 사진)",
+  "assets": [
+    {
+      "file": "whitehair_boss_aim_v1.png",
+      "prompt": "Use case: stylized-concept, transparent game boss sprite. Identity reference is ONLY the WHITE-HAIRED OLDER MAN PHOTO at LOWER MIDDLE of this investigation board, NOT policeman, not black-haired man and not woman. Create that SAME stern weathered older mafia smuggling boss as a FULL BODY isolated front three-quarter character, swept-back silver-white hair, short neatly trimmed white beard and moustache, a distinctive healed diagonal scar across his left forehead/eye/cheek, cold sharp eyes, lean strong older build. Dark charcoal-brown heavy suit jacket over black waistcoat, pale gray shirt and dark tie matching portrait, dark tailored trousers, worn polished black leather shoes. Both hands firmly grip a compact dark semi-automatic pistol AIMED DIRECTLY AT VIEWER, gun muzzle facing camera around chest level, no muzzleflash. Feet naturally planted, slight stagger, no twisted ankles, balanced combat stance. Full body from head to both shoes with generous8% transparent margin, centered, standing figure occupies80%height. Premium detailed anime-painted mobile game sprite, crisp readable silhouette, restrained cool gray daylight and gentle warm rim matching harbor dawn. TRUE TRANSPARENT background. Character only, NO board, photo frame, desk, chair, crate, environment, drawn ground, contact shadow, halo, smoke, labels, text or watermark. Single figure only. Preserve exact white-haired portrait identity."
+    },
+    {
+      "file": "whitehair_boss_hit_v1.png",
+      "prompt": "Create a HIT REACTION counterpart sprite to this exact aiming white-haired mafia boss, for instant swapping in a game. Keep IDENTICAL portrait canvas dimensions1024x1536, body scale, body center, BOTH feet planted at SAME bottom coordinates, hairstyle, older scarred face, white beard, dark patterned suit jacket/waistcoat/tie/scarf, holster and shoes, painted game style and lighting. Change ONLY pose to a readable non-graphic bullet impact flinch: torso jerks backward slightly, shoulders tense, head tilts back slightly with eyes narrowed and jaw clenched, one hand reflexively clutches upper chest over clothing, other hand still holds SAME dark pistol lowered a little at his side/front. He remains STANDING and alive, not fallen or kneeling. No blood, holes, wounds, bullet sparks, muzzleflash or explosion baked in. Avoid bending feet/ankles in opposite directions, no extra fingers, no missing shoe, maintain same silhouette scale as aim pose to prevent popping on swap. TRUE TRANSPARENT background with clean alpha edges and empty space between limbs. No environment, ground, desk, shadow, glow/halo, captions, labels or watermark. One full-body figure only, head and both shoes fully visible."
+    }
+  ],
+  "usage": "stage2_config.js bossRoom.boss"
+}

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>검은 부두 · 2P 구도 검토</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#121416;color:#f0f2f3;font-family:Arial,sans-serif;letter-spacing:0}main{max-width:1100px;margin:auto;padding:24px}h1{margin:0 0 20px;font-size:26px}h2{font-size:18px;margin:28px 0 16px}button,a{touch-action:manipulation}button{background:#23282c;color:#dce4e8;border:1px solid #657078;padding:10px 14px;font-size:14px;cursor:pointer;border-radius:4px}button[aria-selected=true],button[aria-pressed=true]{background:#e1c867;color:#171a1d;border-color:#f7e7a3}.waves{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.toolbar div{display:flex;gap:6px}a{color:#f2db89;font-size:14px}.view{max-width:800px;margin:auto}.panorama{display:none;width:100%;aspect-ratio:1;object-fit:contain}.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.phone{position:relative;aspect-ratio:1/2;overflow:hidden;background:#080a0b}.phone img{position:absolute;top:0;left:0;width:200%;height:100%;max-width:none}.phone.right img{left:-100%}.player{position:absolute;top:8px;left:8px;color:white;background:#080b10c9;border:1px solid #ffffff70;font-size:13px;padding:4px 8px}.view[data-mode=whole] .panorama{display:block}.view[data-mode=whole] .pair{display:none}.moves{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}figure{margin:0}.moves img{width:100%;height:auto;display:block;aspect-ratio:2/3}.moves figcaption{font-size:13px;line-height:1.5;margin-top:8px}@media(max-width:600px){main{padding:14px}h1{font-size:22px}.pair{gap:8px}.waves{gap:6px}.waves button{flex:1 1 40%;padding:10px 6px}.toolbar a{font-size:12px}.toolbar button{padding:9px 10px}.moves{gap:8px}.moves figcaption{font-size:11px}}
+</style>
+<style>
+.entry-scenes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:800px;margin:0 auto 28px}.entry-frame{position:relative;aspect-ratio:2/3;overflow:hidden;background:#080a0b}.entry-background{display:block;width:100%;height:100%;object-fit:contain}.entry-actor{position:absolute;left:19.6%;top:25.8%;width:56.5%;height:auto;pointer-events:none}.entry-actor[hidden]{display:none}.entry-scenes figcaption{font-size:14px;line-height:1.5;margin-top:8px}.entry-tools{display:flex;align-items:center;gap:12px;margin:0 0 14px;font-size:14px}.entry-tools label{display:flex;align-items:center;gap:7px}.entry-tools input{width:18px;height:18px;accent-color:#e1c867}.entry-links{display:flex;gap:12px;flex-wrap:wrap}.entry-links a{font-size:12px}@media(max-width:600px){.entry-scenes{gap:8px}.entry-scenes figcaption{font-size:12px}}
+</style>
+<style>
+.entry-tools{flex-wrap:wrap}.foreman-fall{position:absolute;left:15%;top:24%;width:75%;height:auto;pointer-events:none}.foreman-fall[hidden]{display:none}.fall-frames{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px auto 28px;max-width:800px}.fall-frames figure{min-width:0}.fall-frames canvas{display:block;width:100%;height:auto;background:repeating-conic-gradient(#25292d 0% 25%,#191d21 0% 50%) 0 0/20px 20px}.fall-frames figcaption{font-size:12px;margin-top:8px;line-height:1.5}@media(max-width:600px){.fall-frames{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.entry-tools button{padding:8px 10px}}
+</style>
+<style>
+.entry-actor{left:35.1%;top:32.4%;width:28.25%}
+.foreman-fall{left:32.8%;top:31.5%;width:37.5%}
+</style>
+</head>
+<body><main>
+<h1>검은 부두 · 2P 구도 검토</h1>
+<h2>오프닝 → WAVE 1</h2>
+<div class="entry-tools"><label><input id="showForeman" type="checkbox" checked>작업단원</label><button id="playForemanFall" type="button" disabled>피격 재생</button><button id="resetForeman" type="button">대기 자세</button><div class="entry-links"><a href="opening_wharf_clean_v2.png">배경 원본</a><a href="../../sprites/enemies/dock_foreman_idle_v1.png">투명 캐릭터</a><a href="../../sprites/enemies/dock_foreman_knockdown_atlas_v2.png">쓰러짐 시트</a></div></div>
+<section class="entry-scenes">
+<figure><div class="entry-frame"><img class="entry-background" src="opening_wharf_clean_v2.png" alt="부두 안쪽으로 옮겨진 빈 화물 상자가 있는 오프닝 배경"><img class="entry-actor" src="../../sprites/enemies/dock_foreman_idle_v1.png" alt="담배를 피우며 앉아 있는 별도 작업단원 오브젝트"><canvas id="foremanFall" class="foreman-fall" width="627" height="700" aria-label="작업단원 피격 애니메이션" hidden></canvas></div><figcaption>오프닝 · 배경 + 캐릭터 분리 합성</figcaption></figure>
+<figure><a href="hold_0_to_1_wharf_v1.png"><img class="entry-background" src="hold_0_to_1_wharf_v1.png" alt="경찰이 부두 진입로로 이동하는 HOLD YOUR FIRE 장면"></a><figcaption>오프닝 → 1웨이브 · 부두 진입</figcaption></figure>
+</section>
+<h2>쓰러짐 · 4프레임</h2>
+<section class="fall-frames">
+<figure><canvas width="627" height="700" data-fall-frame="0" aria-label="1프레임 피격"></canvas><figcaption>1 · 앉은 자세에서 피격</figcaption></figure>
+<figure><canvas width="627" height="700" data-fall-frame="1" aria-label="2프레임 균형 상실"></canvas><figcaption>2 · 상자에서 미끄러짐</figcaption></figure>
+<figure><canvas width="627" height="700" data-fall-frame="2" aria-label="3프레임 바닥으로 넘어짐"></canvas><figcaption>3 · 바닥으로 쓰러짐</figcaption></figure>
+<figure><canvas width="627" height="700" data-fall-frame="3" aria-label="4프레임 완전히 쓰러짐"></canvas><figcaption>4 · 완전히 쓰러진 상태</figcaption></figure>
+</section>
+<h2>전투 배경</h2>
+<nav class="waves" aria-label="웨이브" role="tablist">
+<button role="tab" aria-selected="true" data-wave="0">1 · 부두</button>
+<button role="tab" aria-selected="false" data-wave="1">2 · 창고</button>
+<button role="tab" aria-selected="false" data-wave="2">3 · 세관</button>
+<button role="tab" aria-selected="false" data-wave="3">4 · 보스 사무실</button>
+</nav>
+<div class="toolbar"><div><button type="button" data-view="pair" aria-pressed="true">1P + 2P</button><button type="button" data-view="whole" aria-pressed="false">전체</button></div><a id="original" href="wave_1_wharf_v2.png">원본 이미지</a></div>
+<section class="view" data-mode="pair" aria-label="선택한 웨이브 배경">
+<img class="panorama" src="wave_1_wharf_v2.png" alt="전체 부두 전투 배경">
+<div class="pair">
+<div class="phone"><img src="wave_1_wharf_v2.png" alt="왼쪽 절반: 1P 화면"><span class="player">1P</span></div>
+<div class="phone right"><img src="wave_1_wharf_v2.png" alt="오른쪽 절반: 2P 화면"><span class="player">2P</span></div>
+</div>
+</section>
+<h2>HOLD YOUR FIRE</h2>
+<section class="moves">
+<figure><a href="hold_1_to_2_warehouse_v1.png"><img src="hold_1_to_2_warehouse_v1.png" alt="창고 진입"></a><figcaption>1 → 2 · 창고 진입</figcaption></figure>
+<figure><a href="hold_2_to_3_customs_v1.png"><img src="hold_2_to_3_customs_v1.png" alt="세관으로 이동"></a><figcaption>2 → 3 · 세관으로 이동</figcaption></figure>
+<figure><a href="hold_3_to_4_office_v1.png"><img src="hold_3_to_4_office_v1.png" alt="사무실 진입"></a><figcaption>3 → 4 · 사무실 진입</figcaption></figure>
+</section>
+</main>
+<script>
+const assets=['wave_1_wharf_v2.png','wave_2_warehouse_v2.png','wave_3_customs_v2.png','wave_4_boss_office_v2.png'];
+const fallFrames=[{rect:[0,0,627,700],offset:0,ms:110,top:31.5},{rect:[627,0,627,700],offset:0,ms:120,top:31.5},{rect:[0,760,627,494],offset:251,ms:140,top:33.5},{rect:[627,760,627,494],offset:261,ms:800,top:35.5}];
+const fallAtlas=new Image(),fallCanvas=document.getElementById('foremanFall'),idleActor=document.querySelector('.entry-actor'),foremanToggle=document.getElementById('showForeman'),playFall=document.getElementById('playForemanFall');
+let fallTimer=null;
+function drawForemanFrame(canvas,index){const frame=fallFrames[index],context=canvas.getContext('2d');context.clearRect(0,0,canvas.width,canvas.height);context.drawImage(fallAtlas,...frame.rect,0,frame.offset,frame.rect[2],frame.rect[3]);canvas.dataset.frame=String(index);}
+function resetForeman(){clearTimeout(fallTimer);fallTimer=null;fallCanvas.hidden=true;idleActor.hidden=!foremanToggle.checked;playFall.disabled=!fallAtlas.complete||!fallAtlas.naturalWidth;}
+foremanToggle.addEventListener('change',resetForeman);
+document.getElementById('resetForeman').addEventListener('click',()=>{foremanToggle.checked=true;resetForeman();});
+playFall.addEventListener('click',()=>{clearTimeout(fallTimer);foremanToggle.checked=true;idleActor.hidden=true;fallCanvas.hidden=false;playFall.disabled=true;function advance(index){drawForemanFrame(fallCanvas,index);fallCanvas.style.top=fallFrames[index].top+'%';if(index<3)fallTimer=setTimeout(()=>advance(index+1),fallFrames[index].ms);else{fallTimer=null;playFall.disabled=false;}}advance(0);});
+fallAtlas.src='../../sprites/enemies/dock_foreman_knockdown_atlas_v2.png';
+fallAtlas.decode().then(()=>{document.querySelectorAll('[data-fall-frame]').forEach(canvas=>drawForemanFrame(canvas,Number(canvas.dataset.fallFrame)));playFall.disabled=false;}).catch(error=>console.error('작업단원 프레임 로딩 실패',error));
+document.querySelectorAll('[data-wave]').forEach(button=>button.addEventListener('click',()=>{
+ document.querySelectorAll('[data-wave]').forEach(tab=>tab.setAttribute('aria-selected',String(tab===button)));
+ const src=assets[Number(button.dataset.wave)];document.querySelectorAll('.view img').forEach(image=>image.src=src);document.getElementById('original').href=src;
+}));
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
+ document.querySelector('.view').dataset.mode=button.dataset.view;document.querySelectorAll('[data-view]').forEach(control=>control.setAttribute('aria-pressed',String(control===button)));
+}));
+</script>
+</body></html>

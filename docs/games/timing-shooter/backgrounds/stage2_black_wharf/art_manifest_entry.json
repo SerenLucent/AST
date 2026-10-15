@@ -1,0 +1,59 @@
+{
+  "title": "검은 부두 · 오프닝 분리 에셋",
+  "status": "art-review-only",
+  "tool": "built-in image_gen",
+  "sequence": [
+    "opening_wharf_clean_v1.png + ../../sprites/enemies/dock_foreman_idle_v1.png",
+    "hold_0_to_1_wharf_v1.png",
+    "wave_1_wharf_v2.png"
+  ],
+  "layers": {
+    "background": {
+      "file": "opening_wharf_clean_v1.png",
+      "width": 1024,
+      "height": 1536,
+      "containsText": false,
+      "containsCharacter": false,
+      "crateBakedIn": true
+    },
+    "idleCharacter": {
+      "file": "../../sprites/enemies/dock_foreman_idle_v1.png",
+      "transparent": true,
+      "placement": {
+        "leftPercent": 19.6,
+        "topPercent": 25.8,
+        "widthPercent": 56.5
+      },
+      "note": "원본 1024x1536 인물 투명 캔버스를 배경 위에 비례 축소해서 상자 좌석에 맞춤."
+    },
+    "openFire": {
+      "source": "runtime-ui-only",
+      "bakedIn": false,
+      "hideWhen": "successful shot / hit confirmed; do not wait for fall animation to finish",
+      "note": "게임 연결 시 적용할 상태 규칙. 현재 실제 게임 진입이나 피격 이벤트는 변경하지 않았음."
+    }
+  },
+  "assets": [
+    {
+      "file": "open_fire_dock_foreman_v1.png",
+      "prompt": "Use case: illustration-story. Create ONE finished PORTRAIT 2:3 OPEN FIRE opening encounter game illustration for Black Wharf, before Wave1. Reference1 is exact harbor location and weather, reference2 is ONLY painted game style and gold headline typography, do NOT include police officer. First-person eye-level approach, no visible player gun or hands. Main subject: a middle-aged ordinary mafia DOCK FOREMAN, NOT the white-haired stage boss and NOT the handsome fedora final boss. Dark short slicked hair, rough clean-shaven face, charcoal waistcoat over rolled-up pale gray shirt, loosened dark red necktie, dark trousers, practical boots, old leather pistol holster at belt. He has just finished supervising illicit unloading and is taking an unguarded smoking break, SITTING naturally on a SMALL LOW rough timber contraband cargo crate at the edge of the quay. Full body visible, both boots planted on wet cobblestones, relaxed knees naturally aligned, one elbow on thigh, one hand holding a lit cigarette near his mouth with a delicate wisp of smoke, other hand loosely holds folded shipping manifest beside knee. He looks off slightly to right, unaware of player, no dramatic attack pose. Prominent targetable head and torso centered around x50%, y42-55%, unobstructed by props or headline. Composition medium full-body, figure occupies about 45% image height, seat around y65%, feet around y80%, not tiny background figure or extreme closeup. A few rope-bound wooden contraband crates and coiled rope around him. Black cargo ship on LEFT and characteristic red brick warehouse with dark green sliding doors in middle background, pale stone clock-tower customs building farther RIGHT consistent with reference1. Cool silver-gray overcast predawn after rain, wet cobbles, thin sea fog, sparse warm dock lamps, same rich cinematic realistic painted environment with slightly illustrated character face. TOP 12% exact centered single line gold bold condensed title 'OPEN FIRE', matching reference2 gold title style. This is the BEFORE-SHOT frame: no wounds, no blood, no impacts, no fallen bodies, no muzzle flashes, no firework sparks, no crosshair or HUD. No other characters, no police, no extra words, no watermark. No phone split, no panels."
+    },
+    {
+      "file": "hold_0_to_1_wharf_v1.png",
+      "prompt": "Use case: illustration-story. Finished PORTRAIT 2:3 HOLD YOUR FIRE transition/loading game cutscene, Black Wharf, AFTER initial smoking dock foreman opening encounter and BEFORE WAVE1 WHARF combat. Reference1 exact handsome young male police officer identity, black hair, navy cap silver badge, navy uniform, black gloves/boots and belt. Reference2 exact wharf combat destination, reference3 exact first opening location, reference4 exact gold HOLD YOUR FIRE typography and painted cutscene style. This is NOT the warehouse-door entry scene: police is still OUTDOORS and has NOT reached warehouse entrance. Cinematic three-quarter REAR full-body view of officer advancing cautiously from foreground quay into broader dock access lane. Officer in left-middle, natural mid-step, knees and boots correctly aligned, right hand holding black pistol upright near chest, finger off trigger, left hand braced near right for safe ready posture, focused head turned slightly toward warehouse. He passes a SMALL now-empty timber contraband crate beside coiled rope and dark iron bollard at near RIGHT, folded shipping manifest and a barely smoking cigarette left on crate edge subtly connect to previous encounter. No body, no injured person, no blood. Same moored black cargo ship looms on LEFT; ahead red brick warehouse's dark green sliding doors are visible at medium distance, pale stone clock-tower customs building beyond RIGHT, iron crane silhouette, after-rain wet cobbles, gray sea fog, cool silver-gray predawn with small warm dock lamps. Clear sense of moving into first combat area rather than already entering next warehouse. Camera at realistic standing eye level, whole officer including boots fully visible; richly detailed realistic painted environment with illustrated anime character, consistent lighting/architecture. TOP12% exact centered single-line large gold condensed bold text 'HOLD YOUR FIRE' matching reference4, generous side margins, no other text. No gunfire, muzzleflash, targets, enemies, second officer, HUD, watermark or split screen."
+    },
+    {
+      "file": "opening_wharf_clean_v1.png",
+      "prompt": "Precise removal/background-cleanplate edit for game compositing. Preserve input portrait 1024x1536 composition, camera, all building/ship/crane geometry, warehouse door, clock tower, weather, wet cobblestones, lamps, colors and lighting EXACTLY. REMOVE ALL gold OPEN FIRE lettering at top and reconstruct continuous natural cloudy sky behind. REMOVE the seated man ENTIRELY, including hair, face, body, every hand/finger, boots, cigarette, cigarette smoke, holster, shipping paper he holds, and his cast shadow/reflection. REVEAL the SMALL TIMBER CRATE he sat on, exactly same original position and perspective, natural rectangular horizontal top surface intact around x25-61%, y59-74%, clear seating surface so a separate seated character sprite can be overlaid later. Reconstruct the wet road and background originally hidden behind him, preserve nearby crate/rope placements. No people or body remnants anywhere. The crate and static environment remain part of background; character never baked in. NO TEXT ANYWHERE, no caption, UI, target, lettering, watermark. This is ONLY an empty harbor environment clean plate. Do not change crop, zoom or perspective."
+    },
+    {
+      "file": "dock_foreman_idle_v1.png",
+      "prompt": "Background extraction / character sprite separation. From this reference extract ONLY the SAME seated smoking dock foreman as a game character object onto TRUE TRANSPARENT background. Preserve EXACT face identity, seated pose, body proportions, hands, cigarette held near mouth, a very small wisp of translucent cigarette smoke, folded shipping paper held by other hand, waistcoat, rolled gray sleeves, dark red loose necktie, dark trousers, pistol holster, BOTH boots and all silhouette details. The man stays seated in midair ready to be composited onto a separate crate; KEEP his buttocks/thighs at reference seat position. REMOVE EVERYTHING ELSE: all wood crates including the one he sits on, barrels, ropes, cobblestones, ship, buildings, sky, lamps, reflections, cast shadows and ALL OPEN FIRE lettering. Nothing solid behind/between legs; those gaps must be fully transparent. Absolutely NO chair or crate attached to sprite. IMPORTANT registration: output SAME PORTRAIT 1024x1536 canvas and keep man at EXACT original coordinates and size: head top around (440,498), buttocks near (465,930), leftmost boot near x255 and rightmost boot near x755, lowest boot y1200. Do not zoom up, do not recenter, leave transparent margins where environment and headline were. Clean anti-aliased alpha edges, detailed painted game sprite, no white/black/colored matte, no text, no borders or checkerboard drawn into pixels. Character only, unchanged healthy idle state, no injuries."
+    },
+    {
+      "file": "dock_foreman_idle_v1.png",
+      "revision": true,
+      "prompt": "Clean game sprite alpha correction ONLY. Keep exactly this seated smoking man's face, body, clothes, hands, folded paper, cigarette, pose, silhouette, proportions, current scale and position. REMOVE the entire diffuse WHITE/GRAY/BROWN GLOW or BACKDROP/SHADOW behind/around/between him. Every pixel outside the man must be FULLY TRANSPARENT alpha=0 except the small natural wispy cigarette smoke connected to cigarette. No rim bloom, no halo, no backlight aura, no vignette, no ground shadow, no reflections. Empty areas between his thighs/calves and outside boots completely transparent. The lit cigarette tip may be tiny orange but no broad light cloud. Do not add stool/crate/chair under seated pose. One healthy idle character only, no letters, no environment. True transparent PNG, preserve portrait2:3canvas and person pose. Hard clean antialiased cutout edges, not feathered glow."
+    }
+  ]
+}

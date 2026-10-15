@@ -1,0 +1,15 @@
+{
+  "image": "dock_foreman_knockdown_atlas_v2.png",
+  "tool": "built-in image_gen",
+  "reference": "dock_foreman_knockdown_atlas_v1.png",
+  "imageSize": [1254, 1254],
+  "logicalFrameSize": [627, 700],
+  "direction": "viewer-left",
+  "frames": [
+    { "rect": [0, 0, 627, 700], "offsetY": 0, "durationMs": 110 },
+    { "rect": [627, 0, 627, 700], "offsetY": 0, "durationMs": 120 },
+    { "rect": [0, 760, 627, 494], "offsetY": 251, "durationMs": 140 },
+    { "rect": [627, 760, 627, 494], "offsetY": 261, "durationMs": 800 }
+  ],
+  "prompt": "Edit the transparent four-frame dock foreman atlas. Keep identity, clothing, style, upper two poses and layout unchanged. Fix bottom two poses so collapse continues viewer-left: head and shoulders on left, bent legs and boots trailing right. Frame 3 braces palm left while descending; frame 4 lies flat on left side, head left and boots right. No reversal, recovery, crate, floor, text or blood. Preserve transparent background and all limbs inside each source region."
+}
