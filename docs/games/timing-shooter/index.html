@@ -2391,14 +2391,16 @@
     });
     registerAudio(duel.combat.roulette); registerAudio(duel.combat.confirm);
 
+    function prepareDuelAssets() {
+      return Promise.all([duel.prepare(), loadAudioCueBuffer('sound/roulette.mp3'), loadBgmBuffer('sound/versus.mp3')]);
+    }
+
     async function startDuelMode() {
       if (transitionLocked || gameStarted || duel.active) return;
       transitionLocked = true;
       startGameButton.disabled = true;
-      showLoading('Now Loading...');
       try {
-        await Promise.all([duel.prepare(), loadAudioCueBuffer('sound/roulette.mp3'), loadBgmBuffer('sound/versus.mp3')]);
-        hideLoading();
+        await prepareDuelAssets();
         duel.root.querySelector('.duel-mode-card').replaceChildren();
         duel.root.inert = true;
         modeScreen.classList.add('mission-transition');
@@ -2411,7 +2413,6 @@
         console.error('[Duel] Could not load scenes:', error);
         modeDescription.textContent = '장면을 불러오지 못했습니다. 다시 시작해 주세요.';
       } finally {
-        hideLoading();
         duel.root.inert = false;
         modeScreen.classList.remove('mission-transition');
         transitionLocked = false;
@@ -2529,6 +2530,7 @@
       });
       const detail = modeDetails[mode] ?? modeDetails['1p'];
       modeDescription.innerHTML = `<strong>${detail.title}</strong>${detail.body}`;
+      if (mode === 'vs') prepareDuelAssets().catch(error => console.warn('[Duel] Background preload failed:', error));
       if (voice && changed && modeVoiceSrc[mode]) {
         playAudioCue(modeVoiceSrc[mode]);
       }
