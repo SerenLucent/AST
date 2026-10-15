@@ -1478,6 +1478,7 @@
   <link rel="stylesheet" href="hostage.css?v=hostage-ring-2">
   <link rel="stylesheet" href="dodge.css?v=gold-bullet-8">
   <link rel="stylesheet" href="duel.css?v=dodge-color-flash-18">
+  <link rel="stylesheet" href="mission_briefing.css?v=briefing-3">
 </head>
 <body>
   <main id="stage">
@@ -1641,6 +1642,7 @@
   <script src="duel.js?v=mafia-target-19"></script>
   <script src="duel_config.js?v=half-second-shots-7"></script>
   <script src="duel_combat.js?v=dodge-color-flash-18"></script>
+  <script src="mission_briefing.js?v=briefing-3"></script>
   <script>
     const stage = document.getElementById('stage');
     let previousGameTap = null;
@@ -2509,6 +2511,8 @@
       });
       transitionLocked = false;
     }
+
+    const missionBriefing = new MissionBriefing(modeScreen, () => startGameMode());
 
     function selectMode(mode, { voice = false } = {}) {
       const changed = selectedMode !== mode;
@@ -4020,6 +4024,7 @@
         event.preventDefault();
         resumeBgm();
         selectMode(card.dataset.mode, { voice: true });
+        if (card.dataset.mode === '1p' && !transitionLocked) missionBriefing.open(card);
       });
     });
 
@@ -4033,7 +4038,7 @@
         window.alert('준비중입니다');
         return;
       }
-      startGameMode();
+      missionBriefing.open(modeCards.find((card) => card.dataset.mode === '1p'));
     });
 
     gaugeRewardButtons.forEach((button) => {

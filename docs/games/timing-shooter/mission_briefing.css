@@ -1,0 +1,44 @@
+#modeScreen.mission-open > :not(.mission-briefing):not(.mission-flying-card) { visibility: hidden; }
+#modeScreen.mission-open { gap: 0; }
+.mission-transition .mode-card-row, .mission-transition #startGameButton { pointer-events: none; }
+.mission-briefing[hidden] { display: none; }
+.mission-briefing {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) 10px max(18px, env(safe-area-inset-bottom));
+  color: #fff;
+}
+.mission-heading { width: 100%; display: flex; align-items: center; height: 36px; flex: 0 0 36px; position: relative; }
+.mission-heading h2 { margin: 0; width: 100%; text-align: center; font-size: 20px; letter-spacing: 0; color: #f6df9d; }
+.mission-back { position: absolute; left: 0; width: 36px; height: 36px; background: #171b20; color: #fff; border: 1px solid #82878d; border-radius: 4px; font-size: 24px; }
+.mission-card-slot { height: min(24dvh, 190px); aspect-ratio: 1086 / 1448; flex: 0 0 auto; }
+.mission-card-slot img, .mission-flying-card img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.mission-card-slot img { border: 2px solid #ffd84a; border-radius: 6px; box-sizing: border-box; box-shadow: 0 0 18px #ffd84a45; }
+.mission-flying-card { position: absolute; z-index: 5; padding: 0; border: 2px solid #ffd84a; border-radius: 6px; overflow: hidden; background: #101418; transform-origin: top left; backface-visibility: visible; }
+.mission-board { position: relative; margin: 0; width: 100%; aspect-ratio: 4 / 3; flex: 0 0 auto; }
+.mission-board img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.mission-stage-selected { position: absolute; left: 5.7%; top: 42.1%; width: 17.5%; height: 28.2%; padding: 0; background: transparent; border: 4px solid #ffdc24; border-radius: 0; transform: rotate(1deg); box-shadow: inset 0 0 0 1px #fff, inset 0 0 6px #fff, 0 0 2px #fff, 0 0 10px #ffd624; cursor: pointer; }
+.mission-stage-selected:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.mission-lock { position: absolute; width: 24px; height: 28px; display: grid; place-items: center; border-radius: 3px; background: #121820ed; box-shadow: 0 1px 4px #0009; color: #f7e4a5; }
+.mission-lock i { position: relative; width: 13px; height: 11px; margin-top: 7px; border: 2px solid currentColor; border-radius: 2px; box-sizing: border-box; }
+.mission-lock i::before { content: ''; position: absolute; width: 9px; height: 9px; left: 0; top: -9px; border: 2px solid currentColor; border-bottom: 0; border-radius: 6px 6px 0 0; box-sizing: border-box; }
+.mission-lock-chief { left: 27.7%; top: 9.3%; }
+.mission-lock-second { left: 28.5%; top: 44.8%; }
+.mission-lock-third { left: 49.5%; top: 45.8%; }
+.mission-operation { display: flex; gap: 12px; align-items: center; min-height: 22px; font-size: 15px; }
+.mission-operation span { color: #ffd84a; font-weight: 900; font-size: 12px; }
+.mission-launch { width: 72%; min-height: 48px; flex: 0 0 auto; border: 1px solid #ffe5a0; border-radius: 6px; background: linear-gradient(#ffe78e, #d9962e); color: #21170a; font-size: 20px; font-weight: 900; letter-spacing: 0; }
+.mission-launch:disabled { opacity: .6; }
+@media (max-height: 680px) {
+  .mission-briefing { gap: 8px; }
+  .mission-card-slot { height: 128px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mission-flying-card { backface-visibility: hidden; }
+}
