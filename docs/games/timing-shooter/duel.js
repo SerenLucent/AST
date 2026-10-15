@@ -38,7 +38,7 @@
         <div class="duel-images"></div>
         <header class="duel-header">
           <strong class="duel-player">VS MODE</strong>
-          <button class="duel-exit" type="button" aria-label="Exit VS Mode">나가기</button>
+          <button class="duel-exit" type="button" aria-label="모드 선택으로 돌아가기" title="뒤로"><span class="duel-exit-arrow" aria-hidden="true">&#8592;</span><span class="duel-back-label">Back</span><span class="duel-exit-label">나가기</span></button>
         </header>
         <div class="duel-status" role="status" aria-live="polite">
           <strong class="duel-role"></strong><span class="duel-turn"></span>
@@ -162,6 +162,8 @@
 
     showLobby(message = '') {
       this.root.dataset.view = 'lobby';
+      this.root.querySelector('.duel-exit').setAttribute('aria-label', '모드 선택으로 돌아가기');
+      this.root.querySelector('.duel-exit').title = '뒤로';
       this.root.parentElement.classList.remove('duel-running');
       if (this.matchStarted) this.onMatchStop?.();
       this.matchStarted = false;
@@ -298,6 +300,8 @@
       this.root.querySelector('.duel-lobby').hidden = true;
       this.draftSettings = null;
       this.root.dataset.view = 'battle';
+      this.root.querySelector('.duel-exit').setAttribute('aria-label', '대전 나가기');
+      this.root.querySelector('.duel-exit').title = '나가기';
       this.root.parentElement.classList.add('duel-running');
       this.root.querySelector('.duel-status').hidden = false;
       this.root.querySelector('.duel-footer').hidden = true;

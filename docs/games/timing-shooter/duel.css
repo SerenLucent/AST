@@ -38,6 +38,7 @@
 #duelScene[data-view="battle"] .duel-player { display: none; }
 #duelScene[data-view="battle"] .duel-header { left: auto; }
 .duel-exit { padding: 0 14px; }
+.duel-exit-arrow, .duel-back-label { display: none; }
 .duel-status {
   position: absolute;
   top: var(--duel-top);
@@ -66,7 +67,7 @@
 }
 .duel-next { min-width: 140px; padding: 0 24px; }
 .duel-lobby { position: absolute; inset: 0; padding: max(24px, env(safe-area-inset-top)) 20px 20px; background: #101215; overflow-y: auto; }
-.duel-lobby h1 { margin: 0 0 24px; font-size: 28px; line-height: 44px; color: #ffdc57; }
+.duel-lobby h1 { margin: 0 0 24px; padding: 0 76px; text-align: center; font-size: 28px; line-height: 44px; color: #ffdc57; white-space: nowrap; }
 .duel-mode-card { margin: 0 auto 24px; }
 .duel-entry-view .duel-lobby { background: #101215 url('sprites/Main/background.png') center / cover; }
 .duel-entry-view .duel-lobby::before { content: ''; position: absolute; inset: 0; background: #080b10c9; pointer-events: none; }
@@ -74,7 +75,15 @@
 .duel-entry-view .duel-room-entry { background: #101215df; padding: 16px 10px; }
 .duel-entry-view .duel-lobby h1 { margin-bottom: 12px; }
 #duelScene[data-view="lobby"] .duel-player { display: none; }
-#duelScene[data-view="lobby"] .duel-header { top: max(24px, env(safe-area-inset-top)); right: 20px; left: auto; }
+#duelScene[data-view="lobby"] .duel-header { top: max(28px, env(safe-area-inset-top)); left: 12px; right: auto; }
+#duelScene[data-view="lobby"] .duel-exit { display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 74px; height: 36px; min-height: 36px; padding: 0 8px; font-size: 14px; color: #ffdc57; background: #171b20; border-color: #b89b43; box-shadow: inset 0 1px 0 #ffe8a51a, 0 2px 6px #0005; transition: background 120ms, border-color 120ms; }
+#duelScene[data-view="lobby"] .duel-exit-arrow { display: inline; }
+#duelScene[data-view="lobby"] .duel-exit-arrow { font-size: 21px; line-height: 1; }
+#duelScene[data-view="lobby"] .duel-back-label { display: inline; }
+#duelScene[data-view="lobby"] .duel-exit:hover { background: #2b2920; border-color: #ffdc57; }
+#duelScene[data-view="lobby"] .duel-exit:active { background: #3a321c; }
+#duelScene[data-view="lobby"] .duel-exit-label { display: none; }
+@media (max-width: 360px) { .duel-lobby h1 { font-size: 24px; } }
 .duel-start { width: 100%; }
 .duel-room-entry { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; padding: 16px 0; }
 .duel-room-entry::before { content: ''; position: absolute; left: 50%; top: 8px; bottom: 8px; width: 1px; background: #41444a; }

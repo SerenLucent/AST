@@ -1477,7 +1477,7 @@
   <link rel="stylesheet" href="hall.css?v=game-over-5">
   <link rel="stylesheet" href="hostage.css?v=hostage-ring-2">
   <link rel="stylesheet" href="dodge.css?v=gold-bullet-8">
-  <link rel="stylesheet" href="duel.css?v=mode-card-20">
+  <link rel="stylesheet" href="duel.css?v=gold-back-22">
   <link rel="stylesheet" href="mission_briefing.css?v=vs-card-5">
 </head>
 <body>
@@ -1639,7 +1639,7 @@
   <script src="ast_integration.js"></script>
   <script src="multiplayer_config.js?v=multi-play-2"></script>
   <script src="multiplayer_client.js?v=multi-play-1"></script>
-  <script src="duel.js?v=mode-card-20"></script>
+  <script src="duel.js?v=gold-back-22"></script>
   <script src="duel_config.js?v=half-second-shots-7"></script>
   <script src="duel_combat.js?v=dodge-color-flash-18"></script>
   <script src="mission_briefing.js?v=vs-card-5"></script>
@@ -2375,7 +2375,7 @@
     const duel = new DuelScene(stage, {
       onRouletteAudio: startRouletteAudio,
       onMatchStart: () => playBgmLoop('duel', 'sound/versus.mp3'),
-      onMatchStop: stopBgm,
+      onMatchStop: () => { if (bgmMode === 'duel') stopBgm(); },
       onCombatSound: (grade, defense) => {
         if (defense) {
           const src = ['perfect', 'great', 'good'].includes(grade) ? 'sound/miss.mp3' : 'sound/gun.mp3';
