@@ -415,9 +415,9 @@
       }));
     }
 
-    policeTargetPosition() {
+    policeTargetPosition(lane = 0) {
       const image = this.images.get(scenes.police.cover);
-      return this.imagePosition(image, .32, .33);
+      return this.imagePosition(image, .32, lane === 0 ? .33 : .48);
     }
 
     muzzlePosition() {

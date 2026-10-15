@@ -193,7 +193,8 @@
 .duel-ring { width: 120px; height: 120px; }
 .duel-center { width: 36px; height: 36px; }
 .duel-evade { position: absolute; inset: 0; }
-.duel-evade-fixed, .duel-evade-moving { position: absolute; inset: 8px; border: 3px solid var(--shot-color); box-shadow: 0 0 8px var(--shot-color); }
+.duel-evade-fixed, .duel-evade-moving { position: absolute; inset: 8px; border: 3px solid var(--shot-color, #fff); box-shadow: 0 0 8px var(--shot-color, #fff); }
+.duel-evade-fixed { border-color: #fff; box-shadow: 0 0 8px #ffffffa0; }
 #stage.duel-running { min-height: 0; }
 #stage.duel-running #pad { display: block; z-index: 96; bottom: max(16px, env(safe-area-inset-bottom)); }
 .duel-turn-banner { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 6; padding: 18px 12px; background: #05070bf2; text-align: center; font-size: 28px; font-weight: 900; pointer-events: none; }

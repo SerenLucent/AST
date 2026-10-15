@@ -7,12 +7,13 @@
       this.room = null;
       this.key = '';
       this.current = null;
+      this.activeShots = new Map();
+      this.running = false;
       this.timer = null;
       this.frame = null;
       this.token = 0;
       this.pending = null;
       this.effectTimers = new Set();
-      this.muzzleTimer = null;
       this.root = document.createElement('div');
       this.root.className = 'duel-combat';
       this.root.hidden = true;
@@ -20,12 +21,12 @@
         <section class="duel-pattern"><div class="duel-count"></div>
           <div class="duel-table-scroll"><table><thead></thead><tbody></tbody></table></div><button class="duel-ok" type="button">OK</button></section>
         <div class="duel-cue" role="status"></div>
-        <div class="duel-shot-target" hidden><img class="duel-perfect" alt=""><img class="duel-ring" alt=""><img class="duel-center" alt=""></div>
-        <div class="duel-evade" hidden><div class="duel-evade-fixed"></div><div class="duel-evade-moving"></div></div>`;
+        <div class="duel-target-layer"></div>
+        <div class="duel-evade" hidden><div class="duel-evade-fixed"></div></div>`;
       scene.root.append(this.root);
       this.pad = document.getElementById('pad');
       this.resizeObserver = new ResizeObserver(() => {
-        if (this.current && !this.current.defense) this.positionTarget();
+        this.positionTarget();
       });
       this.resizeObserver.observe(scene.root);
       this.root.querySelector('.duel-ok').addEventListener('click', () => this.lock());
@@ -53,7 +54,7 @@
     cue(text) { this.root.querySelector('.duel-cue').textContent = text; }
 
     update(room) {
-      if (TimingShooterMultiplayer.cloud && this.key === `${room.turn}:${room.phase}` && this.roundResults?.length) {
+      if (this.key === `${room.turn}:${room.phase}` && this.roundResults?.length) {
         const defense = room.phase === 'defense';
         const activePlayer = defense ? 3 - room.attacker : room.attacker;
         if (['attack', 'defense'].includes(room.phase) && this.scene.player === activePlayer) {
@@ -109,7 +110,7 @@
         : '<tr><th>탄환</th><th>회피판정</th></tr>';
       this.root.querySelector('tbody').innerHTML = shots.map((shot, index) => {
         const grade = attacker ? shot.attack : shot.defense;
-        return `<tr class="${this.current?.index === index ? 'current' : ''}"><td>${this.bullets(1)}${index + 1}</td>${attacker ? `<td>${this.speedOrbs(shot.speed)}</td>` : ''}<td style="color:${grade ? this.gradeColor(grade) : '#fff'}">${grade ? grade[0].toUpperCase() + grade.slice(1) : '—'}${!attacker && shot.damage != null ? ` (-${shot.damage})` : ''}</td></tr>`;
+        return `<tr class="${this.activeShots.has(index) ? 'current' : ''}"><td>${this.bullets(1)}${index + 1}</td>${attacker ? `<td>${this.speedOrbs(shot.speed)}</td>` : ''}<td style="color:${grade ? this.gradeColor(grade) : '#fff'}">${grade ? grade[0].toUpperCase() + grade.slice(1) : '—'}${!attacker && shot.damage != null ? ` (-${shot.damage})` : ''}</td></tr>`;
       }).join('');
       this.root.querySelector('.duel-ok').hidden = this.room.phase !== 'roulette' || !attacker;
     }
@@ -165,94 +166,133 @@
     }
 
     beginShot() {
-      if (!this.scene.active || !['attack', 'defense'].includes(this.room.phase)) return;
-      const defense = this.room.phase === 'defense';
-      const field = defense ? 'defense' : 'attack';
-      const index = this.room.shots.findIndex(shot => !shot[field]);
-      if (index < 0) return;
-      const shot = this.room.shots[index];
-      const windows = cfg.timingWindows(shot.speed, defense);
-      this.current = { index, shot, defense, perfectAt: performance.now() + shot.duration };
-      if (defense) {
-        this.muzzleTimer = setTimeout(() => {
-          this.muzzleTimer = null;
-          if (this.current) this.current.flashed = true;
-          this.showShotEffect(this.scene.muzzlePosition(), true);
-        }, shot.duration);
-      }
-      this.positionTarget();
+      if (this.running || !this.scene.active || !['attack', 'defense'].includes(this.room.phase)) return;
+      this.running = true;
+      this.roundResults = [];
+      this.nextShotIndex = 0;
+      this.nextLaunchAt = performance.now();
       this.cue('');
-      this.pad.inert = false;
-      this.root.querySelector('.duel-shot-target').hidden = defense;
-      this.root.querySelector('.duel-evade').hidden = !defense;
-      this.root.style.setProperty('--shot-color', colors[shot.color]);
-      for (const [selector, name] of [['.duel-perfect', 'perfect_target'], ['.duel-ring', 'circle'], ['.duel-center', 'target']]) {
-        this.root.querySelector(selector).src = `sprites/${name}_${shot.color}.png`;
-      }
-      this.renderTable(this.room.shots);
+      this.root.querySelector('.duel-evade').hidden = this.room.phase !== 'defense';
       const frame = () => {
-        if (!this.current) return;
-        const remaining = this.current.perfectAt - performance.now();
-        if (defense) {
-          const inset = remaining >= 0 ? 8 + 80 * remaining / shot.duration : 8 * (1 + remaining / windows.bad);
-          this.root.querySelector('.duel-evade-moving').style.inset = `${Math.max(0, inset)}px`;
-        } else {
-          const scale = Math.max(.15, 52 / 120 + (1.75 - 52 / 120) * remaining / shot.duration);
-          this.root.querySelector('.duel-ring').style.transform = `translate(-50%, -50%) scale(${scale})`;
+        if (!this.running) return;
+        const now = performance.now();
+        this.spawnDueShot(now);
+        for (const state of [...this.activeShots.values()]) {
+          const remaining = state.perfectAt - now;
+          const windows = cfg.timingWindows(state.shot.speed, state.defense);
+          if (state.defense) {
+            if (remaining <= 0 && !state.flashed) this.flashMuzzle(state);
+            const inset = remaining >= 0 ? 8 + 80 * remaining / state.shot.duration : 8 * (1 + remaining / windows.bad);
+            state.element.style.inset = `${Math.max(0, inset)}px`;
+          } else {
+            const scale = Math.max(.15, 52 / 120 + (1.75 - 52 / 120) * remaining / state.shot.duration);
+            state.element.querySelector('.duel-ring').style.transform = `translate(-50%, -50%) scale(${scale})`;
+          }
+          if (remaining < -windows.bad) this.resolveShot(state, null, now);
         }
-        if (remaining < -windows.bad) { this.press(null); return; }
-        this.frame = requestAnimationFrame(frame);
+        this.refreshCurrent();
+        if (this.running) this.frame = requestAnimationFrame(frame);
       };
       frame();
     }
 
+    spawnDueShot(now) {
+      if (!this.running || this.pending || this.activeShots.size >= cfg.maxActiveShots
+        || this.nextShotIndex >= this.room.shots.length || now < this.nextLaunchAt) return;
+      const defense = this.room.phase === 'defense';
+      const index = this.nextShotIndex++;
+      const shot = this.room.shots[index];
+      const lanes = new Set([...this.activeShots.values()].map(state => state.lane));
+      const lane = lanes.has(0) ? 1 : 0;
+      const element = document.createElement('div');
+      element.dataset.index = index;
+      element.dataset.lane = lane;
+      element.style.setProperty('--shot-color', colors[shot.color]);
+      if (defense) {
+        element.className = 'duel-evade-moving';
+        this.root.querySelector('.duel-evade').append(element);
+      } else {
+        element.className = 'duel-shot-target';
+        element.setAttribute('role', 'img');
+        element.setAttribute('aria-label', `${index + 1}번 탄환 ${lane === 0 ? '상체' : '하체'}`);
+        element.innerHTML = `<img class="duel-perfect" src="sprites/perfect_target_${shot.color}.png" alt=""><img class="duel-ring" src="sprites/circle_${shot.color}.png" alt=""><img class="duel-center" src="sprites/target_${shot.color}.png" alt="">`;
+        this.root.querySelector('.duel-target-layer').append(element);
+      }
+      const state = { index, shot, defense, lane, element, startedAt: now, perfectAt: now + shot.duration, flashed: false };
+      this.activeShots.set(index, state);
+      this.nextLaunchAt = now + cfg.shotSpawnIntervalMs;
+      this.positionTarget();
+      this.pad.inert = false;
+      this.renderTable(this.room.shots);
+    }
+
     positionTarget() {
-      const target = this.root.querySelector('.duel-shot-target');
-      if (this.scene.player === 2) {
-        const { x, y } = this.scene.policeTargetPosition();
-        target.style.left = `${x}px`; target.style.top = `${y}px`;
-      } else { target.style.left = '22%'; target.style.top = '33%'; }
+      for (const state of this.activeShots.values()) {
+        if (state.defense) continue;
+        if (this.scene.player === 2) {
+          const { x, y } = this.scene.policeTargetPosition(state.lane);
+          state.element.style.left = `${x}px`; state.element.style.top = `${y}px`;
+        } else { state.element.style.left = '22%'; state.element.style.top = state.lane === 0 ? '33%' : '50%'; }
+      }
+    }
+
+    refreshCurrent() {
+      this.current = [...this.activeShots.values()].sort((a, b) => a.perfectAt - b.perfectAt || a.index - b.index)[0] || null;
+      this.pad.inert = !this.activeShots.size || Boolean(this.pending);
     }
 
     press(color) {
-      if (!this.current || this.pending) return;
-      const current = this.current;
-      const delta = Math.round(performance.now() - current.perfectAt);
+      if (!this.activeShots.size || this.pending) return;
+      const now = performance.now();
+      const active = [...this.activeShots.values()];
+      const matching = active.filter(state => state.shot.color === color);
+      const candidates = matching.length ? matching : active;
+      const current = candidates.sort((a, b) => Math.abs(now - a.perfectAt) - Math.abs(now - b.perfectAt) || a.index - b.index)[0];
+      this.resolveShot(current, color, now);
+    }
+
+    flashMuzzle(state) {
+      state.flashed = true;
+      this.showShotEffect(this.scene.muzzlePosition(), true);
+    }
+
+    resolveShot(current, color, now = performance.now()) {
+      if (!this.activeShots.has(current.index) || this.pending) return;
+      const delta = Math.round(now - current.perfectAt);
       const grade = cfg.grade(delta, color === current.shot.color, current.defense, current.shot.speed);
       if (current.defense && !current.flashed) {
-        clearTimeout(this.muzzleTimer); this.muzzleTimer = null;
-        this.showShotEffect(this.scene.muzzlePosition(), true);
+        this.flashMuzzle(current);
       } else if (!current.defense && grade !== 'miss') {
-        const target = this.root.querySelector('.duel-shot-target');
-        const bounds = target.getBoundingClientRect();
+        const bounds = current.element.getBoundingClientRect();
         const rootBounds = this.root.getBoundingClientRect();
         this.showShotEffect({ x: bounds.left + bounds.width / 2 - rootBounds.left,
           y: bounds.top + bounds.height / 2 - rootBounds.top }, false);
       }
-      this.current = null;
-      cancelAnimationFrame(this.frame);
-      this.pad.inert = true;
-      this.root.querySelector('.duel-shot-target').hidden = true;
-      this.root.querySelector('.duel-evade').hidden = true;
+      current.element.remove();
+      this.activeShots.delete(current.index);
       this.cue(grade[0].toUpperCase() + grade.slice(1));
       this.scene.onCombatSound?.(grade, current.defense);
       if (current.defense && ['perfect', 'great', 'good'].includes(grade)) {
         const images = this.scene.root.querySelector('.duel-images');
         images.classList.remove('evading'); void images.offsetWidth; images.classList.add('evading');
       }
-      this.pending = { index: current.index, delta, color, turn: this.room.turn, defense: current.defense };
-      if (TimingShooterMultiplayer.cloud) {
-        this.roundResults.push({ index: current.index, delta, color });
-        this.room.shots[current.index][current.defense ? 'defense' : 'attack'] = grade;
+      this.roundResults.push({ index: current.index, delta, color });
+      this.room.shots[current.index][current.defense ? 'defense' : 'attack'] = grade;
+      if (this.roundResults.length < this.room.shots.length) {
+        this.spawnDueShot(now);
+        this.refreshCurrent();
         this.renderTable(this.room.shots);
-        if (this.roundResults.length < this.room.shots.length) {
-          this.pending = null;
-          this.nextShot();
-          return;
-        }
-        this.pending = { turn: this.room.turn, results: this.roundResults.slice(), requestId: crypto.randomUUID() };
-        this.cue('결과 전송 중');
+        return;
       }
+      this.running = false;
+      cancelAnimationFrame(this.frame);
+      this.current = null;
+      this.pad.inert = true;
+      this.root.querySelector('.duel-evade').hidden = true;
+      this.renderTable(this.room.shots);
+      // Results are keyed by bullet number, not by the order the player resolved them.
+      this.pending = { turn: this.room.turn, results: this.roundResults.slice().sort((a, b) => a.index - b.index), requestId: crypto.randomUUID() };
+      this.cue('결과 전송 중');
       this.retryPending();
     }
 
@@ -262,23 +302,16 @@
       const token = this.token;
       this.submitting = true;
       try {
-        const data = await this.scene.request(pending.results ? 'round' : 'shot', this.scene.session.code, this.scene.session.token, pending.turn, pending);
+        const data = await this.scene.request('round', this.scene.session.code, this.scene.session.token, pending.turn, pending);
         if (!this.scene.active || token !== this.token) return;
         this.pending = null;
         this.scene.applyRoom(data.room);
-        if (!this.pending && pending.results) return;
-        if (token === this.token) this.nextShot();
       } catch (error) {
         if (token === this.token) this.cue('연결 재시도 중');
       } finally { this.submitting = false; }
     }
 
     gradeColor(grade) { return { perfect: '#ffd629', great: '#39ff67', good: '#3d8cff', bad: '#c192ff', miss: '#ff3434' }[grade]; }
-
-    nextShot() {
-      if (cfg.betweenShotsMs > 0) this.timer = setTimeout(() => this.beginShot(), cfg.betweenShotsMs);
-      else this.beginShot();
-    }
 
     showShotEffect(position, muzzle) {
       const effect = document.createElement('img');
@@ -304,7 +337,9 @@
 
     cancel(clearEffects = false) {
       this.token++;
-      clearTimeout(this.muzzleTimer); this.muzzleTimer = null;
+      this.running = false;
+      for (const state of this.activeShots.values()) state.element.remove();
+      this.activeShots.clear();
       if (clearEffects) {
         this.effectTimers.forEach(timer => clearTimeout(timer)); this.effectTimers.clear();
         this.root.querySelectorAll('.duel-shot-effect').forEach(effect => effect.remove());
@@ -312,7 +347,7 @@
       clearTimeout(this.timer); cancelAnimationFrame(this.frame);
       this.stopRoulette(); this.current = null; this.pending = null;
       this.pad.inert = true;
-      for (const selector of ['.duel-shot-target', '.duel-evade']) this.root.querySelector(selector).hidden = true;
+      this.root.querySelector('.duel-evade').hidden = true;
     }
 
     stop() {
