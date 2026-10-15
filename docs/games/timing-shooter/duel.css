@@ -77,8 +77,7 @@
 #duelScene[data-view="lobby"] .duel-player { display: none; }
 #duelScene[data-view="lobby"] .duel-header { top: max(28px, env(safe-area-inset-top)); left: 12px; right: auto; }
 #duelScene[data-view="lobby"] .duel-exit { display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 74px; height: 36px; min-height: 36px; padding: 0 8px; font-size: 14px; color: #ffdc57; background: #171b20; border-color: #b89b43; box-shadow: inset 0 1px 0 #ffe8a51a, 0 2px 6px #0005; transition: background 120ms, border-color 120ms; }
-#duelScene[data-view="lobby"] .duel-exit-arrow { display: inline; }
-#duelScene[data-view="lobby"] .duel-exit-arrow { font-size: 21px; line-height: 1; }
+#duelScene[data-view="lobby"] .duel-exit-arrow { display: block; width: 24px; height: 20px; object-fit: contain; flex: 0 0 24px; }
 #duelScene[data-view="lobby"] .duel-back-label { display: inline; }
 #duelScene[data-view="lobby"] .duel-exit:hover { background: #2b2920; border-color: #ffdc57; }
 #duelScene[data-view="lobby"] .duel-exit:active { background: #3a321c; }

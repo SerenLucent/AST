@@ -38,7 +38,7 @@
         <div class="duel-images"></div>
         <header class="duel-header">
           <strong class="duel-player">VS MODE</strong>
-          <button class="duel-exit" type="button" aria-label="모드 선택으로 돌아가기" title="뒤로"><span class="duel-exit-arrow" aria-hidden="true">&#8592;</span><span class="duel-back-label">Back</span><span class="duel-exit-label">나가기</span></button>
+          <button class="duel-exit" type="button" aria-label="모드 선택으로 돌아가기" title="뒤로"><img class="duel-exit-arrow" src="sprites/UI/back_arrow_gold_v1.png" alt=""><span class="duel-back-label">Back</span><span class="duel-exit-label">나가기</span></button>
         </header>
         <div class="duel-status" role="status" aria-live="polite">
           <strong class="duel-role"></strong><span class="duel-turn"></span>

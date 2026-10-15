@@ -46,7 +46,7 @@ class MissionBriefing {
     this.root.hidden = true;
     this.root.setAttribute('aria-label', '1P 수사 브리핑');
     this.root.innerHTML = `
-      <header class="mission-heading"><button type="button" class="mission-back" aria-label="모드 선택으로 돌아가기" title="뒤로">&#8592;</button><h2>수사 브리핑</h2></header>
+      <header class="mission-heading"><button type="button" class="mission-back" aria-label="모드 선택으로 돌아가기" title="뒤로"><img src="sprites/UI/back_arrow_gold_v1.png" alt=""><span>Back</span></button><h2>수사 브리핑</h2></header>
       <div class="mission-card-slot"></div>
       <figure class="mission-board"><img src="backgrounds/mission_briefing_v3.png" alt="주인공 경찰이 긴 지시봉으로 맨 위 마피아 수장을 가리킨다. 보스 사진들은 모두 보이며, 왼쪽 아래 노란 네온 테두리는 1스테이지 보스다.">
         <button type="button" class="mission-stage-selected" aria-label="1스테이지 마피아 저택 선택됨" aria-pressed="true" title="STAGE 1 · 마피아 저택"></button>
@@ -72,7 +72,7 @@ class MissionBriefing {
     this.busy = true;
     this.screen.classList.add('mission-transition');
     try {
-      const art = this.root.querySelector('img');
+      const art = this.root.querySelector('.mission-board img');
       await art.decode().catch(() => {});
       await animateModeCard(card, this.slot, () => {
         this.root.hidden = false;
