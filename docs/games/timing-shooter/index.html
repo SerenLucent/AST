@@ -4024,12 +4024,12 @@
         event.preventDefault();
         resumeBgm();
         selectMode(card.dataset.mode, { voice: true });
-        if (card.dataset.mode === '1p' && !transitionLocked) missionBriefing.open(card);
       });
     });
 
     startGameButton.addEventListener('pointerdown', (event) => {
       event.preventDefault();
+      if (transitionLocked || missionBriefing.busy || missionBriefing.active) return;
       if (selectedMode === 'vs') {
         startDuelMode();
         return;
