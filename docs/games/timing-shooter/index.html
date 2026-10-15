@@ -1472,13 +1472,14 @@
     }
   </style>
   <link rel="stylesheet" href="opening.css?v=full-cutscene-4">
+  <link rel="stylesheet" href="wharf_opening.css?v=stage2-1">
   <link rel="stylesheet" href="tutorial.css?v=knockdown-3">
   <link rel="stylesheet" href="supply_crate.css?v=crate-two-4">
   <link rel="stylesheet" href="hall.css?v=game-over-5">
   <link rel="stylesheet" href="hostage.css?v=hostage-ring-2">
   <link rel="stylesheet" href="dodge.css?v=gold-bullet-8">
   <link rel="stylesheet" href="duel.css?v=arrow-image-23">
-  <link rel="stylesheet" href="mission_briefing.css?v=arrow-image-6">
+  <link rel="stylesheet" href="mission_briefing.css?v=stage2-7">
 </head>
 <body>
   <main id="stage">
@@ -1630,19 +1631,21 @@
   <script src="opening_config.js"></script>
   <script src="opening.js?v=guard-knockdown-3"></script>
   <script src="hall_config.js?v=full-cutscene-2"></script>
+  <script src="stage2_config.js?v=stage2-1"></script>
+  <script src="wharf_opening.js?v=stage2-1"></script>
   <script src="hall.js?v=dodge-camera-2"></script>
   <script src="hostage.js?v=hostage-1"></script>
   <script src="supply_crate.js?v=crate-two-4"></script>
   <script src="dodge.js?v=gold-bullet-3"></script>
   <script src="boss.js?v=boss-hp-50"></script>
   <script src="tutorial.js?v=knockdown-3"></script>
-  <script src="ast_integration.js"></script>
+  <script src="ast_integration.js?v=stage-id-2"></script>
   <script src="multiplayer_config.js?v=multi-play-2"></script>
   <script src="multiplayer_client.js?v=multi-play-1"></script>
   <script src="duel.js?v=arrow-image-23"></script>
   <script src="duel_config.js?v=half-second-shots-7"></script>
   <script src="duel_combat.js?v=dodge-color-flash-18"></script>
-  <script src="mission_briefing.js?v=arrow-image-6"></script>
+  <script src="mission_briefing.js?v=stage2-7"></script>
   <script>
     const stage = document.getElementById('stage');
     let previousGameTap = null;
@@ -1699,7 +1702,12 @@
     const titleTapSound = document.getElementById('titleTapSound');
     const missSound = document.getElementById('missSound');
     const config = window.TIMING_SHOOTER_CONFIG;
-    const opening = new OpeningSequence(stage, window.TIMING_SHOOTER_OPENING);
+    const mansionOpening = new OpeningSequence(stage, window.TIMING_SHOOTER_OPENING);
+    let wharfOpening = null;
+    let opening = mansionOpening;
+    let campaignConfig = window.TIMING_SHOOTER_HALL;
+    let currentStageId = 'stage1';
+    window.TIMING_SHOOTER_STAGE_ID = currentStageId;
     let hall = new HallScene(stage, window.TIMING_SHOOTER_HALL);
     hall.onCameraChange = () => {
       activeTargets.forEach(positionHallTarget);
@@ -2420,8 +2428,39 @@
       }
     }
 
-    async function startGameMode({ fromTitle = false } = {}) {
+    function selectCampaignStage(stageNumber = 1) {
+      const nextConfig = stageNumber === 2 ? window.TIMING_SHOOTER_STAGE2 : window.TIMING_SHOOTER_HALL;
+      const nextStageId = stageNumber === 2 ? 'stage2' : 'stage1';
+      if (currentStageId === nextStageId) return;
+      opening.finish();
+      currentStageId = nextStageId;
+      window.TIMING_SHOOTER_STAGE_ID = currentStageId;
+      campaignConfig = nextConfig;
+      hall.destroy();
+      hall = new HallScene(stage, nextConfig);
+      hall.onCameraChange = () => {
+        activeTargets.forEach(positionHallTarget);
+        hostage.position();
+        supplyCrate.position();
+      };
+      hall.setCamera(nextConfig.camera ?? .5);
+      if (stageNumber === 2) {
+        wharfOpening ??= new WharfOpeningSequence(stage, nextConfig.opening);
+        opening = wharfOpening;
+      } else opening = mansionOpening;
+      spawnSlots = nextConfig.slots;
+      stageEnemyTotal = nextConfig.enemyTotal;
+      currentFloor = 1;
+      bossBattle = null;
+      defeatedEnemies = 0;
+      combatAssetsReady = null;
+      supplyCrate.resetRoom(stageEnemyTotal, config.waveTargets ?? 2);
+      enemiesRemaining.textContent = String(stageEnemyTotal);
+    }
+
+    async function startGameMode({ fromTitle = false, stageNumber = 1 } = {}) {
       if (gameStarted || transitionLocked || opening.active) return;
+      selectCampaignStage(stageNumber);
       transitionLocked = true;
       if (fromTitle) playOneShot(titleTapSound);
       startGameButton.disabled = true;
@@ -2478,6 +2517,7 @@
     function prepareCombatAssets() {
       if (combatAssetsReady) return combatAssetsReady;
       const sources = [...Object.values(enemySprites), 'sprites/items/supply_crate_atlas_v1.png', 'sprites/UI/hp_frame.png',
+        campaignConfig.bossRoom.boss.sprite, campaignConfig.bossRoom.boss.hitSprite,
         'sprites/effects/hit_blood_overlay.png',
         ...[1, 2, 3].map((frame) => `sprites/effects/bullet_effect_${frame}.png`),
         ...['b', 'g', 'r', 'y'].flatMap((color) =>
@@ -2505,6 +2545,8 @@
         fadeInMs: 450,
         swap: async () => {
           opening.finish();
+          hall.setCamera(campaignConfig.camera ?? .5);
+          document.querySelector('#hud .player-label').textContent = currentStageId === 'stage2' ? '1P · STAGE 2' : '1P';
           gameStarted = true;
           stage.classList.add('game-running');
           firstWaveReadyAt = gameRuntime.now() + 450 + firstWaveDelayMs;
@@ -2520,7 +2562,7 @@
       transitionLocked = false;
     }
 
-    const missionBriefing = new MissionBriefing(modeScreen, () => startGameMode());
+    const missionBriefing = new MissionBriefing(modeScreen, stageNumber => startGameMode({ stageNumber }));
 
     function selectMode(mode, { voice = false } = {}) {
       const changed = selectedMode !== mode;
@@ -3217,7 +3259,7 @@
       if (stageEnded) return;
       if (currentFloor < 4) {
         const nextFloor = currentFloor + 1;
-        const rooms = window.TIMING_SHOOTER_HALL;
+        const rooms = campaignConfig;
         const nextConfig = nextFloor === 2 ? rooms.upperFloor : nextFloor === 3 ? rooms.diningRoom : rooms.bossRoom;
         enterNextRoom(nextConfig, nextFloor).catch((error) => {
           console.error('[Room] Could not prepare scene:', error);
@@ -3254,15 +3296,15 @@
       const screen = document.getElementById('floorLoading');
       const image = document.getElementById('floorLoadingImage');
       document.getElementById('floorLoadingCaption').textContent = 'HOLD YOUR FIRE';
-      document.getElementById('floorLoadingCaption').hidden = false;
-      screen.setAttribute('aria-label', nextFloor === 4 ? 'Entering boss room' : nextFloor === 3 ? 'Entering dining room' : 'Ascending stairs');
-      image.alt = nextFloor === 4 ? 'Police entering the small door behind the dining table' : nextFloor === 3 ? 'Police entering the dining room' : 'Police ascending the stairs';
+      document.getElementById('floorLoadingCaption').hidden = Boolean(config.bakedEntryCaption);
+      screen.setAttribute('aria-label', config.name ? `${config.name} 진입` : nextFloor === 4 ? 'Entering boss room' : nextFloor === 3 ? 'Entering dining room' : 'Ascending stairs');
+      image.alt = config.name ? `경찰이 ${config.name}으로 이동한다` : nextFloor === 4 ? 'Police entering the small door behind the dining table' : nextFloor === 3 ? 'Police entering the dining room' : 'Police ascending the stairs';
       // Crop baked-in lettering out, then use the common caption without clipping its text.
       image.classList.toggle('baked-caption', Boolean(config.captionInImage));
       image.style.objectFit = config.entryFit ?? 'cover';
       image.style.objectPosition = config.entryPosition ?? '30% center';
-      image.src = nextFloor >= 3
-        ? (selectedMode === '2p' ? config.entryCoop : config.entryMale)
+      image.src = nextFloor >= 3 || config.entryMale
+        ? (selectedMode === '2p' && config.entryCoop ? config.entryCoop : config.entryMale)
         : config.stairsMale;
       screen.hidden = false;
       await image.decode();
@@ -4147,6 +4189,12 @@
     }
 
     function connectWebSocket() {
+      if (currentStageId === 'stage2') {
+        serverMode = false;
+        setNetStatus('1P');
+        runAfterFirstWaveDelay(spawnWave);
+        return;
+      }
       if (window.AST_GAME_CONFIG.embedded) {
         serverMode = false;
         setNetStatus('1P');

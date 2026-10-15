@@ -41,6 +41,7 @@ class MissionBriefing {
     this.screen = screen;
     this.active = false;
     this.busy = false;
+    this.selectedStage = 1;
     this.root = document.createElement('section');
     this.root.className = 'mission-briefing';
     this.root.hidden = true;
@@ -48,10 +49,10 @@ class MissionBriefing {
     this.root.innerHTML = `
       <header class="mission-heading"><button type="button" class="mission-back" aria-label="모드 선택으로 돌아가기" title="뒤로"><img src="sprites/UI/back_arrow_gold_v1.png" alt=""><span>Back</span></button><h2>수사 브리핑</h2></header>
       <div class="mission-card-slot"></div>
-      <figure class="mission-board"><img src="backgrounds/mission_briefing_v3.png" alt="주인공 경찰이 긴 지시봉으로 맨 위 마피아 수장을 가리킨다. 보스 사진들은 모두 보이며, 왼쪽 아래 노란 네온 테두리는 1스테이지 보스다.">
-        <button type="button" class="mission-stage-selected" aria-label="1스테이지 마피아 저택 선택됨" aria-pressed="true" title="STAGE 1 · 마피아 저택"></button>
+      <figure class="mission-board"><img src="backgrounds/mission_briefing_v3.png" alt="주인공 경찰이 마피아 수장을 가리킨다. 아래의 저택 보스와 흰머리 보스 사진으로 스테이지를 선택한다.">
+        <button type="button" class="mission-stage mission-stage-one mission-stage-selected" data-stage="1" aria-label="1스테이지 마피아 저택" aria-pressed="true" title="STAGE 1 · 마피아 저택"></button>
+        <button type="button" class="mission-stage mission-stage-two" data-stage="2" aria-label="2스테이지 검은 부두" aria-pressed="false" title="STAGE 2 · 검은 부두"></button>
         <span class="mission-lock mission-lock-chief" role="img" aria-label="마피아 수장 스테이지 잠김" title="준비 중"><i></i></span>
-        <span class="mission-lock mission-lock-second" role="img" aria-label="두 번째 보스 스테이지 잠김" title="준비 중"><i></i></span>
         <span class="mission-lock mission-lock-third" role="img" aria-label="세 번째 보스 스테이지 잠김" title="준비 중"><i></i></span>
       </figure>
       <div class="mission-operation"><span>STAGE 1</span><strong>마피아 저택</strong></div>
@@ -59,12 +60,27 @@ class MissionBriefing {
     screen.append(this.root);
     this.slot = this.root.querySelector('.mission-card-slot');
     this.launch = this.root.querySelector('.mission-launch');
+    this.root.querySelectorAll('[data-stage]').forEach(button => button.addEventListener('click', () => {
+      if (this.busy || this.launch.disabled) return;
+      this.selectStage(Number(button.dataset.stage));
+    }));
     this.root.querySelector('.mission-back').addEventListener('click', () => this.close());
     this.launch.addEventListener('click', async () => {
       if (this.busy || this.launch.disabled) return;
       this.launch.disabled = true;
-      try { await onLaunch(); } finally { this.launch.disabled = false; }
+      try { await onLaunch(this.selectedStage); } finally { this.launch.disabled = false; }
     });
+  }
+
+  selectStage(stage) {
+    this.selectedStage = stage === 2 ? 2 : 1;
+    this.root.querySelectorAll('[data-stage]').forEach(button => {
+      const selected = Number(button.dataset.stage) === this.selectedStage;
+      button.classList.toggle('mission-stage-selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+    this.root.querySelector('.mission-operation span').textContent = `STAGE ${this.selectedStage}`;
+    this.root.querySelector('.mission-operation strong').textContent = this.selectedStage === 2 ? '검은 부두' : '마피아 저택';
   }
 
   async open(card) {
