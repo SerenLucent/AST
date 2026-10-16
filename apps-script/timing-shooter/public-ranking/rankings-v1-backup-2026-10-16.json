@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "game": "timing-shooter",
+  "timeZone": "Asia/Seoul",
+  "weekStart": "2026-10-11T15:00:00.000Z",
+  "updatedAt": "2026-10-14T09:50:58.091Z",
+  "allTime": [
+    {
+      "runId": "357cf241-aaed-4fe3-b25d-3126f50b3430",
+      "name": "CKS WIN",
+      "score": 19828,
+      "savedAt": "2026-10-13T13:32:32.598Z"
+    },
+    {
+      "runId": "a3efd3ef-c467-4e68-8bed-0e54140c0963",
+      "name": "CKS Win~",
+      "score": 18252,
+      "savedAt": "2026-10-14T09:50:58.091Z"
+    },
+    {
+      "runId": "1f804d4f-3c5b-41d9-88f5-86e513d470ae",
+      "name": "성히 win",
+      "score": 17322,
+      "savedAt": "2026-10-13T11:34:25.630Z"
+    },
+    {
+      "runId": "70515da0-a265-4991-922b-e49f56d8849b",
+      "name": "CKS",
+      "score": 17241,
+      "savedAt": "2026-10-13T11:37:31.419Z"
+    },
+    {
+      "runId": "dabfc5eb-9364-4188-b254-2bef79bed88d",
+      "name": "CKS",
+      "score": 16810,
+      "savedAt": "2026-10-13T00:25:28.002Z"
+    },
+    {
+      "runId": "95d138a5-ca0a-44bd-92ee-3adfc634e3a5",
+      "name": "성히7",
+      "score": 16716,
+      "savedAt": "2026-10-13T11:07:44.598Z"
+    },
+    {
+      "runId": "4f19bde8-8b9c-4131-a501-ca45ad866ab3",
+      "name": "성히6",
+      "score": 16048,
+      "savedAt": "2026-10-13T10:51:04.328Z"
+    },
+    {
+      "runId": "54ea8fe9-db91-44d4-af0f-53443944097b",
+      "name": "성히4",
+      "score": 15799,
+      "savedAt": "2026-10-13T10:33:46.779Z"
+    },
+    {
+      "runId": "6587756c-b70b-4667-bd46-0cd41a460ff2",
+      "name": "성히5",
+      "score": 15263,
+      "savedAt": "2026-10-13T10:41:58.202Z"
+    },
+    {
+      "runId": "6d9e7458-6b38-45c6-88e8-09e9474c2cc9",
+      "name": "CKS",
+      "score": 14343,
+      "savedAt": "2026-10-13T02:01:28.857Z"
+    }
+  ],
+  "weekly": [
+    {
+      "runId": "357cf241-aaed-4fe3-b25d-3126f50b3430",
+      "name": "CKS WIN",
+      "score": 19828,
+      "savedAt": "2026-10-13T13:32:32.598Z"
+    },
+    {
+      "runId": "a3efd3ef-c467-4e68-8bed-0e54140c0963",
+      "name": "CKS Win~",
+      "score": 18252,
+      "savedAt": "2026-10-14T09:50:58.091Z"
+    },
+    {
+      "runId": "1f804d4f-3c5b-41d9-88f5-86e513d470ae",
+      "name": "성히 win",
+      "score": 17322,
+      "savedAt": "2026-10-13T11:34:25.630Z"
+    },
+    {
+      "runId": "70515da0-a265-4991-922b-e49f56d8849b",
+      "name": "CKS",
+      "score": 17241,
+      "savedAt": "2026-10-13T11:37:31.419Z"
+    },
+    {
+      "runId": "dabfc5eb-9364-4188-b254-2bef79bed88d",
+      "name": "CKS",
+      "score": 16810,
+      "savedAt": "2026-10-13T00:25:28.002Z"
+    },
+    {
+      "runId": "95d138a5-ca0a-44bd-92ee-3adfc634e3a5",
+      "name": "성히7",
+      "score": 16716,
+      "savedAt": "2026-10-13T11:07:44.598Z"
+    },
+    {
+      "runId": "4f19bde8-8b9c-4131-a501-ca45ad866ab3",
+      "name": "성히6",
+      "score": 16048,
+      "savedAt": "2026-10-13T10:51:04.328Z"
+    },
+    {
+      "runId": "54ea8fe9-db91-44d4-af0f-53443944097b",
+      "name": "성히4",
+      "score": 15799,
+      "savedAt": "2026-10-13T10:33:46.779Z"
+    },
+    {
+      "runId": "6587756c-b70b-4667-bd46-0cd41a460ff2",
+      "name": "성히5",
+      "score": 15263,
+      "savedAt": "2026-10-13T10:41:58.202Z"
+    },
+    {
+      "runId": "6d9e7458-6b38-45c6-88e8-09e9474c2cc9",
+      "name": "CKS",
+      "score": 14343,
+      "savedAt": "2026-10-13T02:01:28.857Z"
+    }
+  ],
+  "receipts": [
+    {
+      "runId": "a3efd3ef-c467-4e68-8bed-0e54140c0963",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "357cf241-aaed-4fe3-b25d-3126f50b3430",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "70515da0-a265-4991-922b-e49f56d8849b",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "1f804d4f-3c5b-41d9-88f5-86e513d470ae",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "95d138a5-ca0a-44bd-92ee-3adfc634e3a5",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "4f19bde8-8b9c-4131-a501-ca45ad866ab3",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "6587756c-b70b-4667-bd46-0cd41a460ff2",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "54ea8fe9-db91-44d4-af0f-53443944097b",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "cafb6ccc-7d1d-452f-a919-2c703a488d19",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "98ad23e7-c7a7-40c5-b65b-ca7558b6bf89",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "126a6074-17f5-4cfa-aaf7-a7469742483e",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "2fec862f-422e-4b0f-8986-62dfabc10a5f",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "5c9de9f1-4df0-41d7-90f8-20124c543303",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "6d9e7458-6b38-45c6-88e8-09e9474c2cc9",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    },
+    {
+      "runId": "dabfc5eb-9364-4188-b254-2bef79bed88d",
+      "accepted": true,
+      "allTime": true,
+      "weekly": true
+    }
+  ]
+}

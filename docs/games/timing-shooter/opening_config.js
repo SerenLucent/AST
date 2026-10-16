@@ -1,4 +1,5 @@
 window.TIMING_SHOOTER_OPENING = {
+  captionArt: true,
   // One world is two portrait viewports wide; cameras use 0 (left), 0.5 (center), 1 (right).
   worldSize: { width: 1720, height: 1860 },
   // Keep one painting for the entire approach; the scene camera supplies the movement.
@@ -31,8 +32,8 @@ window.TIMING_SHOOTER_OPENING = {
   },
   gameStartMs: 700,
   breach: {
-    onePlayerSrc: 'backgrounds/opening/breach/door_kick_1p.webp',
-    twoPlayerSrc: 'backgrounds/opening/breach/door_kick_2p.webp',
+    onePlayerSrc: 'backgrounds/stage1_remaster/breach_1p_v3.png',
+    twoPlayerSrc: 'backgrounds/stage1_remaster/breach_2p_v3.png',
     holdMs: 2000,
     fadeMs: 500
   }

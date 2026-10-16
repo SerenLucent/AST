@@ -1,0 +1,7 @@
+{
+  "scene": "left staircase transition",
+  "asset": "stairs_1p_v3.png",
+  "modes": ["1p", "2p"],
+  "note": "Both players take separate stairs. This shared left-staircase cut shows the male officer only.",
+  "generatedSource": "exec-db72f22c-41c8-434f-95ad-1687407dd8a4.png"
+}

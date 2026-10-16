@@ -23,8 +23,14 @@
       this.turn = 1;
       this.preparation = null;
       this.session = null;
+      window.addEventListener('pagehide', event => {
+        if (!event.persisted && this.active && this.session) {
+          TimingShooterMultiplayer.leaveOnPageExit(this.session);
+        }
+      });
       this.draftSettings = null;
       this.pollTimer = null;
+      this.presenceTimer = null;
       this.busy = false;
       this.generation = 0;
       this.matchStarted = false;
@@ -198,6 +204,10 @@
           return;
         }
         this.session = { code: data.room.code, token: data.token };
+        clearInterval(this.presenceTimer);
+        this.presenceTimer = setInterval(() => {
+          if (this.active && this.session) TimingShooterMultiplayer.heartbeat(this.session);
+        }, window.TIMING_SHOOTER_MULTIPLAYER.heartbeatMs || 10000);
         this.draftSettings = null;
         this.player = data.player;
         this.revision = -1;
@@ -226,8 +236,9 @@
       } catch (error) {
         if (this.active && generation === this.generation) {
           if (['ROOM_CLOSED', 'INVALID_SESSION'].includes(error.code)) {
+            clearInterval(this.presenceTimer);
             this.session = null;
-            if (this.player === 2 && error.code === 'ROOM_CLOSED') this.showHostLeft();
+            if (this.player === 2 && error.code === 'ROOM_CLOSED') this.showHostLeft(error.message.includes('끊') ? error.message : undefined);
             else this.showLobby(error.message);
           } else if (this.matchStarted) this.combat.cue(error.message);
           else this.root.querySelector('.duel-message').textContent = error.message;
@@ -278,7 +289,9 @@
       this.roomSettings = room.settings;
       const present = room.players[1].connected;
       if (present && this.guestPresent !== true) this.roomNotice = 'MAFIA가 참가했습니다.';
-      else if (!present && this.guestPresent === true) this.roomNotice = 'MAFIA가 나갔습니다. 상대방을 기다리는 중입니다.';
+      else if (!present && this.guestPresent === true) this.roomNotice = room.departure === 'timeout'
+        ? 'MAFIA의 연결이 끊어졌습니다. 상대방을 기다리는 중입니다.'
+        : 'MAFIA가 나갔습니다. 상대방을 기다리는 중입니다.';
       this.guestPresent = present;
       if (!room.started) {
         this.showLobby();
@@ -337,7 +350,8 @@
       this.renderSettings(this.draftSettings);
     }
 
-    showHostLeft() {
+    showHostLeft(message = '방장이 나갔습니다.') {
+      this.root.querySelector('#duelHostLeftMessage').textContent = message;
       this.root.parentElement.classList.remove('duel-running');
       this.root.dataset.view = 'lobby';
       this.onMatchStop?.();
@@ -414,7 +428,7 @@
       this.root.dataset.player = String(this.player);
       this.root.dataset.attacker = String(this.attacker);
       this.root.dataset.pose = pose;
-      this.root.querySelector('.duel-turn').textContent = `TURN ${this.turn} / ${this.roomSettings?.deathmatch ? '∞' : this.roomSettings?.turnLimit ?? 10}`;
+      this.root.querySelector('.duel-turn').textContent = `TURN ${Math.ceil(this.turn / 2)} / ${this.roomSettings?.deathmatch ? '∞' : this.roomSettings?.turnLimit ?? 10}`;
       this.root.querySelector('.duel-role').textContent = attacking ? 'ATTACK' : 'DEFENSE';
       this.root.querySelector('.duel-role').dataset.role = attacking ? 'attack' : 'defense';
       this.root.dispatchEvent(new CustomEvent('duelturnchange', {
@@ -458,6 +472,7 @@
       this.combat.stop();
       this.generation += 1;
       clearTimeout(this.pollTimer);
+      clearInterval(this.presenceTimer);
       if (this.session) this.request('leave', this.session.code, this.session.token).catch(() => {});
       this.session = null;
       this.root.hidden = true;

@@ -1193,6 +1193,26 @@
       filter: brightness(1.32) saturate(1.18) contrast(1.06);
     }
 
+    :is(.item-choice, .inventory-slot, .active-item-icon)[data-item-id="magnum"] { --weapon-tag: #ef3038; }
+    :is(.item-choice, .inventory-slot, .active-item-icon)[data-item-id="shotgun"] { --weapon-tag: #fff12c; }
+    :is(.item-choice, .inventory-slot, .active-item-icon)[data-item-id="machine_gun"] { --weapon-tag: #2479ff; }
+    :is(.item-choice, .inventory-slot, .active-item-icon)[data-item-id="sniper"] { --weapon-tag: #20c94f; }
+    :is(.item-choice, .inventory-slot, .active-item-icon):is([data-item-id="magnum"], [data-item-id="shotgun"], [data-item-id="machine_gun"], [data-item-id="sniper"])::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 20px;
+      height: 20px;
+      border-top-left-radius: 6px;
+      background: var(--weapon-tag);
+      clip-path: polygon(0 0, 100% 0, 0 100%);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .active-item-icon { position: relative; }
+    .active-item-icon[data-item-id]::after { width: 10px; height: 10px; border-top-left-radius: 5px; }
+
     .item-choice.visible {
       display: block;
     }
@@ -1473,13 +1493,14 @@
   </style>
   <link rel="stylesheet" href="opening.css?v=full-cutscene-4">
   <link rel="stylesheet" href="wharf_opening.css?v=stage2-distance-3">
-  <link rel="stylesheet" href="tutorial.css?v=knockdown-3">
+  <link rel="stylesheet" href="cutscene_caption.css?v=reference-layout-2">
+  <link rel="stylesheet" href="tutorial.css?v=item-guide-4">
   <link rel="stylesheet" href="supply_crate.css?v=crate-two-4">
   <link rel="stylesheet" href="hall.css?v=game-over-5">
   <link rel="stylesheet" href="hostage.css?v=hostage-ring-2">
   <link rel="stylesheet" href="dodge.css?v=gold-bullet-8">
-  <link rel="stylesheet" href="duel.css?v=arrow-image-23">
-  <link rel="stylesheet" href="mission_briefing.css?v=stage2-7">
+  <link rel="stylesheet" href="duel.css?v=release-20261016">
+  <link rel="stylesheet" href="mission_briefing.css?v=stage2-balance-8">
 </head>
 <body>
   <main id="stage">
@@ -1544,7 +1565,7 @@
         <div id="clearShootRow" class="clear-score-row"><span class="clear-score-label">SHOOT SCORE</span><strong id="clearShootScore" class="clear-score-value">0</strong></div>
         <div id="clearHpRow" class="clear-score-row"><span class="clear-score-label">HP SCORE</span><strong id="clearHpScore" class="clear-score-value">0</strong></div>
         <div id="clearTotalRow" class="clear-score-row"><span class="clear-score-label">TOTAL SCORE</span><strong id="clearTotalScore" class="clear-score-value">0</strong></div>
-        <button id="clearReturnToTitle" class="return-to-title" type="button" hidden>TAP TO RETURN TO TITLE</button>
+        <button id="clearReturnToTitle" class="return-to-title" type="button" hidden>수사 브리핑으로 돌아가기</button>
       </div>
     </div>
     <div id="gameOver" role="status" hidden>Game Over<button id="returnToTitle" class="return-to-title" type="button" hidden>TAP TO RETURN TO TITLE</button></div>
@@ -1628,24 +1649,25 @@
   </script>
   <script src="game_runtime.js"></script>
   <script src="judgement_config.js?v=hp-damage-1"></script>
-  <script src="opening_config.js"></script>
-  <script src="opening.js?v=guard-knockdown-3"></script>
-  <script src="hall_config.js?v=boss-guards-3"></script>
-  <script src="stage2_config.js?v=stage2-camera-5"></script>
+  <script src="opening_config.js?v=remaster-eyes-arms-2"></script>
+  <script src="opening.js?v=remaster-4"></script>
+  <script src="hall_config.js?v=stairs-solo-5"></script>
+  <script src="stage2_config.js?v=stage2-balance-8"></script>
   <script src="wharf_opening.js?v=stage2-1"></script>
   <script src="hall.js?v=dodge-camera-2"></script>
   <script src="hostage.js?v=hostage-1"></script>
   <script src="supply_crate.js?v=crate-two-4"></script>
-  <script src="dodge.js?v=gold-bullet-3"></script>
-  <script src="boss.js?v=boss-hp-50"></script>
-  <script src="tutorial.js?v=knockdown-3"></script>
+  <script src="dodge.js?v=boss-color-switch-4"></script>
+  <script src="boss.js?v=stage2-guards-8"></script>
+  <script src="tutorial.js?v=item-guide-4"></script>
   <script src="ast_integration.js?v=stage-id-2"></script>
-  <script src="multiplayer_config.js?v=multi-play-2"></script>
-  <script src="multiplayer_client.js?v=multi-play-1"></script>
-  <script src="duel.js?v=arrow-image-23"></script>
+  <script src="multiplayer_config.js?v=heartbeat-5"></script>
+  <script src="multiplayer_client.js?v=heartbeat-5"></script>
+  <script src="duel.js?v=heartbeat-26"></script>
   <script src="duel_config.js?v=half-second-shots-7"></script>
-  <script src="duel_combat.js?v=dodge-color-flash-18"></script>
-  <script src="mission_briefing.js?v=stage2-7"></script>
+  <script src="duel_combat.js?v=muzzle-camera-19"></script>
+  <script src="mission_briefing.js?v=return-briefing-8"></script>
+  <script src="enemy_variants.js?v=slim-heads-8"></script>
   <script>
     const stage = document.getElementById('stage');
     let previousGameTap = null;
@@ -1898,9 +1920,7 @@
     document.getElementById('exitYes').addEventListener('click', () => {
       if (!gameRuntime.paused || stageEnded) return;
       stopCombat();
-      if (window.AST_GAME_CONFIG.embedded && window.AstGameScores?.postMessage) {
-        window.AstGameScores.postMessage(JSON.stringify({ type: 'exitGame', game: 'timing-shooter' }));
-      } else window.location.reload();
+      returnToBriefing();
     });
 
     const itemGaugeMax = 100;
@@ -2454,7 +2474,7 @@
       bossBattle = null;
       defeatedEnemies = 0;
       combatAssetsReady = null;
-      supplyCrate.resetRoom(stageEnemyTotal, config.waveTargets ?? 2);
+      supplyCrate.resetRoom(stageEnemyTotal, nextConfig.waveTargets ?? config.waveTargets ?? 2);
       enemiesRemaining.textContent = String(stageEnemyTotal);
     }
 
@@ -2528,7 +2548,7 @@
         combatPreloads.push(image);
         return image.decode();
       });
-      combatAssetsReady = Promise.all([hall.prepare(), ...images]).catch((error) => {
+      combatAssetsReady = Promise.all([hall.prepare(), prepareEnemyVariants(), ...images]).catch((error) => {
         combatAssetsReady = null;
         combatPreloads.length = 0;
         throw error;
@@ -2563,6 +2583,13 @@
     }
 
     const missionBriefing = new MissionBriefing(modeScreen, stageNumber => startGameMode({ stageNumber }));
+
+    function returnToBriefing() {
+      // Reload resets combat timers, sockets, items and room state before another sortie.
+      const url = new URL(window.location.href);
+      url.searchParams.set('returnBriefing', currentStageId === 'stage2' ? '2' : '1');
+      window.location.replace(url.href);
+    }
 
     function selectMode(mode, { voice = false } = {}) {
       const changed = selectedMode !== mode;
@@ -2880,6 +2907,7 @@
         const text = row.querySelector('.effect-gauge-text');
         row.classList.toggle('visible', Boolean(item));
         icon.innerHTML = item ? `<img src="${item.icon}" alt="">` : '';
+        icon.dataset.itemId = item?.id ?? '';
         icon.classList.toggle('visible', Boolean(item));
         if (!item) {
           fill.style.width = '100%';
@@ -2981,6 +3009,7 @@
         const item = storedItems[index];
         button.disabled = !item || item.arriving || stageEnded;
         button.innerHTML = item && !item.arriving ? `<img src="${item.icon}" alt=""><span>Lv.${item.level}</span>` : '';
+        button.dataset.itemId = item && !item.arriving ? item.id : '';
         button.setAttribute('aria-label', item ? `Use ${item.name}, level ${item.level}` : `empty item slot ${index + 1}`);
       });
       updateItemGauge();
@@ -3101,14 +3130,26 @@
       flash.className = 'muzzle-flash';
       flash.src = 'sprites/effects/bullet_effect_1.png';
       flash.alt = '';
+      target.muzzleFlashes ??= new Set();
+      target.muzzleFlashes.add(flash);
+      positionEnemyMuzzleFlashes(target);
+      stage.appendChild(flash);
+      gameRuntime.setTimeout(() => {
+        target.muzzleFlashes.delete(flash);
+        flash.remove();
+      }, enemyMuzzleFlashMs);
+    }
+
+    function positionEnemyMuzzleFlashes(target) {
+      if (!target.muzzleFlashes?.size) return;
       const flashWidth = target.enemyHeight * enemyMuzzleFlashWidthRatio;
       const x = target.x + (target.enemyHeight * (enemyMuzzleOffsetXRatio + enemyMuzzleFineTuneXRatio));
       const y = target.enemyCenterY + (target.enemyHeight * (enemyMuzzleOffsetYRatio + enemyMuzzleFineTuneYRatio));
-      flash.style.width = `${flashWidth}px`;
-      flash.style.left = `${x}px`;
-      flash.style.top = `${y}px`;
-      stage.appendChild(flash);
-      gameRuntime.setTimeout(() => flash.remove(), enemyMuzzleFlashMs);
+      target.muzzleFlashes.forEach(flash => {
+        flash.style.width = `${flashWidth}px`;
+        flash.style.left = `${x}px`;
+        flash.style.top = `${y}px`;
+      });
     }
 
     function shakeStage() {
@@ -3156,7 +3197,7 @@
     function setEnemySprite(target, sprite, reaction = false) {
       target.enemy.src = target.isBoss
         ? (reaction ? hall.config.boss.hitSprite : hall.config.boss.sprite)
-        : sprite;
+        : (target.enemyVariant?.aim ?? sprite);
       target.enemy.classList.toggle('reaction', reaction && !target.isBoss);
     }
 
@@ -3228,7 +3269,11 @@
       gameRuntime.clearTimeout(dodgeTurnTimer);
       gameRuntime.clearTimeout(counterRetryTimer);
       dodge.clear();
-      activeTargets.forEach((target) => target.element.remove());
+      activeTargets.forEach((target) => {
+        target.muzzleFlashes?.forEach(flash => flash.remove());
+        target.muzzleFlashes?.clear();
+        target.element.remove();
+      });
       activeTargets = [];
     }
 
@@ -3266,6 +3311,7 @@
           const screen = document.getElementById('floorLoading');
           screen.hidden = false;
           document.getElementById('floorLoadingCaption').hidden = false;
+          document.getElementById('floorLoadingCaption').classList.remove('hold-fire-art');
           document.getElementById('floorLoadingCaption').textContent = 'LOADING FAILED · TAP TO RETRY';
           document.getElementById('floorLoading').addEventListener('pointerdown', () => {
             floorTransition = false;
@@ -3296,6 +3342,7 @@
       const screen = document.getElementById('floorLoading');
       const image = document.getElementById('floorLoadingImage');
       document.getElementById('floorLoadingCaption').textContent = 'HOLD YOUR FIRE';
+      document.getElementById('floorLoadingCaption').classList.toggle('hold-fire-art', Boolean(config.captionArt));
       document.getElementById('floorLoadingCaption').hidden = Boolean(config.bakedEntryCaption);
       screen.setAttribute('aria-label', config.name ? `${config.name} 진입` : nextFloor === 4 ? 'Entering boss room' : nextFloor === 3 ? 'Entering dining room' : 'Ascending stairs');
       image.alt = config.name ? `경찰이 ${config.name}으로 이동한다` : nextFloor === 4 ? 'Police entering the small door behind the dining table' : nextFloor === 3 ? 'Police entering the dining room' : 'Police ascending the stairs';
@@ -3334,7 +3381,7 @@
         bossBattle = config.boss ? new BossBattle(config.boss) : null;
         hostage.enter(config.hostage);
         stageEnemyTotal = config.enemyTotal;
-        supplyCrate.resetRoom(stageEnemyTotal, window.TIMING_SHOOTER_CONFIG.waveTargets ?? 2);
+        supplyCrate.resetRoom(stageEnemyTotal, config.waveTargets ?? window.TIMING_SHOOTER_CONFIG.waveTargets ?? 2);
         defeatedEnemies = 0;
         nextWaveReadyAt = 0;
         enemiesRemaining.textContent = String(stageEnemyTotal);
@@ -3384,7 +3431,7 @@
         if (progress < 1) gameRuntime.requestAnimationFrame(updateTotal);
         else {
           stageClearScreen.dataset.resultsComplete = 'true';
-          window.astSubmitClearScore({ shootScore, remainingHp, hpScore: remainingHp * 100, totalScore });
+          window.astSubmitClearScore({ stageId: currentStageId, shootScore, remainingHp, hpScore: remainingHp * 100, totalScore });
           gameRuntime.setTimeout(() => {
             document.getElementById('clearReturnToTitle').hidden = false;
           }, 3000);
@@ -3408,12 +3455,17 @@
       screen.addEventListener('click', () => {
         const button = screen.querySelector('.return-to-title');
         if (screen.hidden || button.hidden) return;
-        window.location.reload();
+        if (screen === stageClearScreen) returnToBriefing();
+        else window.location.reload();
       });
     });
 
     function playEnemyKnockdown(target, force = false) {
       if (target.isBoss || target.knockdownSprite || (!force && !['Perfect', 'Great'].includes(target.hitJudgement))) return;
+      if (target.enemyVariant) {
+        playVariantKnockdown(target);
+        return;
+      }
       const sprite = document.createElement('div');
       sprite.className = 'enemy-knockdown';
       sprite.style.backgroundImage = `url("${enemySprites.knockdown}")`;
@@ -3470,6 +3522,8 @@
         if (finishedTarget.element.isConnected) {
           finishedTarget.element.remove();
         }
+        finishedTarget.muzzleFlashes?.forEach(flash => flash.remove());
+        finishedTarget.muzzleFlashes?.clear();
         activeTargets = activeTargets.filter((item) => item !== finishedTarget);
         if (!stageEnded && !serverMode && !hasActiveOrCounteringTargets()) {
           scheduleSpawn(Math.max(0, nextWaveReadyAt - gameRuntime.now()));
@@ -3502,6 +3556,8 @@
       const sprite = colors[effectiveColor];
       const element = document.createElement('div');
       const enemy = makeImage('enemy-img', 'enemies/mafia_gunman_aim_01.png');
+      const enemyVariant = options.isBoss ? null : chooseEnemyVariant();
+      if (enemyVariant) enemy.src = enemyVariant.aim;
       if (options.isBoss) enemy.src = hall.config.boss.sprite;
       const enemyMotion = document.createElement('div');
       enemyMotion.className = 'enemy-motion';
@@ -3560,8 +3616,10 @@
         ], { duration: riseMs, easing: 'ease-out' });
       }
       const newTarget = {
+        enemyVariant,
         isBoss: Boolean(options.isBoss),
         dodgeDurationMs: options.isBoss ? hall.config.boss.dodgeDurationMs : undefined,
+        dodgeColorChangeProgress: options.isBoss ? hall.config.boss.dodgeColorChangeProgress : undefined,
         color: effectiveColor,
         originalColor: color,
         slotId: slot.id,
@@ -3610,11 +3668,13 @@
       target.y = centerY - height * 0.20;
       target.enemyHeight = height;
       target.enemyCenterY = centerY;
+      positionEnemyMuzzleFlashes(target);
       target.element.style.left = `${target.x - circleBaseSize / 2}px`;
       target.element.style.top = `${centerY - circleBaseSize / 2}px`;
       target.enemy.style.height = `${height}px`;
       if (target.knockdownSprite) {
-        target.knockdownSprite.style.width = target.knockdownSprite.style.height = `${height}px`;
+        if (target.enemyVariant) positionVariantKnockdown(target);
+        else target.knockdownSprite.style.width = target.knockdownSprite.style.height = `${height}px`;
       }
       if (target.enemyCover) {
         // This mask stays still while the character rises behind the fountain.
@@ -3648,9 +3708,22 @@
 
       if (wave) {
         activeWaveId = wave.waveId;
-        const roomSlots = currentFloor > 1 ? shuffleItems(spawnSlots) : [];
-        wave.targets.slice(0, stageEnemyTotal - defeatedEnemies).forEach((target, index) => {
-          makeTarget(target.color, currentFloor > 1 ? roomSlots[index % roomSlots.length] : slotById(target.slotId), {
+        const useRoomSlots = currentFloor > 1 || currentStageId === 'stage2';
+        const roomSlots = useRoomSlots ? shuffleItems(spawnSlots) : [];
+        const targets = wave.targets.slice();
+        if (hall.config.waveTargets) {
+          const available = shuffleItems(Object.keys(colors).filter(color => color !== supplyCrate.color
+            && (!hostage.element || hostage.hit || color !== hostage.color)));
+          const count = Math.min(hall.config.waveTargets, stageEnemyTotal - defeatedEnemies, available.length);
+          // The legacy local server sends two targets; room rules may require three.
+          while (targets.length < count) {
+            const color = available.find(color => !targets.some(target => target.color === color)) ?? available[0];
+            targets.push({ id: `${wave.waveId}_room_${targets.length}`, color });
+          }
+          targets.length = count;
+        }
+        targets.slice(0, stageEnemyTotal - defeatedEnemies).forEach((target, index) => {
+          makeTarget(target.color, useRoomSlots ? roomSlots[index % roomSlots.length] : slotById(target.slotId), {
             id: target.id,
             duration: target.duration,
             startAt: wave.startAt
@@ -3663,7 +3736,7 @@
       activeWaveId = `local_${Date.now()}`;
       const freeColors = Object.keys(colors).filter(color => color !== supplyCrate.color
         && (!hostage.element || hostage.hit || color !== hostage.color));
-      const targetCount = Math.min(config.waveTargets ?? 3, stageEnemyTotal - defeatedEnemies, freeColors.length);
+      const targetCount = Math.min(hall.config.waveTargets ?? config.waveTargets ?? 3, stageEnemyTotal - defeatedEnemies, freeColors.length);
       const availableSlots = [...spawnSlots].sort(() => Math.random() - 0.5).slice(0, targetCount);
       const waveColors = [];
       while (waveColors.length < targetCount) {
@@ -3830,10 +3903,10 @@
 
     function applyHitResult(target, result, options = {}) {
       if (stageEnded || !target.element.isConnected) return;
-      const { keepAlive = false, silentMiss = false } = options;
+      const { keepAlive = false, silentMiss = false, silentSound = false } = options;
       const { text, colorText } = result;
 
-      playJudgementSound(text);
+      if (!silentSound) playJudgementSound(text);
       if (text === 'Miss') {
         if (!silentMiss) {
           resetCombo();
@@ -3926,8 +3999,9 @@
 
     function applyShotgunResult(result) {
       const targets = activeTargets.filter((target) => !target.judged);
+      if (targets.length) playJudgementSound(result.text);
       targets.forEach((target) => {
-        applyHitResult(target, result);
+        applyHitResult(target, result, { silentSound: true });
       });
     }
 
@@ -4257,6 +4331,24 @@
     function hideLoading() { loadingScreen.hidden = true; }
     async function prepareTitle() {
       try {
+        const url = new URL(window.location.href);
+        const briefingStage = url.searchParams.get('returnBriefing');
+        if (briefingStage === '1' || briefingStage === '2') {
+          selectMode('1p');
+          modeScreen.classList.remove('hidden');
+          missionBriefing.restore(modeCards.find(card => card.dataset.mode === '1p'), Number(briefingStage));
+          url.searchParams.delete('returnBriefing');
+          window.history.replaceState(null, '', url.href);
+          hideLoading();
+          const resumeBriefingMusic = () => {
+            if (missionBriefing.active && !transitionLocked && !modeScreen.classList.contains('hidden')) {
+              playBgmSequence('select', 'sound/select_1.mp3', 'sound/select_2.mp3');
+            }
+          };
+          resumeBriefingMusic();
+          modeScreen.addEventListener('pointerdown', resumeBriefingMusic, { once: true });
+          return;
+        }
         const image = new Image();
         image.src = 'sprites/Main/main_title.png';
         await Promise.all([image.decode(), loadBgmBuffer('sound/title.mp3')]);

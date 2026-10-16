@@ -33,6 +33,8 @@ class OpeningSequence {
     this.guardKnockdown.style.backgroundImage = `url("${this.knockdownImage.src}")`;
     this.reticle = this.layer.querySelector('.opening-reticle');
     this.caption = this.layer.querySelector('.opening-caption');
+    this.holdCaptionArt = new Image();
+    this.holdCaptionArt.src = 'backgrounds/stage1_remaster/hold_your_fire_gold_v1.png';
     this.flash = this.layer.querySelector('.opening-shot-flash');
     this.fade = document.createElement('div');
     this.fade.className = 'opening-cover-fade';
@@ -73,9 +75,14 @@ class OpeningSequence {
   get active() { return !['idle', 'complete'].includes(this.phase); }
   get canShoot() { return this.phase === 'ready'; }
 
+  setCaption(text) {
+    this.caption.textContent = text;
+    this.caption.classList.toggle('hold-fire-art', Boolean(this.config.captionArt) && text === 'HOLD YOUR FIRE');
+  }
+
   async prepare() {
     if (!this.assetsReady) {
-      this.assetsReady = Promise.all([...this.frames, this.coverImage, this.guardBody, this.knockdownImage, ...this.breachImages].map((image) => image.decode()));
+      this.assetsReady = Promise.all([...this.frames, this.coverImage, this.guardBody, this.knockdownImage, this.holdCaptionArt, ...this.breachImages].map((image) => image.decode()));
     }
     try {
       await this.assetsReady;
@@ -139,7 +146,7 @@ class OpeningSequence {
 
   async revealCover() {
     this.phase = 'transition';
-    this.caption.textContent = '';
+    this.setCaption('');
     const halfDuration = this.config.cover.fadeMs / 2;
     await this.animate(this.fade, [{ opacity: 0 }, { opacity: 1 }], {
       duration: halfDuration, easing: 'ease-in-out', fill: 'forwards'
@@ -170,11 +177,11 @@ class OpeningSequence {
     this.stage.classList.add('opening-running');
     this.layer.classList.add('visible');
     this.setCamera(0.5);
-    this.caption.textContent = 'HOLD YOUR FIRE';
+    this.setCaption('HOLD YOUR FIRE');
     await this.moveToCover();
     await this.revealCover();
     this.phase = 'cover';
-    this.caption.textContent = '';
+    this.setCaption('');
     this.guard.classList.add('visible');
     await this.delay(this.config.guardRevealMs);
     this.color = ['y', 'r', 'b', 'g'][Math.floor(Math.random() * 4)];
@@ -192,7 +199,7 @@ class OpeningSequence {
     }));
     await Promise.all([...this.reticle.children].map((image) => image.decode()));
     this.reticle.classList.add('visible');
-    this.caption.textContent = 'OPEN FIRE';
+    this.setCaption('OPEN FIRE');
     this.phase = 'ready';
     this.stage.classList.add('opening-ready');
     this.stage.querySelector(`.pad-button[data-color="${this.color}"]`).classList.add('signal-color');
@@ -204,7 +211,7 @@ class OpeningSequence {
     this.stage.classList.remove('opening-ready');
     this.stage.querySelectorAll('.signal-color').forEach((button) => button.classList.remove('signal-color'));
     this.reticle.classList.remove('visible');
-    this.caption.textContent = '';
+    this.setCaption('');
     this.onShot();
     this.animate(this.flash, [{ opacity: 0.45 }, { opacity: 0 }], { duration: 170 });
     const impact = new Image();
@@ -239,7 +246,7 @@ class OpeningSequence {
   }
 
   async enterMansion() {
-    this.caption.textContent = 'GAME START';
+    this.setCaption('GAME START');
     this.caption.classList.add('game-start');
     await this.delay(this.config.gameStartMs);
     const halfDuration = this.config.breach.fadeMs / 2;
@@ -249,7 +256,7 @@ class OpeningSequence {
     this.phase = 'breach';
     this.onBreach?.();
     this.caption.classList.remove('game-start');
-    this.caption.textContent = 'HOLD YOUR FIRE';
+    this.setCaption('HOLD YOUR FIRE');
     this.breachImages[this.mode === '2p' ? 1 : 0].classList.add('visible');
     await this.animate(this.fade, [{ opacity: 1 }, { opacity: 0 }], {
       duration: halfDuration, fill: 'forwards'

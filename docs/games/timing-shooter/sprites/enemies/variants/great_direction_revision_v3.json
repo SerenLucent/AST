@@ -1,0 +1,16 @@
+{
+  "tool": "image_gen.imagegen",
+  "reason": "Great frame 4 must continue head-left forward collapse from frame 3, without reversing.",
+  "records": [
+    {
+      "id": "greatThinFinalFix",
+      "prompt": "Edit target reference: the slim mafia eight-pose sprite atlas. Correct ONLY the final Great knockdown pose (bottom-right panel), output it ALONE as a single standalone transparent sprite, not a sheet. Same slim adult man, charcoal pinstripe suit, burgundy tie, fedora, pistol. His Great sequence's third pose (bottom row third column) has his head and hands leaning SCREEN LEFT and his bent knees/feet trailing SCREEN RIGHT. Continue THAT fall forward-left: final pose lying collapsed on stomach/left side, HEAD AT SCREEN LEFT, feet SCREEN RIGHT, face partly down/left, one bent arm under chest, pistol hand toward left floor. Do NOT put head on the right. Do NOT reverse his body's facing or rotate him to face the other direction. Full horizontal figure fits safely inside square canvas with 8% padding, ground at 90% height, entire silhouette visible. Match exact painterly game sprite identity, proportions, suit details and lighting. True transparent background, no shadow ground, no blood, no text, no other poses.",
+      "hint": "Generated images are saved to C:\\Users\\GRAVITY\\.codex\\generated_images\\019f26e9-76e8-79a2-a91f-814cb7d60c61 as C:\\Users\\GRAVITY\\.codex\\generated_images\\019f26e9-76e8-79a2-a91f-814cb7d60c61\\exec-e8a970ba-0efc-4e2a-a691-1765a2df9460.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link."
+    },
+    {
+      "id": "greatBurlyFinalFix",
+      "prompt": "Edit target reference: burly mafia eight-pose atlas. Correct ONLY the final Great knockdown pose (bottom-right panel), output that pose ALONE as ONE standalone transparent sprite. Same burly broad adult man and broad neck, charcoal suit, olive-brown waistcoat, black tie, fedora, watchchain, pistol. Bottom-row third pose has head/hands forward SCREEN LEFT with knees/feet behind SCREEN RIGHT. Continue this fall without reversing: final pose collapsed on stomach/left side with HEAD SCREEN LEFT and FEET SCREEN RIGHT, face toward left/down, bent supporting arm collapsed under torso, pistol hand stretched leftwards near ground. This is forward-left fall, NOT head-right. Preserve bulky anatomy, suit, identity, illustration style, warm highlights. Entire horizontal body centered across square canvas with safe margins, true transparent alpha outside, no environment, blood, shadow ground, captions or other poses.",
+      "hint": "Generated images are saved to C:\\Users\\GRAVITY\\.codex\\generated_images\\019f26e9-76e8-79a2-a91f-814cb7d60c61 as C:\\Users\\GRAVITY\\.codex\\generated_images\\019f26e9-76e8-79a2-a91f-814cb7d60c61\\exec-6eb93f43-9d7a-4a9c-920f-9dc1cf380203.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link."
+    }
+  ]
+}

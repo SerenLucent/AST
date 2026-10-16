@@ -15,6 +15,23 @@
   color: #fff; line-height: 1.5; font-size: 15px;
 }
 .tutorial-copy strong { display: block; color: #ffe168; font-size: 17px; margin-bottom: 6px; }
+.tutorial-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; pointer-events: auto; }
+.tutorial-actions[hidden], .tutorial-enemy[hidden], .tutorial-skip[hidden] { display: none; }
+.tutorial-actions button { min-height: 48px; padding: 10px; border: 1px solid #ffe168; border-radius: 4px; background: #16212c; color: #ffe168; font: bold 16px system-ui; cursor: pointer; }
+.tutorial-actions .tutorial-start-game { background: #ffe168; color: #15191d; }
+.tutorial-actions button:focus-visible, .tutorial-items-close:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.tutorial-items-dialog { width: min(440px, calc(100vw - 24px)); max-height: min(84dvh, 760px); padding: 0; border: 1px solid #d5b857; border-radius: 6px; background: #111820; color: #f6f6f6; box-sizing: border-box; pointer-events: auto; box-shadow: 0 14px 50px #0009; }
+.tutorial-items-dialog[open] { display: flex; flex-direction: column; }
+.tutorial-items-dialog::backdrop { background: #000b; }
+.tutorial-items-dialog header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 18px; border-bottom: 1px solid #ffffff30; }
+.tutorial-items-dialog h2 { margin: 0; font-size: 20px; color: #ffe168; }
+.tutorial-items-close { width: 44px; height: 44px; flex: 0 0 44px; border: 1px solid #ffffff60; border-radius: 4px; background: #222e38; color: #fff; font: 28px/1 system-ui; cursor: pointer; }
+.tutorial-items-list { list-style: none; margin: 0; padding: 0 16px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+.tutorial-items-list li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; align-items: center; padding: 17px 0; border-bottom: 1px solid #ffffff24; }
+.tutorial-items-list li:last-child { border-bottom: 0; }
+.tutorial-items-list img { display: block; width: 64px; height: 64px; object-fit: contain; }
+.tutorial-items-list h3 { margin: 0 0 6px; font: bold 17px system-ui; color: #ffe168; }
+.tutorial-items-list p { margin: 0; font: 15px/1.6 system-ui; word-break: keep-all; overflow-wrap: anywhere; }
 .tutorial-copy p { margin: 0 0 8px; }
 .tutorial-instruction { color: #ffe168; font-weight: 800; }
 .tutorial-color { font-weight: 900; }

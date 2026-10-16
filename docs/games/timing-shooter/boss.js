@@ -13,8 +13,9 @@ class BossBattle {
       const other = Math.floor(Math.random() * (index + 1));
       [colors[index], colors[other]] = [colors[other], colors[index]];
     }
-    return { color: colors[0], flipColor: colors[1],
-      guardColors: this.turn % this.config.guardsEveryTurns === 0 ? colors.slice(2) : [] };
+    const guardColors = this.turn % this.config.guardsEveryTurns === 0
+      ? Array.from({ length: this.config.guardsPerTurn ?? 2 }, (_, i) => colors[2 + i % 2]) : [];
+    return { color: colors[0], flipColor: colors[1], guardColors };
   }
 
   hit(units = 1) {

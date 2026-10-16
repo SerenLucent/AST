@@ -334,7 +334,7 @@
       effect.alt = '';
       effect.src = 'sprites/effects/bullet_effect_1.png';
       effect.style.left = `${position.x}px`; effect.style.top = `${position.y}px`;
-      this.root.append(effect);
+      (muzzle ? this.scene.root.querySelector('.duel-images') : this.root).append(effect);
       this.effectLater(() => { effect.src = 'sprites/effects/bullet_effect_2.png'; }, 55);
       this.effectLater(() => { effect.src = 'sprites/effects/bullet_effect_3.png'; }, 110);
       this.effectLater(() => effect.remove(), muzzle ? 170 : 230);
@@ -353,7 +353,7 @@
       this.activeShots.clear();
       if (clearEffects) {
         this.effectTimers.forEach(timer => clearTimeout(timer)); this.effectTimers.clear();
-        this.root.querySelectorAll('.duel-shot-effect, .duel-dodge-flash').forEach(effect => effect.remove());
+        this.scene.root.querySelectorAll('.duel-shot-effect, .duel-dodge-flash').forEach(effect => effect.remove());
       }
       clearTimeout(this.timer); cancelAnimationFrame(this.frame);
       this.stopRoulette(); this.current = null; this.pending = null;

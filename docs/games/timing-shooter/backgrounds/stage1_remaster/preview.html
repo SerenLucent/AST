@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stage 1 · Remaster</title>
+<link rel="stylesheet" href="../../cutscene_caption.css?v=reference-layout-2">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#141719;color:#f0f2f3;font-family:Arial,sans-serif;letter-spacing:0}main{max-width:1440px;margin:auto;padding:20px}header{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}h1{font-size:22px;margin:0}nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}button{border:1px solid #677075;border-radius:4px;background:#242a2e;color:#eee;font-size:14px;padding:9px 18px;cursor:pointer}button[aria-pressed=true]{background:#edcf6c;color:#191b1d;border-color:#f5e5ab}label{display:flex;align-items:center;gap:7px;padding:8px}input{width:18px;height:18px;accent-color:#edcf6c}section{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}figure{margin:0;min-width:0}.scene{position:relative;aspect-ratio:2/3;background:#000;overflow:hidden}.art{display:block;width:100%;height:100%;object-fit:contain}.caption{position:absolute;left:3%;top:1%;width:94%;height:auto;pointer-events:none}.caption[hidden]{display:none}figcaption{display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:14px}a{color:#e8ce78;font-size:12px}@media(max-width:1000px){section{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){main{padding:14px}section{grid-template-columns:1fr;gap:22px}h1{font-size:20px}}
+</style>
+<style>.scene{aspect-ratio:390/844}</style>
+</head>
+<body><main>
+<header><h1>STAGE 1 · REMASTER</h1><nav aria-label="버전 선택"><button data-mode="1p" aria-pressed="true">1P</button><button data-mode="2p" aria-pressed="false">2P</button><label><input id="original" type="checkbox">원본</label></nav></header>
+<section id="scenes"></section>
+</main>
+<script>
+const scenes=[
+ {name:'저택 진입',file:'breach',version:3,old:['../opening/breach/door_kick_1p.webp','../opening/breach/door_kick_2p.webp']},
+ {name:'2층 이동',file:'stairs',shared:'stairs_1p_v3.png',old:['../cutscenes/stairs_left_male_v1.png','../cutscenes/stairs_right_female_v1.png']},
+ {name:'식당 진입',file:'dining',old:['../cutscenes/dining_door_male_v2.png','../cutscenes/dining_door_coop_v1.png'],baked:true},
+ {name:'보스방 진입',file:'boss_entry',old:['../cutscenes/boss_door_male_v1.png','../cutscenes/boss_door_coop_v1.png']}
+];
+let mode='1p';
+function render(){
+ const original=document.getElementById('original').checked;
+ document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===mode)));
+ document.getElementById('scenes').replaceChildren(...scenes.map(scene=>{
+  const figure=document.createElement('figure'),frame=document.createElement('div'),art=new Image(),caption=new Image(),label=document.createElement('figcaption'),link=document.createElement('a');
+  frame.className='scene';art.className='art';art.alt=`${scene.name} · ${mode.toUpperCase()}`;
+  art.src=original?scene.old[mode==='1p'?0:1]:(scene.shared||`${scene.file}_${mode}_v${scene.version||2}.png`);
+  caption.className='caption';caption.src='hold_your_fire_gold_v1.png';caption.alt='HOLD YOUR FIRE';caption.hidden=original;
+  label.append(document.createTextNode(scene.name));link.href=art.src;link.textContent=original?'원본':'리마스터';label.append(link);
+  frame.append(art,caption);figure.append(frame,label);return figure;
+ }));
+}
+document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{mode=button.dataset.mode;render();}));
+document.getElementById('original').addEventListener('change',render);render();
+</script>
+</body>
+</html>

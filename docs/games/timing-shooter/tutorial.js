@@ -18,7 +18,9 @@ class TutorialSequence {
     this.layer.innerHTML = `
       <div class="tutorial-heading">연습</div>
       <button class="tutorial-skip" type="button">튜토리얼 건너뛰기</button>
-      <div class="tutorial-copy" aria-live="polite"><strong></strong><p></p><div class="tutorial-instruction"></div></div>
+      <div class="tutorial-copy" aria-live="polite"><strong></strong><p></p><div class="tutorial-instruction"></div>
+        <div class="tutorial-actions" hidden><button class="tutorial-view-items" type="button">아이템 보기</button><button class="tutorial-start-game" type="button">게임 시작</button></div>
+      </div>
       <div class="tutorial-enemy"><img class="tutorial-enemy-body" src="sprites/enemies/mafia_gunman_aim_01.png" alt="연습용 마피아"><div class="tutorial-reticle"></div></div>
       <div class="tutorial-result" aria-live="polite"></div>`;
     stage.append(this.layer);
@@ -33,6 +35,28 @@ class TutorialSequence {
     this.copy = this.layer.querySelector('.tutorial-copy p');
     this.instruction = this.layer.querySelector('.tutorial-instruction');
     this.result = this.layer.querySelector('.tutorial-result');
+    this.actions = this.layer.querySelector('.tutorial-actions');
+    const items = [
+      { name: '샷건', icon: 'sprites/items/shotgun_icon.png', description: '한 화면에 나오는 모든 적에게 내가 맞힌 한 적의 판정이 똑같이 적용돼요.' },
+      { name: '머신건', icon: 'sprites/items/machine_gun_icon.png', description: '한 발만 맞혀도 적을 쓰러뜨려요. 추가 점수를 원하면 최대 4발을 더 연타할 수 있어요.' },
+      { name: '매그넘', icon: 'sprites/items/magnum_icon.png', description: '모든 적이 빨간색 타겟으로 나타나며, 버튼 하나로 간편하게 소탕할 수 있어요.' },
+      { name: '스나이퍼', icon: 'sprites/items/sniper_icon.png', description: '모든 판정 범위가 여유 있게 넓어져요.' },
+      { name: '파워 업', icon: 'sprites/items/power_up_icon.png', description: '20% 추가 점수를 받을 수 있으며, 보스전에서는 추가 데미지를 줘요.' },
+      { name: '슬로우 다운', icon: 'sprites/items/slow_down_icon.png', description: '일정 시간 모든 타겟이 느려져요.' },
+      { name: '아머 베스트', icon: 'sprites/items/armor_vest_icon.png', description: '일정 시간 회피하지 못해도 데미지를 입지 않아요.' },
+      { name: '라이프 업', icon: 'sprites/items/medkit_icon.png', description: 'HP를 회복해요.' }
+    ];
+    this.itemDialog = document.createElement('dialog');
+    this.itemDialog.className = 'tutorial-items-dialog';
+    this.itemDialog.setAttribute('aria-labelledby', 'tutorialItemsTitle');
+    this.itemDialog.innerHTML = `<header><h2 id="tutorialItemsTitle">아이템 안내</h2><button type="button" class="tutorial-items-close" aria-label="닫기" title="닫기">×</button></header>
+      <ul class="tutorial-items-list">${items.map(item => `<li><img src="${item.icon}" alt=""><div><h3>${item.name}</h3><p>${item.description}</p></div></li>`).join('')}</ul>`;
+    this.layer.append(this.itemDialog);
+    this.layer.querySelector('.tutorial-view-items').addEventListener('click', () => {
+      if (this.active && this.phase === 'items' && !this.itemDialog.open) this.itemDialog.showModal();
+    });
+    this.itemDialog.querySelector('.tutorial-items-close').addEventListener('click', () => this.itemDialog.close());
+    this.layer.querySelector('.tutorial-start-game').addEventListener('click', () => this.beginGame());
     this.layer.querySelector('.tutorial-skip').addEventListener('pointerdown', event => {
       event.preventDefault();
       this.finish();
@@ -49,6 +73,10 @@ class TutorialSequence {
   start() {
     this.active = true;
     this.index = 0;
+    this.actions.hidden = true;
+    this.enemy.hidden = false;
+    this.layer.querySelector('.tutorial-skip').hidden = false;
+    if (this.itemDialog.open) this.itemDialog.close();
     this.done = new Promise(resolve => { this.resolveDone = resolve; });
     this.layer.classList.add('visible');
     this.stage.classList.add('tutorial-running');
@@ -196,19 +224,40 @@ class TutorialSequence {
         this.later(() => this.showLesson(), 2200);
       });
     } else if (this.index >= 8) {
-      this.dodge.clear();
-      this.result.textContent = '연습 완료!';
-      this.heading.textContent = '이제 실전으로!';
-      this.copy.textContent = '원은 줄어들 때 쏘고, 사각형은 커질 때 피해요. 색깔에 맞는 버튼을 기억하세요.';
-      this.instruction.textContent = '잠시 후 OPEN FIRE 신호탄 장면으로 이동해요.';
-      this.phase = 'complete';
-      this.later(() => this.finish(), 1600);
+      this.showItemChoice();
     } else this.showLesson();
+  }
+
+  showItemChoice() {
+    this.dodge.clear();
+    this.clearCue();
+    this.reticle.hidden = true;
+    this.enemy.hidden = true;
+    this.result.textContent = '';
+    this.heading.textContent = '연습 완료!';
+    this.copy.textContent = '자, 그럼 나오는 아이템들을 볼래?';
+    this.instruction.textContent = '';
+    this.phase = 'items';
+    this.actions.hidden = false;
+    this.layer.querySelector('.tutorial-skip').hidden = true;
+  }
+
+  beginGame() {
+    if (!this.active || this.phase !== 'items') return;
+    if (this.itemDialog.open) this.itemDialog.close();
+    this.actions.hidden = true;
+    this.heading.textContent = '이제 실전으로!';
+    this.copy.textContent = '원은 줄어들 때 쏘고, 사각형은 커질 때 피해요. 색깔에 맞는 버튼을 기억하세요.';
+    this.instruction.textContent = '잠시 후 OPEN FIRE 신호탄 장면으로 이동해요.';
+    this.phase = 'complete';
+    this.later(() => this.finish(), 1600);
   }
 
   finish() {
     if (!this.active) return;
     this.active = false;
+    if (this.itemDialog.open) this.itemDialog.close();
+    this.actions.hidden = true;
     gameRuntime.cancelAnimationFrame(this.frame);
     this.timers.forEach(id => gameRuntime.clearTimeout(id));
     this.timers.clear();

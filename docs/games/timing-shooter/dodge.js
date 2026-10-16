@@ -59,7 +59,11 @@ class DodgeSequence {
     const color = colors[Math.floor(Math.random() * colors.length)];
     const { min, max } = this.config.durationMs;
     const duration = target.dodgeDurationMs ?? (min + Math.random() * (max - min));
-    this.current = { target, color, duration, perfectTime: gameRuntime.now() + duration, resolved: false };
+    const startedAt = gameRuntime.now();
+    const flipColors = colors.filter(candidate => candidate !== color);
+    this.current = { target, color, duration, startedAt, perfectTime: startedAt + duration, resolved: false,
+      colorChangeProgress: target.dodgeColorChangeProgress,
+      flipColor: flipColors[Math.floor(Math.random() * flipColors.length)], colorChanged: false };
     this.layer.style.setProperty('--dodge-color', this.colors[color]);
     this.result.textContent = '';
     this.layer.classList.remove('dodge-success', 'dodge-miss');
@@ -76,6 +80,7 @@ class DodgeSequence {
       this.clearCurrent();
       return;
     }
+    this.updateColor(now);
     const remaining = shot.perfectTime - now;
     const margin = this.config.marginPx;
     // Move each edge by the same pixel distance, not a percentage of the rectangle size.
@@ -90,6 +95,7 @@ class DodgeSequence {
 
   press(color) {
     if (!this.active) return false;
+    this.updateColor(gameRuntime.now());
     const shot = this.current;
     const distance = Math.abs(gameRuntime.now() - shot.perfectTime);
     const judgement = color === shot.color
@@ -97,6 +103,15 @@ class DodgeSequence {
       : 'miss';
     this.resolve(judgement);
     return true;
+  }
+
+  updateColor(now) {
+    const shot = this.current;
+    if (!shot || shot.resolved || shot.colorChanged || shot.colorChangeProgress == null
+        || now < shot.startedAt + shot.duration * shot.colorChangeProgress) return;
+    shot.colorChanged = true;
+    shot.color = shot.flipColor;
+    this.layer.style.setProperty('--dodge-color', this.colors[shot.color]);
   }
 
   resolve(judgement) {

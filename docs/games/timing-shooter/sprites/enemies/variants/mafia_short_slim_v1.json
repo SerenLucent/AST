@@ -1,0 +1,140 @@
+{
+  "id": "short_slim",
+  "name": "키 작고 마른 마피아",
+  "aim": "mafia_short_slim_aim_v1.png",
+  "atlas": "mafia_short_slim_knockdown_atlas_v2.png",
+  "imageSize": [
+    1774,
+    887
+  ],
+  "logicalFrameSize": [
+    888,
+    469
+  ],
+  "drawOffsetX": 222,
+  "groundY": 423,
+  "heightScale": 0.86,
+  "frames": [
+    {
+      "grade": "Perfect",
+      "index": 0,
+      "source": [
+        0,
+        0,
+        444,
+        469
+      ],
+      "offsetY": 0,
+      "durationMs": 100
+    },
+    {
+      "grade": "Perfect",
+      "index": 1,
+      "source": [
+        444,
+        0,
+        443,
+        469
+      ],
+      "offsetY": 0,
+      "durationMs": 100
+    },
+    {
+      "grade": "Perfect",
+      "index": 2,
+      "source": [
+        887,
+        0,
+        444,
+        469
+      ],
+      "offsetY": 0,
+      "durationMs": 100
+    },
+    {
+      "grade": "Perfect",
+      "index": 3,
+      "source": [
+        1331,
+        0,
+        443,
+        469
+      ],
+      "offsetY": 0,
+      "durationMs": 100
+    },
+    {
+      "grade": "Great",
+      "index": 0,
+      "image": "mafia_short_slim_great_heads_v8.png",
+      "source": [
+        0,
+        0,
+        615,
+        780
+      ],
+      "destination": [
+        271.79999999999995,
+        18.119999999999948,
+        344.40000000000003,
+        436.80000000000007
+      ],
+      "durationMs": 85
+    },
+    {
+      "grade": "Great",
+      "index": 1,
+      "image": "mafia_short_slim_great_heads_v8.png",
+      "source": [
+        615,
+        0,
+        639,
+        780
+      ],
+      "destination": [
+        265.08,
+        16.43999999999994,
+        357.84000000000003,
+        436.80000000000007
+      ],
+      "durationMs": 85
+    },
+    {
+      "grade": "Great",
+      "index": 2,
+      "image": "mafia_short_slim_great_atlas_v7.png",
+      "source": [
+        0,
+        780,
+        615,
+        474
+      ],
+      "destination": [
+        271.79999999999995,
+        193.39999999999998,
+        344.40000000000003,
+        265.44
+      ],
+      "durationMs": 85
+    },
+    {
+      "grade": "Great",
+      "index": 3,
+      "image": "mafia_short_slim_great_atlas_v7.png",
+      "source": [
+        615,
+        780,
+        639,
+        474
+      ],
+      "destination": [
+        265.08,
+        186.11999999999998,
+        357.84000000000003,
+        265.44
+      ],
+      "durationMs": 85
+    }
+  ],
+  "note": "Perfect unchanged. Great v7 redrawn from this character aim only, preserving build and dark suit. One fixed scale per character; no per-frame auto-fit."
+}

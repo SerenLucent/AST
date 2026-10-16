@@ -1,0 +1,140 @@
+{
+  "id": "burly",
+  "name": "덩치 큰 마피아",
+  "aim": "mafia_burly_aim_v1.png",
+  "atlas": "mafia_burly_knockdown_atlas_v2.png",
+  "imageSize": [
+    1774,
+    887
+  ],
+  "logicalFrameSize": [
+    888,
+    510
+  ],
+  "drawOffsetX": 222,
+  "groundY": 472,
+  "heightScale": 1,
+  "frames": [
+    {
+      "grade": "Perfect",
+      "index": 0,
+      "source": [
+        0,
+        0,
+        444,
+        510
+      ],
+      "offsetY": 0,
+      "durationMs": 100
+    },
+    {
+      "grade": "Perfect",
+      "index": 1,
+      "source": [
+        444,
+        0,
+        443,
+        510
+      ],
+      "offsetY": 0,
+      "durationMs": 100
+    },
+    {
+      "grade": "Perfect",
+      "index": 2,
+      "source": [
+        887,
+        0,
+        444,
+        510
+      ],
+      "offsetY": 0,
+      "durationMs": 100
+    },
+    {
+      "grade": "Perfect",
+      "index": 3,
+      "source": [
+        1331,
+        0,
+        443,
+        510
+      ],
+      "offsetY": 0,
+      "durationMs": 100
+    },
+    {
+      "grade": "Great",
+      "index": 0,
+      "image": "mafia_burly_great_atlas_v7.png",
+      "source": [
+        0,
+        0,
+        615,
+        780
+      ],
+      "destination": [
+        228.75,
+        -6.099999999999966,
+        430.5,
+        546
+      ],
+      "durationMs": 85
+    },
+    {
+      "grade": "Great",
+      "index": 1,
+      "image": "mafia_burly_great_atlas_v7.png",
+      "source": [
+        615,
+        0,
+        639,
+        780
+      ],
+      "destination": [
+        220.35000000000002,
+        -1.1999999999999886,
+        447.29999999999995,
+        546
+      ],
+      "durationMs": 85
+    },
+    {
+      "grade": "Great",
+      "index": 2,
+      "image": "mafia_burly_great_atlas_v7.png",
+      "source": [
+        0,
+        780,
+        615,
+        474
+      ],
+      "destination": [
+        228.75,
+        210.2,
+        430.5,
+        331.79999999999995
+      ],
+      "durationMs": 85
+    },
+    {
+      "grade": "Great",
+      "index": 3,
+      "image": "mafia_burly_great_atlas_v7.png",
+      "source": [
+        615,
+        780,
+        639,
+        474
+      ],
+      "destination": [
+        220.35000000000002,
+        197.60000000000002,
+        447.29999999999995,
+        331.79999999999995
+      ],
+      "durationMs": 85
+    }
+  ],
+  "note": "Perfect unchanged. Great v7 redrawn from this character aim only, preserving build and dark suit. One fixed scale per character; no per-frame auto-fit."
+}

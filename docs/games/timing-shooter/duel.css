@@ -217,6 +217,7 @@
 .duel-turn-banner[data-role="defense"] { color: #69baff; }
 .duel-shot-effect { position: absolute; width: 110px; height: 110px; object-fit: contain; transform: translate(-50%, -50%); pointer-events: none; z-index: 5; }
 .duel-muzzle-effect { width: 72px; height: 72px; }
+.duel-images .duel-muzzle-effect { width: 72px; height: 72px; object-fit: contain; }
 .duel-images.evading { animation: duel-evade-swipe 320ms ease-out; }
 @keyframes duel-evade-swipe { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-24px); } 60% { transform: translateX(-18px); } }
 #duelScene[data-player="2"] .duel-images.evading { animation-name: duel-evade-swipe-right; }

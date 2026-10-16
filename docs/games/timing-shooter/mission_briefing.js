@@ -83,6 +83,18 @@ class MissionBriefing {
     this.root.querySelector('.mission-operation strong').textContent = this.selectedStage === 2 ? '검은 부두' : '마피아 저택';
   }
 
+  restore(card, stageNumber = 1) {
+    this.selectStage(stageNumber);
+    const portrait = document.createElement('img');
+    portrait.src = card.querySelector('img').src;
+    portrait.alt = card.getAttribute('aria-label') || '';
+    this.slot.replaceChildren(portrait);
+    this.root.hidden = false;
+    this.screen.classList.add('mission-open');
+    this.active = true;
+    this.launch.focus({ preventScroll: true });
+  }
+
   async open(card) {
     if (this.active || this.busy) return;
     this.busy = true;

@@ -1,7 +1,7 @@
 window.TIMING_SHOOTER_STAGE2 = {
   id: 'stage2', title: '검은 부두', camera: 0,
   background: 'backgrounds/stage2_black_wharf/wave_1_wharf_v2.png',
-  enemyTotal: 10, riseMs: 420,
+  enemyTotal: 16, waveTargets: 2, riseMs: 420,
   slots: [
     { id: 'wharf_crates', worldX: .18, footY: .67, heightRatio: .25, clipBottomY: .554, rise: true },
     { id: 'wharf_barrels', worldX: .34, footY: .56, heightRatio: .18 },
@@ -16,7 +16,7 @@ window.TIMING_SHOOTER_STAGE2 = {
     background: 'backgrounds/stage2_black_wharf/wave_2_warehouse_v2.png',
     entryMale: 'backgrounds/stage2_black_wharf/hold_1_to_2_warehouse_v1.png',
     bakedEntryCaption: true, entryFit: 'contain', entryPosition: 'center',
-    enemyTotal: 10, transitionDelayMs: 1000, loadingHoldMs: 2000, riseMs: 420,
+    enemyTotal: 20, waveTargets: 2, transitionDelayMs: 1000, loadingHoldMs: 2000, riseMs: 420,
     slots: [
       { id: 'warehouse_crates', worldX: .28, footY: .69, heightRatio: .25, clipBottomY: .554, rise: true },
       { id: 'warehouse_rear', worldX: .39, footY: .57, heightRatio: .18 },
@@ -32,7 +32,7 @@ window.TIMING_SHOOTER_STAGE2 = {
     background: 'backgrounds/stage2_black_wharf/wave_3_customs_v2.png',
     entryMale: 'backgrounds/stage2_black_wharf/hold_2_to_3_customs_v1.png',
     bakedEntryCaption: true, entryFit: 'contain', entryPosition: 'center',
-    enemyTotal: 10, transitionDelayMs: 1000, loadingHoldMs: 2000, riseMs: 420,
+    enemyTotal: 21, waveTargets: 3, transitionDelayMs: 1000, loadingHoldMs: 2000, riseMs: 420,
     slots: [
       { id: 'customs_counter', worldX: .22, footY: .64, heightRatio: .24, clipBottomY: .504, rise: true },
       { id: 'customs_stairs', worldX: .37, footY: .58, heightRatio: .18 },
@@ -52,13 +52,14 @@ window.TIMING_SHOOTER_STAGE2 = {
     boss: {
       sprite: 'sprites/enemies/whitehair_boss_aim_v1.png',
       hitSprite: 'sprites/enemies/whitehair_boss_hit_v1.png',
-      maxHp: 50, guardsEveryTurns: 3, colorChangeProgress: .5,
-      dodgeDurationMs: 650, machineGunRepeatMultiplier: .25
+      maxHp: 50, guardsEveryTurns: 2, guardsPerTurn: 3, colorChangeProgress: .5,
+      dodgeDurationMs: 975, dodgeColorChangeProgress: .5, machineGunRepeatMultiplier: .25
     },
     slots: [
       { id: 'whitehair_boss', worldX: .5, footY: .70, heightRatio: .34, clipBottomY: .55 },
       { id: 'office_guard_left', worldX: .345, footY: .70, heightRatio: .32, clipBottomY: .55 },
-      { id: 'office_guard_right', worldX: .655, footY: .70, heightRatio: .32, clipBottomY: .55 }
+      { id: 'office_guard_right', worldX: .655, footY: .70, heightRatio: .32, clipBottomY: .55 },
+      { id: 'office_guard_front', worldX: .41, footY: .73, heightRatio: .32, clipBottomY: .55 }
     ],
     occluders: [{ id: 'office_desk', polygon: '24% 54.8%, 76% 54.8%, 75% 72%, 25% 72%' }]
   },

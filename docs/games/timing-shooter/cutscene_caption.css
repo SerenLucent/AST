@@ -1,0 +1,28 @@
+#openingViewport,
+#floorLoading,
+.scene {
+  container-type: size;
+}
+.hold-fire-art {
+  background: url("backgrounds/stage1_remaster/hold_your_fire_gold_v1.png") center / contain no-repeat;
+}
+#openingViewport .opening-caption.hold-fire-art,
+#floorLoadingCaption.hold-fire-art,
+.scene > .caption {
+  --hold-art-height: min(100cqh, 150cqw);
+  top: calc((100cqh - var(--hold-art-height)) / 2 + var(--hold-art-height) * .014);
+  left: 50%;
+  width: min(68cqw, 45.333cqh);
+  transform: translateX(-50%);
+  height: auto;
+  aspect-ratio: 3 / 1;
+  padding: 0;
+  font-size: 0;
+  color: transparent;
+  text-shadow: none;
+}
+#openingViewport .opening-breach-image {
+  object-fit: contain;
+  object-position: center;
+  background: #000;
+}

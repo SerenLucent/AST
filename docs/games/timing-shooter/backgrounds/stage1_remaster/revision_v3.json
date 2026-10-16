@@ -1,0 +1,20 @@
+{
+  "tool": "built-in image_gen",
+  "changes": [
+    {
+      "file": "breach_2p_v3.png",
+      "prompt": "Use case: precise-object-edit. Image1 is target two-police mansion door-kick scene, image2 original male face identity reference. Keep camera, rain/night environment, lighting, door-kicking male body/legs and all materials unchanged. Repair TWO mistakes clearly, don't keep old failed arm pose or tiny squint eyes. (1) FEMALE BEHIND LEFT: completely redraw both arms in a simple separated pose. Her RIGHT hand alone grips ONE pistol held vertically beside her own RIGHT cheek, muzzle pointed UP, index finger along frame. Right upper arm descends from HER shoulder to HER elbow alongside her waist; right forearm rises directly to her own cheek. Her LEFT arm hangs separately DOWN beside her own LEFT hip, gloved hand relaxed and visible. Both shoulders belong to her own torso, exactly two arms/two hands. No crossed forearms, no two-handed grip, no hugging, no holding male's arm, no arms wrapping male, no merging hands, no horizontal pistol across chest. Give her and male's arms a visible separation so silhouettes trace cleanly. (2) BOTH FACES: draw naturally OPEN alert almond-shaped eyes, NOT thin squint/slits. Visible DARK BROWN colored iris and BLACK round pupil centered toward doorway on screen right. Iris fills most eye opening but has clearly legible rounded vertical extent, eyelids open enough to see it. Subtle dim ivory sclera only at sides, NOT white slash/dot, not blind/glowing. Keep youthful attractive original faces, do not age them, do not change heads/cap positions. Male face restores original reference eyes, not an aggressively narrowed gaze. Preserve scene and kicking action exactly. Exactly two police officers, no extra gun/hand/limb. No red annotation, no text or UI. Portrait1024x1536, same detailed painted-game rendering."
+    },
+    {
+      "file": "breach_1p_v3.png",
+      "prompt": "Precise local eye repair ONLY. Image1 is one-player mansion door-kicking scene edit target. Image2 is corrected cooperative scene and supplies male eye/face reference only, DO NOT add the woman to image1. Keep entire image1 environment, male body pose, arms, gun, kick, clothing, materials and camera unchanged. Male officer must have NATURALLY OPEN alert eyes, not an extremely narrow angry squint. Visible iris is clearly DARK BROWN and pupil BLACK, round dark iris occupies most open eye aperture and has discernible vertical height, modest natural ivory sclera at sides. Restore attractive youthful focused original face, smooth relaxed upper eyelid slightly raised so iris/pupil are readable. His gaze remains directed RIGHT into doorway. No white slash eye, blank sclera, glowing eye, pale iris or oversized catchlight. Keep head/cap exactly positioned and size; do not exaggerate eye into cartoon bulge. Exactly ONE male officer, NO woman/no additional arms. Portrait1024x1536, no text/UI, local eye/eyelid correction only."
+    }
+  ],
+  "captionReference": "exec-96efcc7e-21b5-42e9-8827-946fd60f97b8.png",
+  "captionPlacement": {
+    "imageWidthPercent": 65,
+    "visibleTopPercent": 4,
+    "containerWidthPercent": 68,
+    "containerTopPercent": 1.4
+  }
+}
