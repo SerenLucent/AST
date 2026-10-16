@@ -16,8 +16,11 @@ class TutorialSequence {
     this.layer.className = 'tutorial-layer';
     this.layer.setAttribute('aria-label', '튜토리얼');
     this.layer.innerHTML = `
-      <div class="tutorial-heading">연습</div>
-      <button class="tutorial-skip" type="button">튜토리얼 건너뛰기</button>
+      <div class="tutorial-toolbar">
+        <div class="tutorial-heading">연습</div>
+        <button class="tutorial-browse-items" type="button">아이템 종류 보기</button>
+        <button class="tutorial-skip" type="button">튜토리얼 건너뛰기</button>
+      </div>
       <div class="tutorial-copy" aria-live="polite"><strong></strong><p></p><div class="tutorial-instruction"></div>
         <div class="tutorial-actions" hidden><button class="tutorial-view-items" type="button">아이템 보기</button><button class="tutorial-start-game" type="button">게임 시작</button></div>
       </div>
@@ -54,6 +57,9 @@ class TutorialSequence {
     this.layer.append(this.itemDialog);
     this.layer.querySelector('.tutorial-view-items').addEventListener('click', () => {
       if (this.active && this.phase === 'items' && !this.itemDialog.open) this.itemDialog.showModal();
+    });
+    this.layer.querySelector('.tutorial-browse-items').addEventListener('click', () => {
+      if (this.active && this.phase !== 'complete' && !this.itemDialog.open) this.itemDialog.showModal();
     });
     this.itemDialog.querySelector('.tutorial-items-close').addEventListener('click', () => this.itemDialog.close());
     this.layer.querySelector('.tutorial-start-game').addEventListener('click', () => this.beginGame());

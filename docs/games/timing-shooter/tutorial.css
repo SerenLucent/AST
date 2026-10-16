@@ -3,12 +3,15 @@
 #stage.tutorial-running #pad { display: block; }
 .tutorial-layer { position: absolute; inset: 0; z-index: 10; display: none; pointer-events: none; }
 .tutorial-layer.visible { display: block; }
-.tutorial-heading { position: absolute; top: 28px; left: 16px; color: #ffe168; font-size: 20px; font-weight: 900; }
-.tutorial-skip {
-  position: absolute; top: 12px; right: 12px; width: 196px; height: 56px;
-  border: 2px solid #ffe168; border-radius: 6px; background: #111820f2;
-  color: #fff; font-size: 16px; font-weight: 800; pointer-events: auto; cursor: pointer;
+.tutorial-toolbar { position: absolute; top: 12px; left: 12px; right: 12px; display: grid; grid-template-columns: 40px minmax(0, 1fr) 124px; gap: 6px; align-items: center; }
+.tutorial-heading { color: #ffe168; font-size: 18px; font-weight: 900; }
+.tutorial-browse-items, .tutorial-skip {
+  min-width: 0; height: 44px; padding: 0 5px; box-sizing: border-box;
+  border: 1px solid #ffe168; border-radius: 6px; background: #111820f2;
+  color: #fff; font-size: 12px; font-weight: 800; pointer-events: auto; cursor: pointer; white-space: nowrap;
 }
+.tutorial-browse-items { justify-self: center; width: 118px; max-width: 100%; color: #ffe168; }
+.tutorial-browse-items:focus-visible, .tutorial-skip:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .tutorial-copy {
   position: absolute; left: 16px; right: 16px; top: 86px; min-height: 144px;
   padding: 14px; background: #0c1119ed; border: 1px solid #ffffff40; border-radius: 6px;
