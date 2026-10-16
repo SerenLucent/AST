@@ -50,7 +50,7 @@ class TutorialSequence {
     this.itemDialog.className = 'tutorial-items-dialog';
     this.itemDialog.setAttribute('aria-labelledby', 'tutorialItemsTitle');
     this.itemDialog.innerHTML = `<header><h2 id="tutorialItemsTitle">아이템 안내</h2><button type="button" class="tutorial-items-close" aria-label="닫기" title="닫기">×</button></header>
-      <ul class="tutorial-items-list">${items.map(item => `<li><img src="${item.icon}" alt=""><div><h3>${item.name}</h3><p>${item.description}</p></div></li>`).join('')}</ul>`;
+      <ul class="tutorial-items-list">${items.map(item => `<li><span class="tutorial-item-icon active-item-icon" data-item-id="${item.icon.split('/').pop().replace('_icon.png', '')}"><img src="${item.icon}" alt=""></span><div><h3>${item.name}</h3><p>${item.description}</p></div></li>`).join('')}</ul>`;
     this.layer.append(this.itemDialog);
     this.layer.querySelector('.tutorial-view-items').addEventListener('click', () => {
       if (this.active && this.phase === 'items' && !this.itemDialog.open) this.itemDialog.showModal();
@@ -185,6 +185,7 @@ class TutorialSequence {
     this.clearCue();
     if (this.index < 4) {
       this.playSound('sound/gun.mp3');
+      this.showHitEffect();
       this.enemy.classList.add('shot');
       this.knockdown.style.backgroundPosition = '0% 0%';
       for (let frame = 1; frame < 4; frame++) {
@@ -228,6 +229,18 @@ class TutorialSequence {
     } else this.showLesson();
   }
 
+  showHitEffect() {
+    const effect = document.createElement('img');
+    effect.className = 'tutorial-hit-effect';
+    effect.alt = '';
+    effect.src = 'sprites/effects/bullet_effect_1.png';
+    effect.style.setProperty('--hit-color', { b: '#4695ff', y: '#ffd629', r: '#ff403a', g: '#43ff68' }[this.color]);
+    this.enemy.append(effect);
+    this.later(() => { effect.src = 'sprites/effects/bullet_effect_2.png'; }, 55);
+    this.later(() => { effect.src = 'sprites/effects/bullet_effect_3.png'; }, 110);
+    this.later(() => effect.remove(), 230);
+  }
+
   showItemChoice() {
     this.dodge.clear();
     this.clearCue();
@@ -261,6 +274,7 @@ class TutorialSequence {
     gameRuntime.cancelAnimationFrame(this.frame);
     this.timers.forEach(id => gameRuntime.clearTimeout(id));
     this.timers.clear();
+    this.layer.querySelectorAll('.tutorial-hit-effect').forEach(effect => effect.remove());
     this.dodge.clear();
     this.clearCue();
     this.layer.classList.remove('visible');
