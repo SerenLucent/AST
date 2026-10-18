@@ -9,3 +9,5 @@ dialog{max-height:90dvh;overflow:hidden}#catalog{max-height:55dvh;overflow-y:aut
 
 .card.insufficient{background:#eee0c7;color:#57371e;border-color:#ba9564;box-shadow:0 3px 0 #ba9564;opacity:1}.card.insufficient canvas{filter:brightness(.68)}.card.insufficient .ast-coin{filter:none}.card.insufficient:hover{background:#eee0c7}
 header{flex-wrap:wrap}header>div{flex-wrap:wrap;justify-content:flex-end;min-width:0}
+
+#zoomControls{position:absolute;right:12px;bottom:65px;z-index:3;display:flex;gap:4px;padding:6px;border-radius:14px;background:#fff8e9ec}#zoomControls button{min-width:44px;min-height:44px;padding:8px}#game{touch-action:none;cursor:grab}
