@@ -1674,7 +1674,7 @@
   <script src="stage4_config.js?v=ending-type-9"></script>
   <script src="dodge.js?v=shared-inset-6"></script>
   <script src="boss.js?v=stage2-guards-8"></script>
-  <script src="tutorial.js?v=item-guide-6"></script>
+  <script src="tutorial.js?v=direction-hints-7"></script>
   <script src="boss_aftermath.js?v=casino-aftermath-3"></script>
   <script src="ast_integration.js?v=stage-id-2"></script>
   <script src="multiplayer_config.js?v=heartbeat-5"></script>
@@ -2577,9 +2577,9 @@
           mode: selectedMode,
           transition: swap => runFadeTransition({ fadeOutMs: 1000, fadeInMs: 1000, swap }),
           onBreach: () => prepareCombatAssets().catch((error) => console.warn('[Stage] Preload failed:', error)),
-          onReady: () => playStageBgm(),
           onShot: () => {
             playOneShot(gunSound);
+            playStageBgm();
           },
           onComplete: enterStageAfterOpening
         }).catch((error) => {

@@ -7,9 +7,9 @@ class TutorialSequence {
     this.colors = ['b', 'y', 'r', 'g'];
     this.hints = {
       b: '하늘은 푸르니까, 위쪽 버튼은 파란색!',
-      y: '땅은 흙과 같으니까, 아래쪽 버튼은 노란색!',
+      y: '아랫버튼은 땅을 생각하며 황토같은 노란색!',
       r: '앞으로 나아가는 붉은색, 오른쪽 버튼!',
-      g: '천천히 완만한 녹색, 왼쪽 버튼!'
+      g: '천천히 완만함을 뜻하며 뒤로가기 방향 녹색!'
     };
     this.names = { b: '파란색 위쪽', y: '노란색 아래쪽', r: '빨간색 오른쪽', g: '녹색 왼쪽' };
     this.layer = document.createElement('section');
