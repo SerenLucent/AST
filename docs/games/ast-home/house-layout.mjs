@@ -8,6 +8,15 @@ export const AREAS={
  dining:{name:'2층 다이닝 홀',floor:2,x:0,y:0,w:24,h:30,kind:'dining'}
 };
 export const STAIR={x:20,y:23,w:4,h:7};
+// Art anchors are fractions of the full canvas, independent of camera zoom.
+export const NAVIGATION=[
+ {id:'exit',floor:1,x:.195,y:.578,label:'↙ 입구',target:'exit'},
+ {id:'roomA',floor:1,x:.405,y:.303,label:'↗ A룸',target:'roomA'},
+ {id:'roomB',floor:1,x:.535,y:.405,label:'↗ B룸',target:'roomB'},
+ {id:'roomC',floor:1,x:.685,y:.535,label:'↗ C룸',target:'roomC'},
+ {id:'upstairs',floor:1,x:.633,y:.674,label:'↗ 2층',target:2},
+ {id:'downstairs',floor:2,x:.674,y:.674,label:'↙ 1층',target:1}
+];
 export function project(x,y,floor=1){return {x:1000+(y-x)*30,y:(floor===1?210:410)+(x+y)*15}}
 export function unproject(p,floor=1){const dy=p.y-(floor===1?210:410);return {x:dy/30-(p.x-1000)/60,y:dy/30+(p.x-1000)/60}}
 export const HOUSE_ITEMS=[
@@ -19,6 +28,14 @@ export const HOUSE_ITEMS=[
  {id:'microphone',name:'마이크',price:70,w:1,h:1,places:['practice'],asset:'microphone',category:'연습 장비'},
  {id:'music-stand',name:'악보 거치대',price:40,w:1,h:1,places:['practice'],asset:'music-stand',category:'연습 장비'},
  {id:'chair',name:'연습 의자',price:30,w:1,h:1,places:['practice'],asset:'chair',category:'가구'},
+ {id:'studio-speaker',name:'스튜디오 스피커',price:120,w:1,h:1,places:['practice'],asset:'studio-speaker',category:'연습 장비'},
+ {id:'practice-desk',name:'연습용 탁자',price:90,w:2,h:3,places:['practice'],asset:'practice-desk',category:'가구'},
+ {id:'guitar',name:'어쿠스틱 기타',price:110,w:1,h:1,places:['practice'],asset:'guitar',category:'악기'},
+ {id:'drum-kit',name:'컴팩트 드럼 세트',price:280,w:3,h:3,places:['practice'],asset:'drum-kit',category:'악기'},
+ {id:'tv-console',name:'LCD TV와 거실장',price:220,w:1,h:4,places:['living'],asset:'tv-console',category:'가구'},
+ {id:'lounge-chair',name:'클래식 암체어',price:100,w:2,h:2,places:['living','dining'],asset:'lounge-chair',category:'가구'},
+ {id:'floor-lamp',name:'브라스 장스탠드',price:65,w:1,h:1,places:['living','dining'],asset:'floor-lamp',category:'장식'},
+ {id:'sideboard',name:'다이닝 수납장',price:140,w:1,h:3,places:['dining'],asset:'sideboard',category:'가구'},
  {id:'banquet-table',name:'대형 식탁',price:300,w:4,h:8,places:['dining'],asset:'banquet-table',category:'가구',surface:{w:4,h:8}},
  {id:'dining-chair',name:'다이닝 의자',price:50,w:1,h:1,places:['dining'],asset:'dining-chair',category:'가구'},
  {id:'fruit',name:'과일 플래터',price:20,w:1,h:2,places:['surface'],asset:'fruit',category:'음식'},
