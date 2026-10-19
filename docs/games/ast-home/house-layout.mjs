@@ -10,12 +10,12 @@ export const AREAS={
 export const STAIR={x:20,y:23,w:4,h:7};
 // Art anchors are fractions of the full canvas, independent of camera zoom.
 export const NAVIGATION=[
- {id:'exit',floor:1,x:.195,y:.578,label:'↙ 입구',target:'exit'},
+ {id:'exit',floor:1,x:.195,y:.578,label:'↙ 테라스로 나가기',target:'exit'},
  {id:'roomA',floor:1,x:.405,y:.303,label:'↗ A룸',target:'roomA'},
  {id:'roomB',floor:1,x:.535,y:.405,label:'↗ B룸',target:'roomB'},
  {id:'roomC',floor:1,x:.685,y:.535,label:'↗ C룸',target:'roomC'},
- {id:'upstairs',floor:1,x:.633,y:.674,label:'↗ 2층',target:2},
- {id:'downstairs',floor:2,x:.674,y:.674,label:'↙ 1층',target:1}
+ {id:'upstairs',floor:1,x:.633,y:.674,label:'↑ 2층 올라가기',target:2},
+ {id:'downstairs',floor:2,x:.674,y:.674,label:'↓ 1층 내려가기',target:1}
 ];
 export function project(x,y,floor=1){return {x:1000+(y-x)*30,y:(floor===1?210:410)+(x+y)*15}}
 export function unproject(p,floor=1){const dy=p.y-(floor===1?210:410);return {x:dy/30-(p.x-1000)/60,y:dy/30+(p.x-1000)/60}}

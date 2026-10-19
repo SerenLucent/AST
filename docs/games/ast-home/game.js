@@ -1,11 +1,14 @@
+import {TEST_KEY,readTestState,mountTestTools} from './test-session.mjs';
 import {request as astRequest} from './ast-bridge.js?v=20261012-bridge1';
 import {SharedHomeSession} from './shared-session.mjs?v=20261012-bridge1';
 import {COLS,ROWS,BUILD_ROWS,catalog,footprint,canPlace,point,cell,spriteLayout,migrateLayout} from './model.mjs';
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d');
+const testMode=new URLSearchParams(location.search).get('mode')==='test';if(testMode)mountTestTools();
 const shared=new URLSearchParams(location.search).get('mode')==='shared';let revision=0,busy=false,walletReady=false,walletLoaded=false;
 const sharedSession=shared?new SharedHomeSession({request:astRequest,storage:localStorage}):null;
-const key='myhome-prototype-v1';let state={coins:5000,items:[]},selected=null,draft=null,ready=false,hitboxes=[];
+const key=testMode?TEST_KEY:'myhome-prototype-v1';let state={coins:5000,items:[]},selected=null,draft=null,ready=false,hitboxes=[];
 try{const s=shared?null:JSON.parse(localStorage.getItem(key));if(s&&Number.isFinite(s.coins)&&s.coins>=0&&Array.isArray(s.items)){const items=[];for(const i of s.items){if(catalog.some(t=>t.id===i.type)&&[i.x,i.y,i.rotation].every(Number.isInteger)&&i.rotation>=0&&i.rotation<4&&typeof i.uid==='string'&&!items.some(j=>j.uid===i.uid))items.push(i)}state={coins:s.coins,items:migrateLayout(items)}}}catch{}
+if(testMode)state=readTestState(localStorage);
 if(shared)state={coins:0,items:[]};
 const images={},frames={};const bg=new Image();
 function polygon(x,y,w=1,h=1){const p=[point(x,y),point(x+w,y),point(x+w,y+h),point(x,y+h)];ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath()}
@@ -84,5 +87,5 @@ async function commitShared(item,purchase){
 }
 $('retrySync').onclick=async()=>{if(busy)return;if(!ready){location.reload();return}try{await syncShared()}catch{/* Preserve the sync error and allow another retry. */}};
 
-function updateEnter(){const b=$('enterMansion');if(!b)return;b.hidden=!!draft;const p={x:camera.x+1090*camera.scale,y:camera.y+385*camera.scale};b.style.left=(p.x/1536*100)+'%';b.style.top=(p.y/1024*100)+'%';}
+function updateEnter(){const b=$('enterMansion');if(!b)return;b.hidden=!!draft;b.disabled=busy;b.textContent='↗ ENTER · 1층';const p={x:camera.x+1090*camera.scale,y:camera.y+385*camera.scale};b.style.left=(p.x/1536*100)+'%';b.style.top=(p.y/1024*100)+'%';}
 if($('enterMansion'))$('enterMansion').onclick=()=>{if(draft||busy)return;const url=new URL(location.href);url.searchParams.set('scene','mansion');location.href=url.href};
