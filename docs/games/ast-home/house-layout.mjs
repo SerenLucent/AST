@@ -1,0 +1,45 @@
+// This logical square grid is the single source of truth for rendering and rules.
+export const WORLD={width:2048,height:1536,cols:24,rows:30,origin:{x:1000,y:210},tileX:30,tileY:15};
+export const AREAS={
+ hall:{name:'1층 거실',floor:1,x:9,y:0,w:15,h:30,kind:'living'},
+ roomA:{name:'A룸 · 연습실',floor:1,x:0,y:0,w:8,h:9,kind:'practice'},
+ roomB:{name:'B룸 · 연습실',floor:1,x:0,y:10,w:8,h:9,kind:'practice'},
+ roomC:{name:'C룸 · 연습실',floor:1,x:0,y:20,w:8,h:10,kind:'practice'},
+ dining:{name:'2층 다이닝 홀',floor:2,x:0,y:0,w:24,h:30,kind:'dining'}
+};
+export const STAIR={x:20,y:23,w:4,h:7};
+export function project(x,y,floor=1){return {x:1000+(y-x)*30,y:(floor===1?210:410)+(x+y)*15}}
+export function unproject(p,floor=1){const dy=p.y-(floor===1?210:410);return {x:dy/30-(p.x-1000)/60,y:dy/30+(p.x-1000)/60}}
+export const HOUSE_ITEMS=[
+ {id:'elegant-sofa',name:'클래식 소파',price:180,w:2,h:4,places:['living'],asset:'elegant-sofa',category:'가구'},
+ {id:'coffee-table',name:'낮은 커피 테이블',price:60,w:2,h:3,places:['living'],asset:'coffee-table',category:'가구'},
+ {id:'plant',name:'실내 화분',price:40,w:1,h:1,places:['living','practice','dining'],asset:'plant',category:'장식'},
+ {id:'bookshelf',name:'악보 책장',price:80,w:1,h:2,places:['living','practice'],asset:'bookshelf',category:'가구'},
+ {id:'piano',name:'업라이트 피아노',price:250,w:2,h:3,places:['practice'],asset:'piano',category:'악기'},
+ {id:'microphone',name:'마이크',price:70,w:1,h:1,places:['practice'],asset:'microphone',category:'연습 장비'},
+ {id:'music-stand',name:'악보 거치대',price:40,w:1,h:1,places:['practice'],asset:'music-stand',category:'연습 장비'},
+ {id:'chair',name:'연습 의자',price:30,w:1,h:1,places:['practice'],asset:'chair',category:'가구'},
+ {id:'banquet-table',name:'대형 식탁',price:300,w:4,h:8,places:['dining'],asset:'banquet-table',category:'가구',surface:{w:4,h:8}},
+ {id:'dining-chair',name:'다이닝 의자',price:50,w:1,h:1,places:['dining'],asset:'dining-chair',category:'가구'},
+ {id:'fruit',name:'과일 플래터',price:20,w:1,h:2,places:['surface'],asset:'fruit',category:'음식'},
+ {id:'tea-set',name:'티 세트',price:25,w:1,h:2,places:['surface'],asset:'tea-set',category:'음식'},
+ {id:'bread',name:'빵 바구니',price:15,w:1,h:1,places:['surface'],asset:'bread',category:'음식'}
+];
+export const definition=id=>HOUSE_ITEMS.find(i=>i.id===id);
+export function size(item){const d=definition(item.type);if(!d)throw new Error('Unknown furniture');return item.rotation%2?[d.h,d.w]:[d.w,d.h]}
+export function overlap(a,b,aw,ah,bw,bh){return a.x+aw>b.x&&b.x+bw>a.x&&a.y+ah>b.y&&b.y+bh>a.y}
+export function canBuild(item,items){
+ const d=definition(item.type),area=AREAS[item.area];
+ if(!d||!area||![item.x,item.y,item.rotation].every(Number.isInteger)||item.rotation<0||item.rotation>3)return false;
+ let bounds={w:area.w,h:area.h},kind=area.kind;
+ if(item.parent){const table=items.find(i=>i.uid===item.parent&&i.type==='banquet-table'&&i.area===item.area&&!i.parent);if(!table)return false;bounds=definition(table.type).surface;kind='surface'}
+ if(!d.places.includes(kind))return false;
+ const [w,h]=size(item);
+ const margin=!item.parent&&area.kind==='practice'?1:0;
+ if(item.x<margin||item.y<margin||item.x+w>bounds.w-margin||item.y+h>bounds.h-margin)return false;
+ if(!item.parent){const global={x:area.x+item.x,y:area.y+item.y};if(overlap(global,STAIR,w,h,STAIR.w,STAIR.h))return false;}
+ return items.filter(i=>i.uid!==item.uid&&i.area===item.area&&(i.parent||null)===(item.parent||null)).every(i=>{const [iw,ih]=size(i);return !overlap(item,i,w,h,iw,ih)});
+}
+export function floorItems(items,floor){return items.filter(i=>AREAS[i.area]?.floor===floor)}
+export function furniturePoint(item,items){const area=AREAS[item.area];if(!item.parent)return {x:area.x+item.x,y:area.y+item.y};const table=items.find(i=>i.uid===item.parent);if(!table)return {x:0,y:0};const td=definition(table.type);let x=item.x,y=item.y;const [w,h]=size(item);if(table.rotation===1){[x,y]=[td.h-item.y-h,item.x]}else if(table.rotation===2){[x,y]=[td.w-item.x-w,td.h-item.y-h]}else if(table.rotation===3){[x,y]=[item.y,td.w-item.x-w]}return {x:area.x+table.x+x,y:area.y+table.y+y}}
+export function spriteBox(item,frame,items){const p=furniturePoint(item,items);let [w,h]=size(item);const table=item.parent?items.find(i=>i.uid===item.parent):null;if(table?.rotation%2)[w,h]=[h,w];const center=project(p.x+w/2,p.y+h/2,AREAS[item.area].floor),front=project(p.x+w,p.y+h,AREAS[item.area].floor);const width=(w+h)*30*.90,height=width*frame.h/frame.w;return {x:center.x-width/2,y:front.y-height-3-(item.parent?45:0),w:width,h:height}}

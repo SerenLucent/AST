@@ -24,7 +24,7 @@ async function page({balance = 80, legacy = false, failRead = false, failImage =
   const server = {balance, revision: 0, items: [], ids: new Set(), failRead, loseReplies: false};
   const elements = new Map();
   function element(tag) {
-    const e = {tag, children: [], dataset: {}, hidden: false, disabled: false, textContent: '', open: false,
+    const e = {style:{},tag, children: [], dataset: {}, hidden: false, disabled: false, textContent: '', open: false,
       append(...children) { this.children.push(...children); },
       setAttribute() {}, addEventListener() {},
       showModal() { this.open = true; }, close() { this.open = false; },
@@ -187,7 +187,7 @@ test('standalone prototype keeps its local balance and never touches the server'
 
 test('HTML cache version loads a real game entry point which imports the required session module', () => {
   const html = fs.readFileSync(path.join(webRoot, 'index.html'), 'utf8');
-  assert.match(html, /game\.js\?v=20261019-camera1/);
+  assert.match(html, /game\.js\?v=20261019-house1/);
   assert.match(html, /id="retrySync"/);
   const game = fs.readFileSync(path.join(webRoot, 'game.js'), 'utf8');
   assert.match(game, /new SharedHomeSession/);
