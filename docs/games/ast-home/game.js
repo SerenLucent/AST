@@ -1,4 +1,5 @@
-import {scanAtlas,spriteIndex,registeredSprite,drawRegisteredSprite} from './sprite-geometry.mjs?v=20261019-whole3';
+import {loadAsset,assetUrl,spriteFrames} from './asset-loader.mjs?v=20261020-assets1';
+import {spriteIndex,registeredSprite,drawRegisteredSprite} from './sprite-geometry.mjs?v=20261019-whole3';
 import {TEST_KEY,readTestState,mountTestTools} from './test-session.mjs';
 import {request as astRequest} from './ast-bridge.js?v=20261012-bridge1';
 import {SharedHomeSession} from './shared-session.mjs?v=20261012-bridge1';
@@ -11,13 +12,13 @@ const key=testMode?TEST_KEY:'myhome-prototype-v1';let state={coins:5000,items:[]
 try{const s=shared?null:JSON.parse(localStorage.getItem(key));if(s&&Number.isFinite(s.coins)&&s.coins>=0&&Array.isArray(s.items)){const items=[];for(const i of s.items){if(catalog.some(t=>t.id===i.type)&&[i.x,i.y,i.rotation].every(Number.isInteger)&&i.rotation>=0&&i.rotation<4&&typeof i.uid==='string'&&!items.some(j=>j.uid===i.uid))items.push(i)}state={coins:s.coins,items:migrateLayout(items)}}}catch{}
 if(testMode)state=readTestState(localStorage);
 if(shared)state={coins:0,items:[]};
-const images={},frames={};const bg=new Image();
+const images={},frames={};let bg,assetsLoading=true;
 function polygon(x,y,w=1,h=1){const p=[point(x,y),point(x+w,y),point(x+w,y+h),point(x,y+h)];ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath()}
 function message(s){$('status').textContent=s}
 function save(){if(shared)return;try{localStorage.setItem(key,JSON.stringify(state))}catch{message('이 브라우저에서는 저장할 수 없습니다. 현재 배치는 세션 동안 유지됩니다.')}}
 let memberNames={};
 function updateCatalog(){for(const button of $('catalog').querySelectorAll('.card')){const item=catalog.find(t=>t.id===button.dataset.type);const insufficient=(!shared||walletLoaded)&&state.coins<item.price;const blocked=!ready||busy||(shared&&!walletReady);button.disabled=insufficient||blocked;button.classList.toggle('insufficient',insufficient);button.title=blocked?'서버 연결을 확인해 주세요.':insufficient?'아스트가 부족합니다.':`${item.name} 구매`;}}
-function ui(){$('shopButton').disabled=!ready||busy||(shared&&!walletReady);updateCatalog();const chosen=state.items.find(i=>i.uid===selected);$('furnitureDetails').textContent=chosen?(chosen.placedBy?(memberNames[chosen.placedBy]||chosen.placedBy)+' · '+(chosen.purchasedAt?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(chosen.purchasedAt))+' 구매':'구매 시간 기록 없음'):'테스트 배치'):''; const cost=draft?.purchase?catalog.find(t=>t.id===draft.type).price:0;$('confirmCost').textContent=cost.toLocaleString();$('confirm').setAttribute('aria-label',`확정, ${cost} 아스트`); $('wallet').textContent=shared&&!walletLoaded?(busy?'잔액 확인 중…':'잔액 조회 필요'):`${state.coins.toLocaleString()} 아스트${shared&&!walletReady?' · 확인 필요':''}`;$('retrySync').hidden=ready&&(!shared||walletReady);$('retrySync').disabled=busy;$('retrySync').textContent=ready?'다시 연결':'다시 불러오기';$('actions').hidden=!selected||!!draft;$('placement').hidden=!draft;$('confirm').disabled=!ready||busy||(shared&&!walletReady)||!draft||!canPlace(draft,state.items)||(draft.purchase&&state.coins<catalog.find(t=>t.id===draft.type).price); }
+function ui(){$('shopButton').disabled=!ready||busy||(shared&&!walletReady);updateCatalog();const chosen=state.items.find(i=>i.uid===selected);$('furnitureDetails').textContent=chosen?(chosen.placedBy?(memberNames[chosen.placedBy]||chosen.placedBy)+' · '+(chosen.purchasedAt?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(chosen.purchasedAt))+' 구매':'구매 시간 기록 없음'):'테스트 배치'):''; const cost=draft?.purchase?catalog.find(t=>t.id===draft.type).price:0;$('confirmCost').textContent=cost.toLocaleString();$('confirm').setAttribute('aria-label',`확정, ${cost} 아스트`); $('wallet').textContent=shared&&!walletLoaded?(busy?'잔액 확인 중…':'잔액 조회 필요'):`${state.coins.toLocaleString()} 아스트${shared&&!walletReady?' · 확인 필요':''}`;$('retrySync').hidden=assetsLoading||ready&&(!shared||walletReady);$('retrySync').disabled=busy||assetsLoading;$('retrySync').textContent=ready?'다시 연결':'다시 불러오기';$('actions').hidden=!selected||!!draft;$('placement').hidden=!draft;$('confirm').disabled=!ready||busy||(shared&&!walletReady)||!draft||!canPlace(draft,state.items)||(draft.purchase&&state.coins<catalog.find(t=>t.id===draft.type).price); }
 function sprite(item,alpha=1){const f=frames[item.type][spriteIndex(item.type,item.rotation)],im=images[item.type],[w,h]=footprint(item),quad=[point(item.x,item.y),point(item.x+w,item.y),point(item.x+w,item.y+h),point(item.x,item.y+h)],pose=registeredSprite(item.type,f,quad);drawRegisteredSprite(ctx,im,f,pose,alpha);return {uid:item.uid,...pose.box}}
 
 function draw(){if(!ready)return;ctx.clearRect(0,0,1536,1024);ctx.save();ctx.translate(camera.x,camera.y);ctx.scale(camera.scale,camera.scale);ctx.drawImage(bg,0,0,1536,1024);if(draft){for(let x=0;x<COLS;x++)for(let y=0;y<BUILD_ROWS;y++){polygon(x,y);ctx.fillStyle='rgba(255,255,230,.12)';ctx.fill();ctx.strokeStyle='rgba(73,73,43,.35)';ctx.lineWidth=1;ctx.stroke()}const [w,h]=footprint(draft);polygon(draft.x,draft.y,w,h);ctx.fillStyle=canPlace(draft,state.items)?'#63b97b88':'#d7515188';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke()}
@@ -39,31 +40,33 @@ canvas.addEventListener('pointercancel',abortGesture);canvas.addEventListener('l
 $('shopButton').onclick=async()=>{if(draft){message('현재 배치를 확정하거나 취소한 뒤 구매하세요.');return}if(!ready){message('가구 이미지를 준비하는 중입니다.');return}if(!$('shop').open)$('shop').showModal();if(busy){$('shopNotice').textContent='아스트 잔액 확인 중…';return}if(shared){$('shopNotice').textContent='아스트 잔액 확인 중…';walletReady=false;updateCatalog();try{await syncShared();$('shopNotice').textContent='가구를 고른 뒤 바닥 셀에 배치하세요. 확정할 때 아스트가 사용됩니다.'}catch(e){$('shopNotice').textContent=e.message+' 목록을 닫고 다시 눌러 재시도하세요.';updateCatalog();return}}updateCatalog()};$('closeShop').onclick=()=>$('shop').close();
 $('move').onclick=()=>begin(state.items.find(i=>i.uid===selected));$('rotateSelected').onclick=()=>{const i=state.items.find(i=>i.uid===selected);begin({...i,rotation:(i.rotation+1)%4})};$('rotateDraft').onclick=()=>{if(busy)return;draft.rotation=(draft.rotation+1)%4;draw()};
 $('cancel').onclick=()=>{if(busy||!draft)return;const old=draft;draft=null;selected=old.purchase?null:old.uid;message('취소했습니다. 아스트는 사용되지 않았습니다.');draw()};$('confirm').onclick=async()=>{if(!ready||busy||(shared&&!walletReady)||!draft||!canPlace(draft,state.items))return;const t=catalog.find(t=>t.id===draft.type);if(draft.purchase&&state.coins<t.price)return;const {purchase,...item}=draft;if(shared){await commitShared(item,purchase);return}if(purchase){state.coins-=t.price;state.items.push(item)}else state.items=state.items.map(i=>i.uid===item.uid?item:i);draft=null;selected=null;message('배치했습니다. 가구를 누르면 이동·회전할 수 있습니다.');save();draw()};
-function load(src){return new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error(src));i.src=src})}
-function bounds(im){const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const g=c.getContext('2d');g.drawImage(im,0,0);return scanAtlas(g.getImageData(0,0,c.width,c.height).data,c.width,c.height)}
 async function start(){
-  busy=true;ui();
+  // Server latency overlaps image loading; purchases still require both ready
+  // images and the authoritative account-bound wallet response.
+  const serverWork=shared?syncShared().catch(()=>{}):Promise.resolve();
+  let imageError=false;ui();
   try{
-    bg.src='assets/backgrounds/empty-living-grid-v4.png';await bg.decode();
-    await Promise.all(catalog.map(async t=>{const im=await load(`assets/furniture/${t.id}-4dir.png`);images[t.id]=im;frames[t.id]=bounds(im)}));
+    await Promise.all([
+      loadAsset('assets/backgrounds/empty-living-grid-v4.png').then(im=>{bg=im}),
+      ...catalog.map(async t=>{const source=`assets/furniture/${t.id}-4dir.png`;images[t.id]=await loadAsset(source);frames[t.id]=spriteFrames(source,'Registered')})
+    ]);
     for(const t of catalog){
       const button=document.createElement('button');button.className='card';button.dataset.type=t.id;button.disabled=true;
       const preview=document.createElement('canvas');preview.width=180;preview.height=150;
       const g=preview.getContext('2d'),f=frames[t.id][0],scale=Math.min(160/f.w,135/f.h);
       g.drawImage(images[t.id],f.x,f.y,f.w,f.h,(180-f.w*scale)/2,(150-f.h*scale)/2,f.w*scale,f.h*scale);
       const name=document.createElement('strong');name.textContent=t.name;
-      const price=document.createElement('span'),coin=document.createElement('img');coin.src='assets/ui/ast-coin.png';coin.className='ast-coin';coin.alt='';
+      const price=document.createElement('span'),coin=document.createElement('img');coin.src=assetUrl('assets/ui/ast-coin.png');coin.className='ast-coin';coin.alt='';
       price.append(coin,document.createTextNode(`${t.price.toLocaleString()} 아스트`));button.append(preview,name,price);
       button.onclick=()=>{if(!ready||busy||(shared&&!walletReady))return;if(state.coins<t.price){message('아스트가 부족합니다.');$('shop').close();return}$('shop').close();begin({uid:crypto.randomUUID(),type:t.id,x:4,y:5,rotation:0},true)};
       $('catalog').append(button);
     }
-    ready=true;
-  }catch(e){message('게임 이미지를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 다시 불러오기를 눌러 주세요.');console.error(e);}
-  finally{busy=false;ui();}
-  if(!ready)return;
-  draw();
-  if(shared){try{await syncShared()}catch{/* syncShared keeps the actual error visible. */}}
-  else message('아이템 구매 버튼으로 가구를 골라보세요.');
+    ready=true;draw();
+  }catch(e){imageError=true;console.error(e);}
+  finally{assetsLoading=false;ui();}
+  await serverWork;
+  if(imageError)message('게임 이미지를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 다시 불러오기를 눌러 주세요.');
+  else if(!shared)message('아이템 구매 버튼으로 가구를 골라보세요.');
 }
 start();
 
@@ -89,5 +92,5 @@ async function commitShared(item,purchase){
 }
 $('retrySync').onclick=async()=>{if(busy)return;if(!ready){location.reload();return}try{await syncShared()}catch{/* Preserve the sync error and allow another retry. */}};
 
-function updateEnter(){const b=$('enterMansion');if(!b)return;b.hidden=!!draft;b.disabled=busy;b.textContent='↗ ENTER · 1층';const p={x:camera.x+1090*camera.scale,y:camera.y+385*camera.scale};b.style.left=(p.x/1536*100)+'%';b.style.top=(p.y/1024*100)+'%';}
+function updateEnter(){const b=$('enterMansion');if(!b)return;b.hidden=!ready||!!draft;b.disabled=busy;b.textContent='↗ ENTER · 1층';const p={x:camera.x+1090*camera.scale,y:camera.y+385*camera.scale};b.style.left=(p.x/1536*100)+'%';b.style.top=(p.y/1024*100)+'%';}
 if($('enterMansion'))$('enterMansion').onclick=()=>{if(draft||busy)return;const url=new URL(location.href);url.searchParams.set('scene','mansion');location.href=url.href};

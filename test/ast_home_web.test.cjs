@@ -7,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const crypto = require('node:crypto');
 const {pathToFileURL} = require('node:url');
-const root = path.resolve(__dirname, '..');
+const root = process.env.AST_HOME_ROOT || path.resolve(__dirname, '..');
 const webRoot = path.join(root, 'docs/games/ast-home');
 const accountKey = crypto.createHash('sha256').update('web-test-account').digest('hex');
 const pendingKey = 'ast-home-pending-v2:' + accountKey;
@@ -16,6 +16,7 @@ const copy = value => JSON.parse(JSON.stringify(value));
 async function page({balance = 80, legacy = false, failRead = false, failImage = false, shared = true} = {}) {
   const {SharedHomeSession} = await import(pathToFileURL(path.join(webRoot, 'shared-session.mjs')));
   const model = await import(pathToFileURL(path.join(webRoot, 'model.mjs')));
+  const {ASSETS} = await import(pathToFileURL(path.join(webRoot, 'asset-manifest.mjs')));
   const geometry = await import(pathToFileURL(path.join(webRoot, 'sprite-geometry.mjs')));
   const records = new Map(), calls = [], timers = new Map();
   if (legacy) records.set('ast-home-pending-v1', JSON.stringify({
@@ -25,7 +26,7 @@ async function page({balance = 80, legacy = false, failRead = false, failImage =
   const server = {balance, revision: 0, items: [], ids: new Set(), failRead, loseReplies: false};
   const elements = new Map();
   function element(tag) {
-    const e = {style:{},tag, children: [], dataset: {}, hidden: false, disabled: false, textContent: '', open: false,
+    const e = {tag, children: [], dataset: {}, style: {}, hidden: false, disabled: false, textContent: '', open: false,
       append(...children) { this.children.push(...children); },
       setAttribute() {}, addEventListener() {},
       showModal() { this.open = true; }, close() { this.open = false; },
@@ -34,8 +35,9 @@ async function page({balance = 80, legacy = false, failRead = false, failImage =
     };
     const drawing = {drawn: [],
       drawImage(im) { this.drawn.push(im.src); }, clearRect() { this.drawn = []; },
-      getImageData() { return {data: new Uint8ClampedArray(64).fill(255)}; },
-      save() {}, restore() {}, translate() {}, scale() {}, transform() {}, clip() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {},
+      getImageData() { throw new Error('Runtime pixel scans must not return'); },
+      beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {},
+      save() {}, restore() {}, translate() {}, scale() {}, transform() {}, clip() {},
     };
     e.getContext = () => drawing;
     return e;
@@ -82,7 +84,7 @@ async function page({balance = 80, legacy = false, failRead = false, failImage =
     );
   }}};
   const context = vm.createContext({
-    ...model, ...geometry, SharedHomeSession, document, Image: MockImage, window: host,
+    ...model, ...geometry, ASSETS, SharedHomeSession, document, Image: MockImage, window: host,
     location: {search: shared ? '?mode=shared' : '', reload() {}}, URLSearchParams, crypto,
     localStorage: {getItem: k => records.get(k) ?? null, setItem: (k, v) => records.set(k, v), removeItem: k => records.delete(k)},
     setTimeout(fn, delay) { const id = timers.size + 1; timers.set(id, {fn, delay}); return id; },
@@ -90,6 +92,9 @@ async function page({balance = 80, legacy = false, failRead = false, failImage =
   });
   const bridge = fs.readFileSync(path.join(webRoot, 'ast-bridge.js'), 'utf8').replace('export function', 'function');
   vm.runInContext(bridge + '\nglobalThis.astRequest=request;', context);
+  const loader = fs.readFileSync(path.join(webRoot, 'asset-loader.mjs'), 'utf8')
+    .replace(/^import .*;\r?\n/gm, '').replaceAll('export function', 'function');
+  vm.runInContext('(function(){' + loader + '\nObject.assign(globalThis,{loadAsset,assetUrl,spriteFrames});})()', context);
   const game = fs.readFileSync(path.join(webRoot, 'game.js'), 'utf8')
     .replace(/^import .*;\r?\n/gm, '')
     .replace(/^start\(\);/m, 'globalThis.started=start();');
@@ -121,7 +126,7 @@ test('actual game purchase includes the native account key and shows the saved c
   assert.equal(p.server.balance, 50);
   assert.equal(p.server.items.length, 1);
   assert.equal(p.$('wallet').textContent, '50 아스트');
-  assert.ok(p.$('game').getContext().drawn.includes('assets/furniture/chair-4dir.png'));
+  assert.ok(p.$('game').getContext().drawn.some(url => /chair-4dir-.*\.webp$/.test(url)));
   assert.equal(p.records.has(pendingKey), false);
   assert.ok(p.records.has('ast-home-pending-v1'));
   assert.equal(p.timers.size, 0);
@@ -173,7 +178,8 @@ test('actual image failure shows an image retry, not local HTTP server instructi
   assert.doesNotMatch(p.$('status').textContent, /HTTP/);
   assert.equal(p.$('retrySync').textContent, '다시 불러오기');
   assert.equal(p.$('retrySync').hidden, false);
-  assert.equal(p.calls.length, 0);
+  // Read-only refresh starts in parallel, even if image decoding then fails.
+  assert.deepEqual(p.calls.map(c => c.action), ['astHomeGet']);
 });
 
 test('standalone prototype keeps its local balance and never touches the server', async () => {
@@ -188,7 +194,7 @@ test('standalone prototype keeps its local balance and never touches the server'
 
 test('HTML cache version loads a real game entry point which imports the required session module', () => {
   const html = fs.readFileSync(path.join(webRoot, 'index.html'), 'utf8');
-  assert.match(html, /game\.js\?v=20261019-whole3/);
+  assert.match(html, /game\.js\?v=20261020-assets1/);
   assert.match(html, /id="retrySync"/);
   const game = fs.readFileSync(path.join(webRoot, 'game.js'), 'utf8');
   assert.match(game, /new SharedHomeSession/);
