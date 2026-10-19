@@ -1,7 +1,7 @@
 import {TEST_KEY,readTestState,mountTestTools} from './test-session.mjs';
 import {request} from './ast-bridge.js?v=20261019-house1';
 import {SharedHomeSession} from './shared-session.mjs';
-import {WORLD,AREAS,STAIR,NAVIGATION,HOUSE_ITEMS,definition,size,project as groundProject,unproject as groundUnproject,canBuild,floorItems,furniturePoint,spriteBox} from './house-layout.mjs?v=20261019-travel1';
+import {WORLD,AREAS,STAIR,NAVIGATION,HOUSE_ITEMS,definition,size,project as groundProject,unproject as groundUnproject,canBuild,floorItems,furniturePoint,spriteBox} from './house-layout.mjs?v=20261019-grid2';
 
 const testMode=new URLSearchParams(location.search).get('mode')==='test';
 const shared=new URLSearchParams(location.search).get('mode')==='shared';
@@ -24,16 +24,16 @@ if(!shared){try{const saved=JSON.parse(localStorage.getItem(key));if(saved&&Numb
 if(testMode)state=readTestState(localStorage);
 function status(s){$('houseStatus').textContent=s}
 function save(){if(!shared)try{localStorage.setItem(key,JSON.stringify(state))}catch{status('배치는 유지되지만 이 브라우저에 저장하지 못했습니다.')}}
-function project(x,y){return groundProject(x,y,floor)}
-function unproject(p){return groundUnproject(p,floor)}
+function project(x,y,id=area||'hall'){return groundProject(x,y,floor,id)}
+function unproject(p,id=area||'hall'){return groundUnproject(p,floor,id)}
 function setPath(points){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath()}
-function quad(x,y,w,h){return [project(x,y),project(x+w,y),project(x+w,y+h),project(x,y+h)]}
+function quad(x,y,w,h,id=area||'hall'){return [project(x,y,id),project(x+w,y,id),project(x+w,y+h,id),project(x,y+h,id)]}
 function sceneItems(){return draft?state.items.filter(i=>i.uid!==draft.uid).concat([draft]):state.items}
 function frameIndex(item){const table=item.parent&&sceneItems().find(i=>i.uid===item.parent);const r=(item.rotation+(table?.rotation||0))%4;return item.type==='banquet-table'?[1,0,3,2][r]:r}
 function itemFrame(item){return frames[item.type][frameIndex(item)]}
 function fitCamera(){camera.x=Math.max(WORLD.width*(1-camera.scale),Math.min(0,camera.x));camera.y=Math.max(WORLD.height*(1-camera.scale),Math.min(0,camera.y))}
 function setZoom(next){if(gesture)return;next=Math.max(1,Math.min(3.5,next));camera.x=1024-(1024-camera.x)*next/camera.scale;camera.y=768-(768-camera.y)*next/camera.scale;camera.scale=next;fitCamera();draw()}
-function focusArea(){if(!area)return;const a=AREAS[area],p=project(a.x+a.w/2,a.y+a.h/2);camera.scale=a.kind==='practice'?2:1.25;camera.x=1024-p.x*camera.scale;camera.y=768-p.y*camera.scale;fitCamera()}
+function focusArea(){if(!area)return;const a=AREAS[area],p=project(a.x+a.w/2,a.y+a.h/2,area);camera.scale=a.kind==='practice'?2:1.25;camera.x=1024-p.x*camera.scale;camera.y=768-p.y*camera.scale;fitCamera()}
 function blocked(){if(draft){status('현재 배치를 O로 확정하거나 X로 취소하세요.');return true}return busy}
 function selectArea(id,focus=false){if(blocked())return;area=id;parent=null;selected=null;if(focus)focusArea();status(`${AREAS[id].name} 선택 · 아이템 구매로 이 공간을 꾸며보세요.`);draw()}
 function changeFloor(n){if(blocked())return;floor=n;area=null;parent=null;selected=null;camera.scale=1;camera.x=0;camera.y=0;renderAreas();status(n===1?'1층 · 거실이나 A/B/C룸을 선택하세요.':'2층 · 다이닝 홀을 선택해 식탁과 의자를 배치하세요.');draw()}
@@ -42,13 +42,13 @@ function leaveHouse(){if(blocked())return;const u=new URL(location.href);u.searc
 function navigate(target){if(blocked())return;if(target==='exit')leaveHouse();else if(typeof target==='number')changeFloor(target);else selectArea(target,true)}
 function renderPortals(){const host=$('housePortals');host.replaceChildren();for(const n of NAVIGATION.filter(n=>n.floor===floor)){const b=document.createElement('button');b.className='house-portal';b.dataset.portal=n.id;b.textContent=n.label;b.setAttribute('aria-label',n.target==='exit'?'테라스로 나가기':typeof n.target==='number'?n.target+'층으로 이동':AREAS[n.target].name+' 입장');b.style.left=((camera.x+n.x*2048*camera.scale)/2048*100)+'%';b.style.top=((camera.y+n.y*1536*camera.scale)/1536*100)+'%';b.disabled=!!draft||busy;b.onclick=()=>navigate(n.target);host.append(b)}}
 function surfacePoints(item){const table=state.items.find(i=>i.uid===parent);const p=furniturePoint({...item,area,parent},sceneItems());let [w,h]=size(item);if(table.rotation%2)[w,h]=[h,w];return quad(p.x,p.y,w,h).map(p=>({x:p.x,y:p.y-45}))}
-function targetPolygon(item){if(item.parent){const old=parent;parent=item.parent;const points=surfacePoints(item);parent=old;return points}const a=AREAS[item.area];const [w,h]=size(item);return quad(a.x+item.x,a.y+item.y,w,h)}
+function targetPolygon(item){if(item.parent){const old=parent;parent=item.parent;const points=surfacePoints(item);parent=old;return points}const a=AREAS[item.area];const [w,h]=size(item);return quad(a.x+item.x,a.y+item.y,w,h,item.area)}
 function paintItem(item,alpha=1){const frame=itemFrame(item),box=spriteBox(item,frame,sceneItems());ctx.globalAlpha=alpha;ctx.drawImage(sprites[item.type],frame.x,frame.y,frame.w,frame.h,box.x,box.y,box.w,box.h);ctx.globalAlpha=1;return {...box,uid:item.uid}}
 function draw(){if(!ready){update();return}ctx.clearRect(0,0,2048,1536);ctx.save();ctx.translate(camera.x,camera.y);ctx.scale(camera.scale,camera.scale);ctx.drawImage(backgrounds[floor],0,0,2048,1536);
- for(const [id,a] of Object.entries(AREAS).filter(([,a])=>a.floor===floor)){setPath(quad(a.x,a.y,a.w,a.h));ctx.strokeStyle='#806d4b33';ctx.lineWidth=1;if(!area)ctx.stroke();const p=project(a.x+a.w/2,a.y+a.h/2);if(!area){ctx.font='600 24px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff9ebec';ctx.fillRect(p.x-92,p.y-26,184,38);ctx.fillStyle='#705637';ctx.fillText(a.name.split(' · ')[0],p.x,p.y)}}
+ for(const [id,a] of Object.entries(AREAS).filter(([,a])=>a.floor===floor)){setPath(quad(a.x,a.y,a.w,a.h,id));ctx.strokeStyle='#806d4b33';ctx.lineWidth=1;if(!area)ctx.stroke();const p=project(a.x+a.w/2,a.y+a.h/2,id);if(!area){ctx.font='600 24px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff9ebec';ctx.fillRect(p.x-92,p.y-26,184,38);ctx.fillStyle='#705637';ctx.fillText(a.name.split(' · ')[0],p.x,p.y)}}
  const list=floorItems(state.items,floor).filter(i=>i.uid!==draft?.uid);if(draft)list.push(draft);
- const parents=list.filter(i=>!i.parent).sort((a,b)=>{const pa=furniturePoint(a,sceneItems()),pb=furniturePoint(b,sceneItems()),[w,h]=size(a),[bw,bh]=size(b);return project(pa.x+w,pa.y+h).y-project(pb.x+bw,pb.y+bh).y});hitboxes=[];
- if(draft&&!draft.parent){const a=AREAS[draft.area];for(let x=a.kind==='practice'?1:0;x<a.w-(a.kind==='practice'?1:0);x++)for(let y=a.kind==='practice'?1:0;y<a.h-(a.kind==='practice'?1:0);y++){setPath(quad(a.x+x,a.y+y,1,1));ctx.strokeStyle='#625a4677';ctx.lineWidth=.8;ctx.stroke()}}
+ const parents=list.filter(i=>!i.parent).sort((a,b)=>{const pa=furniturePoint(a,sceneItems()),pb=furniturePoint(b,sceneItems()),[w,h]=size(a),[bw,bh]=size(b);return project(pa.x+w,pa.y+h,a.area).y-project(pb.x+bw,pb.y+bh,b.area).y});hitboxes=[];
+ if(draft&&!draft.parent){const a=AREAS[draft.area];for(let x=a.kind==='practice'?1:0;x<a.w-(a.kind==='practice'?1:0);x++)for(let y=a.kind==='practice'?1:0;y<a.h-(a.kind==='practice'?1:0);y++){if(!canBuild({uid:'grid-cell',type:'plant',area:draft.area,x,y,rotation:0},[]))continue;setPath(quad(a.x+x,a.y+y,1,1,draft.area));ctx.strokeStyle='#625a4677';ctx.lineWidth=.8;ctx.stroke()}}
  for(const item of parents){const box=paintItem(item,item.uid===draft?.uid?.toString()? .7:1);if(item.uid!==draft?.uid)hitboxes.push(box);if(item.uid===selected){setPath(targetPolygon(item));ctx.strokeStyle='#fff1a4';ctx.lineWidth=3;ctx.stroke()}
    if(item.uid===parent){const d=definition(item.type);for(let x=0;x<d.surface.w;x++)for(let y=0;y<d.surface.h;y++){setPath(surfacePoints({type:'bread',x,y,rotation:0}));ctx.fillStyle='#fff6d733';ctx.fill();ctx.strokeStyle='#b38a47';ctx.lineWidth=1;ctx.stroke()}}
    const children=list.filter(i=>i.parent===item.uid).sort((a,b)=>a.x+a.y-b.x-b.y);for(const child of children){const box=paintItem(child,child.uid===draft?.uid? .7:1);if(child.uid!==draft?.uid)hitboxes.push(box)}
@@ -62,7 +62,7 @@ function eventPoint(e){const r=canvas.getBoundingClientRect();return {x:((e.clie
 const inside=(b,p)=>p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h;
 canvas.addEventListener('pointerdown',e=>{if(!ready||busy||gesture||!e.isPrimary||e.button>0)return;const p=eventPoint(e),box=draft&&spriteBox(draft,itemFrame(draft),state.items);gesture={id:e.pointerId,cx:e.clientX,cy:e.clientY,px:camera.x,py:camera.y,drag:false,move:!!draft&&inside(box,p),before:draft?{...draft}:null,cell:draft?choosePoint(p):null};canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointermove',e=>{const g=gesture;if(!g||g.id!==e.pointerId)return;if(!g.drag&&Math.hypot(e.clientX-g.cx,e.clientY-g.cy)<6)return;g.drag=true;if(g.move){const q=choosePoint(eventPoint(e));draft.x=g.before.x+q.x-g.cell.x;draft.y=g.before.y+q.y-g.cell.y}else{const r=canvas.getBoundingClientRect();camera.x=g.px+(e.clientX-g.cx)*2048/r.width;camera.y=g.py+(e.clientY-g.cy)*1536/r.height;fitCamera()}draw();e.preventDefault()});
-canvas.addEventListener('pointerup',e=>{const g=gesture;if(!g||g.id!==e.pointerId)return;gesture=null;const p=eventPoint(e);if(!g.drag){if(draft){const c=choosePoint(p);draft.x=c.x;draft.y=c.y}else{const hit=[...hitboxes].reverse().find(b=>inside(b,p));if(hit){selected=hit.uid;const i=state.items.find(i=>i.uid===selected);area=i.area;parent=i.parent||null;status('이동·회전을 선택하세요. 식탁은 음식 배치 영역으로도 선택할 수 있습니다.')}else{const q=unproject(p);if(q.x>=STAIR.x&&q.x<STAIR.x+STAIR.w&&q.y>=STAIR.y&&q.y<STAIR.y+STAIR.h){changeFloor(floor===1?2:1)}else{const found=Object.entries(AREAS).find(([,a])=>a.floor===floor&&q.x>=a.x&&q.x<a.x+a.w&&q.y>=a.y&&q.y<a.y+a.h);if(found)selectArea(found[0]);else selected=null}}}}draw();if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId)});
+canvas.addEventListener('pointerup',e=>{const g=gesture;if(!g||g.id!==e.pointerId)return;gesture=null;const p=eventPoint(e);if(!g.drag){if(draft){const c=choosePoint(p);draft.x=c.x;draft.y=c.y}else{const hit=[...hitboxes].reverse().find(b=>inside(b,p));if(hit){selected=hit.uid;const i=state.items.find(i=>i.uid===selected);area=i.area;parent=i.parent||null;status('이동·회전을 선택하세요. 식탁은 음식 배치 영역으로도 선택할 수 있습니다.')}else{const stair=NAVIGATION.find(n=>n.floor===floor&&typeof n.target==='number');if(stair&&Math.hypot(p.x-stair.x*2048,p.y-stair.y*1536)<65){changeFloor(stair.target)}else{const found=Object.entries(AREAS).find(([id,a])=>{const q=unproject(p,id);return a.floor===floor&&q.x>=a.x&&q.x<a.x+a.w&&q.y>=a.y&&q.y<a.y+a.h});if(found)selectArea(found[0]);else selected=null}}}}draw();if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId)});
 function abort(e){const g=gesture;if(!g||g.id!==e.pointerId)return;gesture=null;if(g.move&&g.before)draft=g.before;draw()}
 canvas.addEventListener('pointercancel',abort);canvas.addEventListener('lostpointercapture',abort);
 $('floorOne').onclick=()=>changeFloor(1);$('floorTwo').onclick=()=>changeFloor(2);$('stairsButton').onclick=()=>changeFloor(floor===1?2:1);$('housePlus').onclick=()=>setZoom(camera.scale+.25);$('houseMinus').onclick=()=>setZoom(camera.scale-.25);$('housePercent').onclick=()=>{camera.scale=1;camera.x=0;camera.y=0;draw()};

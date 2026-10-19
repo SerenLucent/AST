@@ -17,8 +17,22 @@ export const NAVIGATION=[
  {id:'upstairs',floor:1,x:.633,y:.674,label:'↑ 2층 올라가기',target:2},
  {id:'downstairs',floor:2,x:.674,y:.674,label:'↓ 1층 내려가기',target:1}
 ];
-export function project(x,y,floor=1){return {x:1000+(y-x)*30,y:(floor===1?210:410)+(x+y)*15}}
-export function unproject(p,floor=1){const dy=p.y-(floor===1?210:410);return {x:dy/30-(p.x-1000)/60,y:dy/30+(p.x-1000)/60}}
+// Each painted first-floor room has its own floor origin. Both tile axes
+// have equal length: these are regular square cells in orthographic projection.
+export const FLOOR_ONE_PLANES={
+ hall:{x:644,y:413,tx:32.5,ty:19.8},
+ roomA:{x:990,y:208,tx:30,ty:18},
+ roomB:{x:1269,y:376,tx:30,ty:18},
+ roomC:{x:1584,y:536,tx:30,ty:18}
+};
+export function project(x,y,floor=1,areaId=null){const p=floor===1&&FLOOR_ONE_PLANES[areaId],a=AREAS[areaId];if(p){x-=a.x;y-=a.y;return {x:p.x+(y-x)*p.tx,y:p.y+(x+y)*p.ty}}return {x:1000+(y-x)*30,y:(floor===1?210:410)+(x+y)*15}}
+export function unproject(p,floor=1,areaId=null){const v=floor===1&&FLOOR_ONE_PLANES[areaId],a=AREAS[areaId];if(v){const sum=(p.y-v.y)/v.ty,difference=(p.x-v.x)/v.tx;return {x:a.x+(sum-difference)/2,y:a.y+(sum+difference)/2}}const dy=p.y-(floor===1?210:410);return {x:dy/30-(p.x-1000)/60,y:dy/30+(p.x-1000)/60}}
+// Ground footprint of the approved staircase, measured on the painted floor.
+export const HALL_STAIR_FOOTPRINT=[{x:1020,y:870},{x:1410,y:830},{x:1520,y:920},{x:1520,y:1210},{x:1340,y:1230},{x:1020,y:1040}];
+// The cutaway partition hides the near edge of A room. Do not offer cells
+// whose floor is covered by that wall in the painted background.
+export const VISIBLE_BUILD_BOUNDS={roomA:{x:1,y:1,w:6,h:5}};
+export function polygonsOverlap(a,b){for(const poly of [a,b])for(let i=0;i<poly.length;i++){const v=poly[i],w=poly[(i+1)%poly.length],axis={x:-(w.y-v.y),y:w.x-v.x},ap=a.map(p=>p.x*axis.x+p.y*axis.y),bp=b.map(p=>p.x*axis.x+p.y*axis.y);if(Math.max(...ap)<=Math.min(...bp)||Math.max(...bp)<=Math.min(...ap))return false}return true}
 export const HOUSE_ITEMS=[
  {id:'elegant-sofa',name:'클래식 소파',price:180,w:2,h:4,places:['living'],asset:'elegant-sofa',category:'가구'},
  {id:'coffee-table',name:'낮은 커피 테이블',price:60,w:2,h:3,places:['living'],asset:'coffee-table',category:'가구'},
@@ -54,9 +68,11 @@ export function canBuild(item,items){
  const [w,h]=size(item);
  const margin=!item.parent&&area.kind==='practice'?1:0;
  if(item.x<margin||item.y<margin||item.x+w>bounds.w-margin||item.y+h>bounds.h-margin)return false;
+ const visible=!item.parent&&VISIBLE_BUILD_BOUNDS[item.area];if(visible&&(item.x<visible.x||item.y<visible.y||item.x+w>visible.x+visible.w||item.y+h>visible.y+visible.h))return false;
  if(!item.parent){const global={x:area.x+item.x,y:area.y+item.y};if(overlap(global,STAIR,w,h,STAIR.w,STAIR.h))return false;}
+ if(item.area==='hall'&&!item.parent){const corners=[[item.x,item.y],[item.x+w,item.y],[item.x+w,item.y+h],[item.x,item.y+h]].map(([x,y])=>project(area.x+x,area.y+y,1,'hall'));if(polygonsOverlap(corners,HALL_STAIR_FOOTPRINT))return false;}
  return items.filter(i=>i.uid!==item.uid&&i.area===item.area&&(i.parent||null)===(item.parent||null)).every(i=>{const [iw,ih]=size(i);return !overlap(item,i,w,h,iw,ih)});
 }
 export function floorItems(items,floor){return items.filter(i=>AREAS[i.area]?.floor===floor)}
 export function furniturePoint(item,items){const area=AREAS[item.area];if(!item.parent)return {x:area.x+item.x,y:area.y+item.y};const table=items.find(i=>i.uid===item.parent);if(!table)return {x:0,y:0};const td=definition(table.type);let x=item.x,y=item.y;const [w,h]=size(item);if(table.rotation===1){[x,y]=[td.h-item.y-h,item.x]}else if(table.rotation===2){[x,y]=[td.w-item.x-w,td.h-item.y-h]}else if(table.rotation===3){[x,y]=[item.y,td.w-item.x-w]}return {x:area.x+table.x+x,y:area.y+table.y+y}}
-export function spriteBox(item,frame,items){const p=furniturePoint(item,items);let [w,h]=size(item);const table=item.parent?items.find(i=>i.uid===item.parent):null;if(table?.rotation%2)[w,h]=[h,w];const center=project(p.x+w/2,p.y+h/2,AREAS[item.area].floor),front=project(p.x+w,p.y+h,AREAS[item.area].floor);const width=(w+h)*30*.90,height=width*frame.h/frame.w;return {x:center.x-width/2,y:front.y-height-3-(item.parent?45:0),w:width,h:height}}
+export function spriteBox(item,frame,items){const p=furniturePoint(item,items);let [w,h]=size(item);const table=item.parent?items.find(i=>i.uid===item.parent):null;if(table?.rotation%2)[w,h]=[h,w];const center=project(p.x+w/2,p.y+h/2,AREAS[item.area].floor,item.area),front=project(p.x+w,p.y+h,AREAS[item.area].floor,item.area);const tile=FLOOR_ONE_PLANES[item.area]?.tx||30,width=(w+h)*tile*.90,height=width*frame.h/frame.w;return {x:center.x-width/2,y:front.y-height-3-(item.parent?45:0),w:width,h:height}}
