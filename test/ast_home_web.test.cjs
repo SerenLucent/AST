@@ -16,6 +16,7 @@ const copy = value => JSON.parse(JSON.stringify(value));
 async function page({balance = 80, legacy = false, failRead = false, failImage = false, shared = true} = {}) {
   const {SharedHomeSession} = await import(pathToFileURL(path.join(webRoot, 'shared-session.mjs')));
   const model = await import(pathToFileURL(path.join(webRoot, 'model.mjs')));
+  const geometry = await import(pathToFileURL(path.join(webRoot, 'sprite-geometry.mjs')));
   const records = new Map(), calls = [], timers = new Map();
   if (legacy) records.set('ast-home-pending-v1', JSON.stringify({
     action: 'astHomeApply', operation: 'purchase', requestId: 'unowned-request-0001',
@@ -34,7 +35,7 @@ async function page({balance = 80, legacy = false, failRead = false, failImage =
     const drawing = {drawn: [],
       drawImage(im) { this.drawn.push(im.src); }, clearRect() { this.drawn = []; },
       getImageData() { return {data: new Uint8ClampedArray(64).fill(255)}; },
-      save() {}, restore() {}, translate() {}, scale() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {},
+      save() {}, restore() {}, translate() {}, scale() {}, transform() {}, clip() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {},
     };
     e.getContext = () => drawing;
     return e;
@@ -81,7 +82,7 @@ async function page({balance = 80, legacy = false, failRead = false, failImage =
     );
   }}};
   const context = vm.createContext({
-    ...model, SharedHomeSession, document, Image: MockImage, window: host,
+    ...model, ...geometry, SharedHomeSession, document, Image: MockImage, window: host,
     location: {search: shared ? '?mode=shared' : '', reload() {}}, URLSearchParams, crypto,
     localStorage: {getItem: k => records.get(k) ?? null, setItem: (k, v) => records.set(k, v), removeItem: k => records.delete(k)},
     setTimeout(fn, delay) { const id = timers.size + 1; timers.set(id, {fn, delay}); return id; },
@@ -187,7 +188,7 @@ test('standalone prototype keeps its local balance and never touches the server'
 
 test('HTML cache version loads a real game entry point which imports the required session module', () => {
   const html = fs.readFileSync(path.join(webRoot, 'index.html'), 'utf8');
-  assert.match(html, /game\.js\?v=20261019-controls1/);
+  assert.match(html, /game\.js\?v=20261019-planes1/);
   assert.match(html, /id="retrySync"/);
   const game = fs.readFileSync(path.join(webRoot, 'game.js'), 'utf8');
   assert.match(game, /new SharedHomeSession/);
