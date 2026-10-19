@@ -153,6 +153,8 @@
   inset: 0;
   background: #ffe9bc;
   opacity: 0;
+  z-index: 4;
+  pointer-events: none;
 }
 
 .opening-cover-fade {
@@ -166,10 +168,11 @@
 
 .opening-impact {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   width: 100px;
   height: 100px;
   transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 #stage.opening-ready #pad { display: block; }

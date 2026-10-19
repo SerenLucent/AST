@@ -52,8 +52,9 @@ window.TIMING_SHOOTER_STAGE2 = {
     boss: {
       sprite: 'sprites/enemies/whitehair_boss_aim_v1.png',
       hitSprite: 'sprites/enemies/whitehair_boss_hit_v1.png',
+      muzzleOffsetXRatio: 36 / 1536, muzzleOffsetYRatio: -483 / 1536,
       maxHp: 50, guardsEveryTurns: 2, guardsPerTurn: 3, colorChangeProgress: .5,
-      dodgeDurationMs: 975, dodgeColorChangeProgress: .5, machineGunRepeatMultiplier: .25
+      dodgeDurationMs: 650, dodgeColorChangeProgress: .5, machineGunRepeatMultiplier: .25
     },
     slots: [
       { id: 'whitehair_boss', worldX: .5, footY: .70, heightRatio: .34, clipBottomY: .55 },

@@ -15,6 +15,10 @@ class HallScene {
       const image = new Image();
       image.src = config.background;
       image.alt = '';
+      if (config.backgroundFit) {
+        image.style.objectFit = config.backgroundFit;
+        image.style.objectPosition = `${(config.backgroundPositionX ?? .5) * 100}% center`;
+      }
       if (occluder) {
         image.dataset.occluder = occluder.id;
         image.style.clipPath = `polygon(${occluder.polygon})`;
@@ -25,6 +29,7 @@ class HallScene {
     addImage(this.background);
     config.occluders.forEach((occluder) => addImage(occluder.depth === 4 ? this.frontColumns : this.foreground, occluder));
     stage.prepend(this.background, this.foreground, this.frontColumns);
+    if (config.singleView) [this.background, this.foreground, this.frontColumns].forEach(layer => { layer.style.width = '100%'; });
     this.setCamera(0.5);
     this.observer = new ResizeObserver(() => this.renderCamera());
     this.observer.observe(stage);
@@ -48,7 +53,7 @@ class HallScene {
   }
 
   renderCamera() {
-    const transform = `translateX(${-(this.camera + this.dodgeOffset) * this.stage.clientWidth}px)`;
+    const transform = `translateX(${-(this.config.singleView ? this.dodgeOffset : this.camera + this.dodgeOffset) * this.stage.clientWidth}px)`;
     this.background.style.transform = transform;
     this.foreground.style.transform = transform;
     this.frontColumns.style.transform = transform;
@@ -56,7 +61,44 @@ class HallScene {
     this.onCameraChange?.();
   }
 
-  screenX(worldX) { return (worldX * 2 - this.camera - this.dodgeOffset) * this.stage.clientWidth; }
+  project(x, y, withDodge = true) {
+    const width = this.stage.clientWidth, height = this.stage.clientHeight;
+    const image = this.images[0];
+    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+    const drawnWidth = image.naturalWidth * scale, drawnHeight = image.naturalHeight * scale;
+    return { x: x * drawnWidth + (width - drawnWidth) * (this.config.backgroundPositionX ?? .5)
+      - (withDodge ? this.dodgeOffset * width : 0), y: y * drawnHeight + (height - drawnHeight) * .5 };
+  }
+
+  screenX(worldX) {
+    if (this.config.backgroundFit === 'cover') return this.project(worldX, 0).x;
+    return (this.config.singleView ? worldX - this.dodgeOffset : worldX * 2 - this.camera - this.dodgeOffset) * this.stage.clientWidth;
+  }
+
+  playBossHit() {
+    if (!this.config.boss?.embedded) return;
+    if (!this.hitImage) {
+      this.hitImage = new Image();
+      this.hitImage.src = this.config.background;
+      this.hitImage.alt = '';
+      this.hitImage.style.objectFit = 'cover';
+      this.hitImage.style.objectPosition = `${this.config.backgroundPositionX * 100}% center`;
+      this.background.append(this.hitImage);
+    }
+    // Reuse the baked pose; this clipped recoil highlight never resizes the column.
+    const points = [[.245,.188],[.307,.188],[.314,.238],[.307,.425],[.285,.56],
+      [.211,.57],[.21,.545],[.23,.48],[.235,.386],[.213,.35],[.217,.255]];
+    this.hitImage.style.clipPath = `polygon(${points.map(([x,y]) => {
+      const point = this.project(x,y,false);return `${point.x}px ${point.y}px`;
+    }).join(',')})`;
+    this.hitAnimation?.cancel();
+    this.hitAnimation = this.hitImage.animate([
+      { opacity: 0, transform: 'translateX(0)', filter: 'brightness(1)' },
+      { opacity: .9, transform: 'translateX(-3px)', filter: 'brightness(1.5)' },
+      { opacity: .5, transform: 'translateX(2px)', filter: 'brightness(1.15)' },
+      { opacity: 0, transform: 'translateX(0)', filter: 'brightness(1)' }
+    ], { duration: 180, fill: 'forwards' });
+  }
 
   playDodge(direction = 1) {
     if (this.defeated) return;
@@ -98,6 +140,7 @@ class HallScene {
   }
 
   destroy() {
+    this.hitAnimation?.cancel();
     this.observer.disconnect();
     this.background.remove();
     this.foreground.remove();

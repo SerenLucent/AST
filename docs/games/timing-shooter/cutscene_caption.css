@@ -1,4 +1,5 @@
 #openingViewport,
+#wharfOpeningViewport,
 #floorLoading,
 .scene {
   container-type: size;
@@ -7,6 +8,7 @@
   background: url("backgrounds/stage1_remaster/hold_your_fire_gold_v1.png") center / contain no-repeat;
 }
 #openingViewport .opening-caption.hold-fire-art,
+#wharfOpeningViewport .opening-caption.hold-fire-art,
 #floorLoadingCaption.hold-fire-art,
 .scene > .caption {
   --hold-art-height: min(100cqh, 150cqw);

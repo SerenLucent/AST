@@ -1,4 +1,12 @@
 class DodgeSequence {
+  static insetAt(config, remaining, duration) {
+    const margin = config.marginPx;
+    const inset = remaining >= 0
+      ? margin + (config.startMarginPx - margin) * (remaining / duration)
+      : margin * (1 + remaining / config.judgementMs.bad);
+    return Math.max(0, inset);
+  }
+
   constructor(stage, config, onResolve, onIdle = () => {}) {
     this.stage = stage;
     this.config = config;
@@ -32,7 +40,11 @@ class DodgeSequence {
   }
 
   renderAmmo() {
-    const count = this.queue.filter((target) => target.element.isConnected).length + (this.active ? 1 : 0);
+    const shotsFor = target => Math.max(1, Math.floor(target.dodgeShotCount ?? 1));
+    const count = this.queue.filter((target) => target.element.isConnected)
+      .reduce((sum, target) => sum + shotsFor(target), 0)
+      + (this.current && this.current.target.element.isConnected
+        ? this.current.shotsRemaining - (this.current.resolved ? 1 : 0) : 0);
     this.ammo.replaceChildren(...Array.from({ length: count }, () => {
       const bullet = document.createElement('span');
       bullet.className = 'dodge-bullet';
@@ -47,9 +59,9 @@ class DodgeSequence {
     this.ammo.setAttribute('aria-label', `${count} incoming bullets`);
   }
 
-  startNext() {
+  startNext(continuation = null) {
     if (this.current) return;
-    const target = this.queue.shift();
+    const target = continuation?.target ?? this.queue.shift();
     if (!target) return;
     if (!target.element.isConnected) {
       this.startNext();
@@ -62,6 +74,7 @@ class DodgeSequence {
     const startedAt = gameRuntime.now();
     const flipColors = colors.filter(candidate => candidate !== color);
     this.current = { target, color, duration, startedAt, perfectTime: startedAt + duration, resolved: false,
+      shotsRemaining: continuation?.shotsRemaining ?? Math.max(1, Math.floor(target.dodgeShotCount ?? 1)),
       colorChangeProgress: target.dodgeColorChangeProgress,
       flipColor: flipColors[Math.floor(Math.random() * flipColors.length)], colorChanged: false };
     this.layer.style.setProperty('--dodge-color', this.colors[color]);
@@ -82,13 +95,9 @@ class DodgeSequence {
     }
     this.updateColor(now);
     const remaining = shot.perfectTime - now;
-    const margin = this.config.marginPx;
     // Move each edge by the same pixel distance, not a percentage of the rectangle size.
-    const inset = remaining >= 0
-      ? margin + (this.config.startMarginPx - margin) * (remaining / shot.duration)
-      : margin * (1 + remaining / this.config.judgementMs.bad);
     this.growing.style.transform = 'none';
-    this.growing.style.inset = `${Math.max(0, inset)}px`;
+    this.growing.style.inset = `${DodgeSequence.insetAt(this.config, remaining, shot.duration)}px`;
     this.layer.classList.toggle('timing-zone', Math.abs(remaining) <= this.config.judgementMs.great);
     if (remaining < -this.config.judgementMs.bad) this.resolve('miss');
   }
@@ -123,7 +132,8 @@ class DodgeSequence {
     this.growing.style.display = judgement === 'miss' ? '' : 'none';
     this.layer.classList.remove('timing-zone');
     this.layer.classList.add(judgement === 'miss' ? 'dodge-miss' : 'dodge-success');
-    const appliedDamage = this.onResolve(shot.target, damage, judgement) ?? damage;
+    const appliedDamage = this.onResolve(shot.target, damage, judgement,
+      { finalShot: shot.shotsRemaining === 1 }) ?? damage;
     if (this.current !== shot) return;
     const label = document.createElement('div');
     label.className = 'dodge-result-label';
@@ -139,9 +149,13 @@ class DodgeSequence {
 
   clearCurrent(notifyIdle = true) {
     gameRuntime.clearTimeout(this.holdTimer);
+    const shot = this.current;
+    const continuation = notifyIdle && shot?.resolved && shot.shotsRemaining > 1
+      && shot.target.element.isConnected
+      ? { target: shot.target, shotsRemaining: shot.shotsRemaining - 1 } : null;
     this.current = null;
     this.layer.classList.remove('visible', 'timing-zone', 'dodge-success', 'dodge-miss');
-    this.startNext();
+    this.startNext(continuation);
     this.renderAmmo();
     if (notifyIdle && !this.current && this.queue.length === 0) this.onIdle();
   }

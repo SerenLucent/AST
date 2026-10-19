@@ -52,8 +52,8 @@ class MissionBriefing {
       <figure class="mission-board"><img src="backgrounds/mission_briefing_v3.png" alt="주인공 경찰이 마피아 수장을 가리킨다. 아래의 저택 보스와 흰머리 보스 사진으로 스테이지를 선택한다.">
         <button type="button" class="mission-stage mission-stage-one mission-stage-selected" data-stage="1" aria-label="1스테이지 마피아 저택" aria-pressed="true" title="STAGE 1 · 마피아 저택"></button>
         <button type="button" class="mission-stage mission-stage-two" data-stage="2" aria-label="2스테이지 검은 부두" aria-pressed="false" title="STAGE 2 · 검은 부두"></button>
-        <span class="mission-lock mission-lock-chief" role="img" aria-label="마피아 수장 스테이지 잠김" title="준비 중"><i></i></span>
-        <span class="mission-lock mission-lock-third" role="img" aria-label="세 번째 보스 스테이지 잠김" title="준비 중"><i></i></span>
+        <button type="button" class="mission-stage mission-stage-four" data-stage="4" aria-label="4스테이지 백색 성역" aria-pressed="false" title="STAGE 4 · 백색 성역"></button>
+        <button type="button" class="mission-stage mission-stage-three" data-stage="3" aria-label="3스테이지 마지막 배팅" aria-pressed="false" title="STAGE 3 · 마지막 배팅"></button>
       </figure>
       <div class="mission-operation"><span>STAGE 1</span><strong>마피아 저택</strong></div>
       <button type="button" class="mission-launch">소탕 작전</button>`;
@@ -73,14 +73,14 @@ class MissionBriefing {
   }
 
   selectStage(stage) {
-    this.selectedStage = stage === 2 ? 2 : 1;
+    this.selectedStage = [1, 2, 3, 4].includes(stage) ? stage : 1;
     this.root.querySelectorAll('[data-stage]').forEach(button => {
       const selected = Number(button.dataset.stage) === this.selectedStage;
       button.classList.toggle('mission-stage-selected', selected);
       button.setAttribute('aria-pressed', String(selected));
     });
     this.root.querySelector('.mission-operation span').textContent = `STAGE ${this.selectedStage}`;
-    this.root.querySelector('.mission-operation strong').textContent = this.selectedStage === 2 ? '검은 부두' : '마피아 저택';
+    this.root.querySelector('.mission-operation strong').textContent = { 1: '마피아 저택', 2: '검은 부두', 3: '마지막 배팅', 4: '백색 성역' }[this.selectedStage];
   }
 
   restore(card, stageNumber = 1) {

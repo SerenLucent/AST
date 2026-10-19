@@ -33,6 +33,8 @@
 .mission-stage { position: absolute; padding: 0; background: transparent; border: 4px solid #d9cbb1; border-radius: 0; cursor: pointer; }
 .mission-stage-one { left: 5.7%; top: 42.1%; width: 17.5%; height: 28.2%; transform: rotate(1deg); }
 .mission-stage-two { left: 28%; top: 43.4%; width: 16.7%; height: 28%; transform: rotate(1deg); }
+.mission-stage-three { left: 49.2%; top: 44.6%; width: 15.7%; height: 27.7%; transform: rotate(1deg); }
+.mission-stage-four { left: 27%; top: 8.5%; width: 20.6%; height: 29.5%; transform: rotate(1deg); }
 .mission-stage-selected { border-color: #ffdc24; box-shadow: inset 0 0 0 1px #fff, inset 0 0 6px #fff, 0 0 2px #fff, 0 0 10px #ffd624; }
 .mission-stage:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 .mission-lock { position: absolute; width: 24px; height: 28px; display: grid; place-items: center; border-radius: 3px; background: #121820ed; box-shadow: 0 1px 4px #0009; color: #f7e4a5; }

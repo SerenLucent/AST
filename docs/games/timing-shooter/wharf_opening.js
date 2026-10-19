@@ -22,7 +22,20 @@ class WharfOpeningSequence {
     this.reticle = this.layer.querySelector('.opening-reticle');
     this.caption = this.layer.querySelector('.opening-caption');
     this.flash = this.layer.querySelector('.opening-shot-flash');
+    this.shotEffect = new OpeningShotEffect(this.layer, this.flash);
     this.knockdownImage = new Image();
+    if (config.label) {
+      this.layer.setAttribute('aria-label', config.label);
+      this.background.alt = config.label;
+      this.guardBody.alt = `${config.label}를 지키는 경비`;
+      this.entry.alt = `경찰이 ${config.label}로 진입한다`;
+    }
+    for (const [element, layout] of [[this.guardBody, config.guardLayout], [this.fall, config.fallLayout], [this.reticle, config.reticleLayout]]) {
+      if (layout) for (const [key, value] of Object.entries(layout)) element.style[key] = `${value}%`;
+    }
+    if (config.guardLayout) this.guardBody.style.objectFit = 'contain';
+    this.fall.width = config.canvasWidth ?? 627;
+    this.fall.height = config.canvasHeight ?? 700;
     stage.prepend(this.layer);
   }
 
@@ -36,22 +49,26 @@ class WharfOpeningSequence {
       this.guardBody.src = this.config.idle;
       this.knockdownImage.src = this.config.knockdown;
       this.entry.src = this.config.entry;
-      this.assetsReady = Promise.all([this.background, this.guardBody, this.knockdownImage, this.entry].map(image => image.decode()))
+      this.assetsReady = Promise.all([this.shotEffect.prepare(), ...[this.background, this.guardBody, this.knockdownImage, this.entry].map(image => image.decode())])
         .catch(error => { this.assetsReady = null; throw error; });
     }
     return this.assetsReady;
   }
 
-  async play({ onShot, onBreach, onComplete }) {
+  async play({ mode = '1p', onShot, onBreach, onComplete, transition }) {
     await this.prepare();
+    this.entry.src = mode === '2p' && this.config.entryCoop ? this.config.entryCoop : this.config.entry;
+    await this.entry.decode();
     this.onShot = onShot;
     this.onBreach = onBreach;
     this.onComplete = onComplete;
+    this.transition = transition;
     this.phase = 'approach';
     this.guardBody.hidden = false;
     this.fall.hidden = true;
     this.entry.hidden = true;
     this.caption.classList.remove('game-start');
+    this.caption.classList.remove('hold-fire-art');
     this.caption.textContent = '';
     this.layer.hidden = false;
     this.stage.classList.add('opening-running');
@@ -81,7 +98,7 @@ class WharfOpeningSequence {
     this.stage.classList.remove('opening-ready');
     this.stage.querySelectorAll('.signal-color').forEach(button => button.classList.remove('signal-color'));
     this.onShot?.();
-    this.flash.animate([{ opacity: .45 }, { opacity: 0 }], { duration: 170 });
+    this.shotEffect.play(this.reticle);
     this.guardBody.hidden = true;
     this.fall.hidden = false;
     this.enterWharf().catch(error => {
@@ -95,7 +112,7 @@ class WharfOpeningSequence {
     const context = this.fall.getContext('2d');
     for (let index = 0; index < this.config.frames.length; index++) {
       const frame = this.config.frames[index];
-      context.clearRect(0, 0, 627, 700);
+      context.clearRect(0, 0, this.fall.width, this.fall.height);
       context.drawImage(this.knockdownImage, ...frame.rect, 0, frame.offset, frame.rect[2], frame.rect[3]);
       this.fall.style.top = `${frame.top}%`;
       this.fall.dataset.frame = String(index);
@@ -104,17 +121,23 @@ class WharfOpeningSequence {
     this.caption.textContent = 'GAME START';
     this.caption.classList.add('game-start');
     await this.delay(700);
-    this.phase = 'transition';
-    this.caption.textContent = '';
-    this.caption.classList.remove('game-start');
-    this.onBreach?.();
-    this.fall.hidden = true;
-    this.entry.hidden = false;
+    const showEntry = () => {
+      this.phase = 'transition';
+      this.caption.textContent = '';
+      this.caption.classList.remove('game-start');
+      this.onBreach?.();
+      this.fall.hidden = true;
+      this.entry.hidden = false;
+      if (this.config.captionArt) this.caption.classList.add('hold-fire-art');
+    };
+    if (this.transition) await this.transition(showEntry);
+    else showEntry();
     await this.delay(this.config.entryHoldMs);
     await this.onComplete?.();
   }
 
   finish() {
+    this.shotEffect.clear();
     this.phase = 'complete';
     this.layer.hidden = true;
     this.caption.textContent = '';

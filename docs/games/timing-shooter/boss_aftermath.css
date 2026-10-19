@@ -1,0 +1,33 @@
+.boss-aftermath-scene { position: absolute; inset: 0; pointer-events: none; }
+.boss-aftermath-sprite { position: absolute; z-index: 1; width: auto; transform: translateX(-50%); pointer-events: none; }
+.boss-aftermath-hands { z-index: 3; }
+.boss-aftermath-hand-left { clip-path: inset(39% 60% 55% 20%); }
+.boss-aftermath-hand-right { clip-path: inset(39% 10% 55% 68%); }
+#stage.stage-cleared :is(#hud, #pad, #inventory, #itemTray, #itemGaugeHud, #activeEffects, #enemyCounter) { visibility: hidden; pointer-events: none; }
+#stageClear { background: #0006; }
+#stageClear .clear-results { top: 6%; height: 88%; }
+#stageClear .clear-results[hidden] { display: none; }
+#stageClear .clear-title { font-size: 30px; margin-bottom: 14px; }
+#stageClear .clear-score-row { margin-top: 12px; }
+#stageClear .clear-score-value { font-size: 26px; }
+#stageClear #clearTotalRow { padding-top: 12px; }
+#stageClear #clearReturnToTitle { position: absolute; left: 0; bottom: 0; margin: 0; }
+.boss-dialogue { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 24px; box-sizing: border-box; overflow-y: auto; background: #0009; }
+.boss-dialogue[hidden] { display: none; }
+.boss-dialogue-portrait { display: block; width: 180px; max-width: 55%; aspect-ratio: 1; object-fit: cover; flex: 0 0 auto; border: 2px solid #d6ae55; border-radius: 4px; box-shadow: 0 6px 24px #0008; }
+.boss-dialogue-copy { width: min(330px, 100%); padding: 18px; box-sizing: border-box; border: 1px solid #b99555; border-radius: 4px; background: #111416f5; text-align: left; }
+.boss-dialogue-name { display: block; color: #f4ca72; font-size: 15px; font-weight: 800; }
+.boss-dialogue-text { margin: 12px 0 0; color: #fff; font-size: 18px; font-weight: 500; line-height: 1.7; word-break: keep-all; overflow-wrap: anywhere; }
+.boss-dialogue-next { max-width: 330px; flex: 0 0 auto; }
+.boss-dialogue-next:focus-visible, #clearReturnToTitle:focus-visible { outline: 2px solid #f4ca72; outline-offset: 3px; }
+@media (max-height: 650px) {
+  #stageClear .clear-results { top: 3%; height: 91%; }
+  #stageClear .clear-title { font-size: 24px; margin-bottom: 8px; }
+  #stageClear .clear-score-row { margin-top: 8px; }
+  #stageClear .clear-score-label { font-size: 12px; line-height: 1.3; }
+  #stageClear .clear-score-value { font-size: 22px; }
+  #stageClear #clearTotalRow { padding-top: 8px; }
+  .boss-dialogue { gap: 12px; padding: 16px; }
+  .boss-dialogue-portrait { width: 120px; }
+  .boss-dialogue-text { font-size: 16px; line-height: 1.6; }
+}

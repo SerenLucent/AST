@@ -36,6 +36,7 @@ class OpeningSequence {
     this.holdCaptionArt = new Image();
     this.holdCaptionArt.src = 'backgrounds/stage1_remaster/hold_your_fire_gold_v1.png';
     this.flash = this.layer.querySelector('.opening-shot-flash');
+    this.shotEffect = new OpeningShotEffect(this.layer, this.flash);
     this.fade = document.createElement('div');
     this.fade.className = 'opening-cover-fade';
     this.layer.append(this.fade);
@@ -82,7 +83,7 @@ class OpeningSequence {
 
   async prepare() {
     if (!this.assetsReady) {
-      this.assetsReady = Promise.all([...this.frames, this.coverImage, this.guardBody, this.knockdownImage, this.holdCaptionArt, ...this.breachImages].map((image) => image.decode()));
+      this.assetsReady = Promise.all([this.shotEffect.prepare(), ...[...this.frames, this.coverImage, this.guardBody, this.knockdownImage, this.holdCaptionArt, ...this.breachImages].map((image) => image.decode())]);
     }
     try {
       await this.assetsReady;
@@ -147,7 +148,7 @@ class OpeningSequence {
   async revealCover() {
     this.phase = 'transition';
     this.setCaption('');
-    const halfDuration = this.config.cover.fadeMs / 2;
+    const halfDuration = 1000;
     await this.animate(this.fade, [{ opacity: 0 }, { opacity: 1 }], {
       duration: halfDuration, easing: 'ease-in-out', fill: 'forwards'
     });
@@ -213,18 +214,7 @@ class OpeningSequence {
     this.reticle.classList.remove('visible');
     this.setCaption('');
     this.onShot();
-    this.animate(this.flash, [{ opacity: 0.45 }, { opacity: 0 }], { duration: 170 });
-    const impact = new Image();
-    impact.className = 'opening-impact';
-    impact.src = 'sprites/effects/bullet_effect_1.png';
-    impact.style.left = `${this.config.guard.x * 100}%`;
-    impact.style.top = `calc(${(this.config.guard.footY - this.config.guard.height * this.config.guard.aimHeight) * 100}% + ${this.config.guard.aimOffsetPx ?? 0}px)`;
-    impact.style.width = `${100 / this.currentZoom}px`;
-    impact.style.height = `${100 / this.currentZoom}px`;
-    this.scenePlane.append(impact);
-    gameRuntime.setTimeout(() => { impact.src = 'sprites/effects/bullet_effect_2.png'; }, 55);
-    gameRuntime.setTimeout(() => { impact.src = 'sprites/effects/bullet_effect_3.png'; }, 110);
-    gameRuntime.setTimeout(() => impact.remove(), 230);
+    this.shotEffect.play(this.reticle);
     this.guard.classList.add('shot');
     const guardScreenX = this.guard.getBoundingClientRect().left + this.guard.clientWidth / 2;
     const stageRect = this.stage.getBoundingClientRect();
@@ -249,7 +239,7 @@ class OpeningSequence {
     this.setCaption('GAME START');
     this.caption.classList.add('game-start');
     await this.delay(this.config.gameStartMs);
-    const halfDuration = this.config.breach.fadeMs / 2;
+    const halfDuration = 1000;
     await this.animate(this.fade, [{ opacity: 0 }, { opacity: 1 }], {
       duration: halfDuration, fill: 'forwards'
     });
@@ -266,6 +256,7 @@ class OpeningSequence {
   }
 
   finish() {
+    this.shotEffect.clear();
     this.phase = 'complete';
     this.stage.classList.remove('opening-running', 'opening-ready');
     this.layer.classList.remove('visible');

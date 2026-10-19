@@ -106,3 +106,57 @@ class Hostage {
 }
 
 window.Hostage = Hostage;
+
+class HostageGroup {
+  constructor(stage, getHall, onHit) {
+    this.stage = stage;
+    this.getHall = getHall;
+    this.onHit = onHit;
+    this.members = [];
+  }
+  get primary() { return this.members.find(member => member.element && !member.hit) ?? this.members.find(member => member.element); }
+  get element() { return this.primary?.element ?? null; }
+  get hit() { return !this.members.some(member => member.element && !member.hit); }
+  get color() { return this.primary?.color ?? null; }
+  set color(value) { this.members.forEach(member => { member.color = value; }); }
+  get body() { return this.primary?.body; }
+  get reticle() { return this.primary?.reticle; }
+  get cross() { return this.primary?.cross; }
+  get slot() { return this.primary?.slot; }
+  get x() { return this.primary?.x; }
+  get y() { return this.primary?.y; }
+  prepare(config) {
+    const definitions = Array.isArray(config) ? config : config ? [config] : [];
+    return Promise.all(definitions.map(definition => new Hostage(this.stage, this.getHall, this.onHit).prepare(definition)));
+  }
+  enter(config, secondPlayer = false) {
+    this.clear();
+    const definitions = Array.isArray(config) ? config : config ? [config] : [];
+    this.members = definitions.map(definition => {
+      const member = new Hostage(this.stage, this.getHall, this.onHit);
+      member.enter(definition, secondPlayer);
+      return member;
+    });
+  }
+  position() { this.members.forEach(member => member.position()); }
+  refreshColor(targets, change = true, excluded = []) {
+    const primary = this.primary;
+    if (!primary || primary.hit) return;
+    primary.refreshColor(targets, change, excluded);
+    // Staff share one reserved color, leaving room for enemy and supply colors.
+    for (const member of this.members) {
+      if (member === primary || member.hit || !member.element) continue;
+      member.color = primary.color;
+      member.rings.forEach(image => { if (member.color) image.src = `sprites/${image.dataset.prefix}_${member.color}.png`; });
+      member.reticle.dataset.color = member.color ?? '';
+      member.setEnabled(member.enabled);
+    }
+  }
+  setEnabled(enabled) { this.members.forEach(member => member.setEnabled(enabled)); }
+  press(color) {
+    const member = this.members.find(entry => entry.element && !entry.hit && entry.enabled && entry.color === color);
+    return member ? member.press(color) : false;
+  }
+  clear() { this.members.forEach(member => member.clear()); this.members = []; }
+}
+window.HostageGroup = HostageGroup;
