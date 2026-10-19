@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {AREAS,STAIR,NAVIGATION,HOUSE_ITEMS,FLOOR_ONE_PLANES,project,unproject,canBuild,size,furniturePoint} from '../docs/games/ast-home/house-layout.mjs';
+import {AREAS,STAIR,NAVIGATION,HOUSE_ITEMS,FLOOR_ONE_PLANES,project,unproject,canBuild,size,furniturePoint,spriteBox} from '../docs/games/ast-home/house-layout.mjs';
 for(let x=0;x<24;x++)for(let y=0;y<30;y++){const q=unproject(project(x+.5,y+.5));assert.ok(Math.abs(q.x-x-.5)<1e-9&&Math.abs(q.y-y-.5)<1e-9)}
 const a={uid:'piano-00000000001',area:'roomA',type:'piano',rotation:0,x:1,y:1};
 assert.equal(canBuild(a,[]),true);assert.equal(canBuild({...a,area:'hall'},[]),false);
@@ -21,4 +21,5 @@ for(const id of Object.keys(FLOOR_ONE_PLANES)){const a=AREAS[id];for(let x=0;x<=
 assert.deepEqual(project(5,7,2,'dining'),{x:1060,y:590},'second-floor projection stays unchanged');
 assert.equal(canBuild({...a,area:'roomA',x:1,y:5,type:'piano'},[]),false,'A room near wall is unavailable');
 assert.equal(canBuild({uid:'stair-mask-check',type:'plant',area:'hall',x:7,y:25,rotation:0},[]),false,'no placement over visible staircase');
+for(const type of ['coffee-table','elegant-sofa'])for(let rotation=0;rotation<4;rotation++){const item={uid:'contact-check',area:'hall',type,x:2,y:5,rotation},f={w:600,h:420,contactU:rotation%2?.3:.7,contactV:.98},box=spriteBox(item,f,[]),[w,h]=size(item),front=project(AREAS.hall.x+item.x+w,AREAS.hall.y+item.y+h,1,'hall');assert.ok(Math.abs(box.x+box.w*f.contactU-front.x)<1e-9,'nearest foot x matches floor corner');assert.ok(Math.abs(box.y+box.h*f.contactV-front.y)<1e-9,'nearest foot is grounded')}
 console.log('House rules passed: regular square grid, corrected direction, room catalogs, collision, four rotations, stairs, table-only food, tabletop bounds and child transform');
