@@ -111,8 +111,10 @@ window.TIMING_SHOOTER_STAGE4_PILLAR_ROOM = {
     escape: { image: 'backgrounds/stage4_sanctuary/boss_escape_stairs_v1.png',
       title: '보스 도주', text: '보스가 1층으로 도주합니다. 놓치기 전에 쫓아가세요.', next: '따라가기' },
     ending: [
+      { image: 'backgrounds/stage4_sanctuary/boss_escape_foyer_v1.png', title: '마피아 보스', text: '이건... 예상밖인걸', next: '쫓아가기' },
+      { image: 'backgrounds/stage4_sanctuary/chase_foyer_male_v1.png', title: '현관 추격', cinematic: true, autoAdvanceMs: 2000 },
       { image: 'backgrounds/stage4_sanctuary/ending_car_escape_v1.png', title: '마피아 보스', text: '크… 지금 잡힐 순 없지.' },
-      { image: 'backgrounds/stage4_sanctuary/ending_police_v1.png', title: '이걸 놓치다니....', text: '추적은 아직 끝나지 않았다', emphasis: true },
+      { image: 'backgrounds/stage4_sanctuary/ending_police_v1.png', title: '이걸 놓치다니....', text: '추격은 아직 끝나지 않았다', emphasis: true },
       { image: 'backgrounds/stage4_sanctuary/ending_car_escape_v1.png', title: 'SEASON 2 · JAPAN',
         text: '놈의 다음 행선지는 일본. 야쿠자의 그림자 속에서 새로운 추적이 시작된다.', next: '결과 보기' }
     ]

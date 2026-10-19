@@ -1493,7 +1493,7 @@
   </style>
   <link rel="stylesheet" href="opening.css?v=shot-effect-5">
   <link rel="stylesheet" href="room_warning.css?v=center-2">
-  <link rel="stylesheet" href="campaign_story.css?v=ending-copy-2">
+  <link rel="stylesheet" href="campaign_story.css?v=ending-type-4">
   <link rel="stylesheet" href="sanctuary_encounter.css?v=standard-dodge-2">
   <link rel="stylesheet" href="wharf_opening.css?v=stage2-distance-3">
   <link rel="stylesheet" href="cutscene_caption.css?v=casino-caption-3">
@@ -1661,17 +1661,17 @@
   <script src="opening_config.js?v=remaster-eyes-arms-2"></script>
   <script src="opening_shot_effect.js?v=all-stages-1"></script>
   <script src="room_warning.js?v=trap-1"></script>
-  <script src="campaign_story.js?v=ending-copy-3"></script>
+  <script src="campaign_story.js?v=foyer-chase-4"></script>
   <script src="sanctuary_encounter.js?v=standard-dodge-3"></script>
-  <script src="opening.js?v=story-fades-6"></script>
+  <script src="opening.js?v=stage-music-7"></script>
   <script src="hall_config.js?v=stairs-solo-5"></script>
   <script src="stage2_config.js?v=boss-dodge-10"></script>
   <script src="stage3_config.js?v=boss-dodge-3"></script>
-  <script src="wharf_opening.js?v=story-fades-4"></script>
+  <script src="wharf_opening.js?v=stage-music-5"></script>
   <script src="hall.js?v=vs-pillar-cover-4"></script>
   <script src="hostage.js?v=casino-staff-2"></script>
   <script src="supply_crate.js?v=crate-two-4"></script>
-  <script src="stage4_config.js?v=ending-copy-7"></script>
+  <script src="stage4_config.js?v=ending-type-9"></script>
   <script src="dodge.js?v=shared-inset-6"></script>
   <script src="boss.js?v=stage2-guards-8"></script>
   <script src="tutorial.js?v=item-guide-6"></script>
@@ -2256,7 +2256,7 @@
       activeBgmSources = [];
     }
 
-    function startWebBgmSource(buffer, { loop = false, onended = null } = {}) {
+    function startWebBgmSource(buffer, { loop = false, onended = null, when = 0 } = {}) {
       const context = ensureBgmContext();
       const source = context.createBufferSource();
       source.buffer = buffer;
@@ -2265,7 +2265,7 @@
       if (onended) {
         source.onended = onended;
       }
-      source.start(0);
+      source.start(when);
       activeBgmSources.push(source);
       return source;
     }
@@ -2318,13 +2318,16 @@
           loadBgmBuffer(loopSrc)
         ]);
         if (token !== bgmSequenceToken || bgmMode !== mode) return false;
+        const startsAt = ensureBgmContext().currentTime + 0.03;
         startWebBgmSource(introBuffer, {
+          when: startsAt,
           onended: () => {
             if (token !== bgmSequenceToken || bgmMode !== mode) return;
             activeBgmSources = activeBgmSources.filter((source) => source.buffer !== introBuffer);
-            startWebBgmSource(loopBuffer, { loop: true });
           }
         });
+        // Schedule both buffers on the audio clock; onended may be delayed by rendering.
+        startWebBgmSource(loopBuffer, { loop: true, when: startsAt + introBuffer.duration });
         return true;
       } catch (error) {
         console.warn(`[BGM] ${mode} load/play failed:`, error);
@@ -2553,7 +2556,7 @@
       showLoading('Now Loading...');
       stopBgm();
       const unlockDone = unlockBgm();
-      const assetsReady = Promise.all([opening.prepare(), prepareCombatAssets(), warmStageMusic(), waitMs(350)]);
+      const assetsReady = Promise.all([opening.prepare(), prepareCombatAssets(), warmStageMusic(), warmTutorialMusic(), waitMs(350)]);
       const fadeDone = runFadeTransition({
         fadeOutMs: 500,
         fadeInMs: 400,
@@ -2563,18 +2566,20 @@
           modeScreen.classList.add('hidden');
           hideLoading();
           tutorial.start();
+          playBgmSequence('tutorial', 'sound/tutorial_1.mp3', 'sound/tutorial_2.mp3');
         }
       });
       try {
         await Promise.all([unlockDone, fadeDone]);
         await tutorial.done;
+        if (bgmMode === 'tutorial') stopBgm();
         opening.play({
           mode: selectedMode,
           transition: swap => runFadeTransition({ fadeOutMs: 1000, fadeInMs: 1000, swap }),
           onBreach: () => prepareCombatAssets().catch((error) => console.warn('[Stage] Preload failed:', error)),
+          onReady: () => playStageBgm(),
           onShot: () => {
             playOneShot(gunSound);
-            playBgmSequence('stage1', 'sound/stage1_1.mp3', 'sound/stage1_2.mp3');
           },
           onComplete: enterStageAfterOpening
         }).catch((error) => {
@@ -2591,11 +2596,31 @@
       }
     }
 
+    const stageMusic = {
+      stage1: { intro: 'sound/stage1_1.mp3', loop: 'sound/stage1_2.mp3' },
+      stage2: { intro: 'sound/stage2_1.mp3', loop: 'sound/stage2_2.mp3' },
+      stage3: { intro: 'sound/stage3_1.mp3', loop: 'sound/stage3_2.mp3' },
+      stage4: { intro: 'sound/stage4_1.mp3', loop: 'sound/stage4_2.mp3' }
+    };
+
+    function playStageBgm() {
+      const tracks = stageMusic[currentStageId];
+      return playBgmSequence(currentStageId, tracks.intro, tracks.loop);
+    }
+
+    function warmTutorialMusic() {
+      return Promise.all([
+        loadBgmBuffer('sound/tutorial_1.mp3'),
+        loadBgmBuffer('sound/tutorial_2.mp3')
+      ]).catch(error => console.warn('[BGM] Tutorial preload failed:', error));
+    }
+
     function warmStageMusic({ decode = true } = {}) {
       const load = decode ? loadBgmBuffer : downloadBgm;
+      const tracks = stageMusic[currentStageId];
       return Promise.all([
-        load('sound/stage1_1.mp3'),
-        load('sound/stage1_2.mp3')
+        load(tracks.intro),
+        load(tracks.loop)
       ]).catch((error) => console.warn('[BGM] Stage preload failed:', error));
     }
 
@@ -3503,7 +3528,10 @@
         const bossHitImage = new Image();
         if (config.boss) bossImage.src = config.boss.sprite;
         if (config.boss) bossHitImage.src = config.boss.hitSprite;
-        await Promise.all([nextHall.prepare(), config.boss ? bossImage.decode() : Promise.resolve(), config.boss ? bossHitImage.decode() : Promise.resolve(), hostage.prepare(config.hostages ?? config.hostage), waitMs(config.loadingHoldMs)]);
+        await Promise.all([nextHall.prepare(), config.boss ? bossImage.decode() : Promise.resolve(), config.boss ? bossHitImage.decode() : Promise.resolve(), hostage.prepare(config.hostages ?? config.hostage),
+          currentStageId === 'stage4' && config.boss
+            ? loadBgmBuffer('sound/versus.mp3').catch(error => console.warn('[BGM] Final boss preload failed:', error)) : Promise.resolve(),
+          waitMs(config.loadingHoldMs)]);
       } catch (error) {
         nextHall.destroy();
         throw error;
@@ -3951,6 +3979,7 @@
         return;
       }
       if (bossBattle.hp === 0) return;
+      if (currentStageId === 'stage4') playBgmLoop('final-boss', 'sound/versus.mp3');
       const existingBoss = activeTargets.find(target => target.isBoss);
       gameRuntime.clearTimeout(dodgeTurnTimer);
       gameRuntime.clearTimeout(counterRetryTimer);

@@ -7,7 +7,7 @@ class CampaignStory {
     this.layer.innerHTML = '<img alt=""><div class="campaign-story-dialogue"><h2></h2><p></p><button type="button">탭하여 계속</button></div>';
     stage.append(this.layer);
     this.button = this.layer.querySelector('button');
-    this.button.onclick = () => this.resolve?.(true);
+    this.button.onclick = () => { if (!this.button.disabled) this.resolve?.(true); };
   }
 
   prepare(pages) {
@@ -34,17 +34,28 @@ class CampaignStory {
         image.src = page.image;
         image.alt = page.title;
         this.layer.querySelector('h2').textContent = page.title;
-        this.layer.querySelector('p').textContent = page.text;
+        this.layer.querySelector('p').textContent = page.text ?? '';
         this.layer.classList.toggle('story-emphasis', Boolean(page.emphasis));
+        this.layer.querySelector('.campaign-story-dialogue').hidden = Boolean(page.cinematic);
+        this.button.hidden = Boolean(page.autoAdvanceMs);
         this.button.textContent = page.next ?? '탭하여 계속';
         this.layer.dataset.page = String(index);
         this.layer.hidden = false;
       });
       if (token !== this.token) return false;
       const next = new Promise(resolve => { this.resolve = resolve; });
-      this.button.disabled = false;
-      this.button.focus({ preventScroll: true });
-      if (!await next || token !== this.token) return false;
+      let autoTimer = null;
+      if (page.autoAdvanceMs) {
+        autoTimer = gameRuntime.setTimeout(() => this.resolve?.(true), page.autoAdvanceMs);
+        this.autoTimer = autoTimer;
+      } else {
+        this.button.disabled = false;
+        this.button.focus({ preventScroll: true });
+      }
+      const continued = await next;
+      gameRuntime.clearTimeout(autoTimer);
+      if (this.autoTimer === autoTimer) this.autoTimer = null;
+      if (!continued || token !== this.token) return false;
       this.resolve = null;
     }
     this.button.disabled = true;
@@ -53,6 +64,8 @@ class CampaignStory {
 
   cancel() {
     this.token = (this.token ?? 0) + 1;
+    gameRuntime.clearTimeout(this.autoTimer);
+    this.autoTimer = null;
     this.resolve?.(false);
     this.resolve = null;
     this.layer.hidden = true;

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="../../">
+  <title>Stage 4 Ending Preview</title>
+  <link rel="stylesheet" href="campaign_story.css?v=ending-type-4">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #000; font-family: Arial, sans-serif; }
+    #preview { position: relative; width: min(100vw, 430px); height: 100dvh; margin: auto; overflow: hidden; }
+    #fade { position: absolute; inset: 0; z-index: 40; background: #000; opacity: 0; pointer-events: none; transition: opacity 1s linear; }
+  </style>
+</head>
+<body>
+  <main id="preview"><div id="fade"></div></main>
+  <script src="game_runtime.js"></script>
+  <script src="stage4_config.js?v=ending-type-9"></script>
+  <script src="campaign_story.js?v=foyer-chase-4"></script>
+  <script>
+    const fade = document.getElementById('fade');
+    const wait = () => new Promise(resolve => setTimeout(resolve, 1000));
+    const story = new CampaignStory(document.getElementById('preview'), async swap => {
+      fade.style.pointerEvents = 'auto';
+      fade.style.opacity = '1';
+      await wait();
+      swap();
+      fade.style.opacity = '0';
+      await wait();
+      fade.style.pointerEvents = 'none';
+    });
+    story.play(TIMING_SHOOTER_STAGE4.ending);
+  </script>
+</body>
+</html>

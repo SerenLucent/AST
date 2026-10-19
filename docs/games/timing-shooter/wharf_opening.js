@@ -55,7 +55,7 @@ class WharfOpeningSequence {
     return this.assetsReady;
   }
 
-  async play({ mode = '1p', onShot, onBreach, onComplete, transition }) {
+  async play({ mode = '1p', onShot, onBreach, onComplete, onReady, transition }) {
     await this.prepare();
     this.entry.src = mode === '2p' && this.config.entryCoop ? this.config.entryCoop : this.config.entry;
     await this.entry.decode();
@@ -86,6 +86,7 @@ class WharfOpeningSequence {
     this.reticle.classList.add('visible');
     this.caption.textContent = 'OPEN FIRE';
     this.phase = 'ready';
+    onReady?.();
     this.stage.classList.add('opening-ready');
     this.stage.querySelector(`.pad-button[data-color="${this.color}"]`).classList.add('signal-color');
   }

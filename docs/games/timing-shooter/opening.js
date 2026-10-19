@@ -162,7 +162,7 @@ class OpeningSequence {
     });
   }
 
-  async play({ onShot, onComplete, onBreach, mode = '1p' }) {
+  async play({ onShot, onComplete, onBreach, onReady, mode = '1p' }) {
     await this.prepare();
     this.onShot = onShot;
     this.onComplete = onComplete;
@@ -202,6 +202,7 @@ class OpeningSequence {
     this.reticle.classList.add('visible');
     this.setCaption('OPEN FIRE');
     this.phase = 'ready';
+    onReady?.();
     this.stage.classList.add('opening-ready');
     this.stage.querySelector(`.pad-button[data-color="${this.color}"]`).classList.add('signal-color');
   }

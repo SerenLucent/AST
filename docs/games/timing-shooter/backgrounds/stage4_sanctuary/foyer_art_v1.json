@@ -1,0 +1,13 @@
+{
+  "tool": "built-in image_gen",
+  "assets": [
+    {
+      "file": "boss_escape_foyer_v1.png",
+      "prompt": "Use case: illustration-story. Create one portrait 1024x1536 game narrative cutscene, matching the supplied reference's polished detailed semi-realistic anime painterly style, bright white marble and teal-and-gold isolated palace in sunny daylight. Reference image is identity/style reference only: same handsome young mafia boss, black fedora, black pinstripe three-piece suit, white shirt, black tie, black gloves, same face and build. NEW scene after ground-floor pillar duel: he is fleeing across the GROUND FLOOR through a huge open FRONT ENTRANCE to outside, camera inside palace behind him, rear three-quarter full body, looks back over shoulder with surprised frustrated expression, clear dark iris/pupil. One foot across the flat doorway threshold, long jacket moving as he runs, handgun safely lowered in right hand. Two arms and two legs, natural proportions. Tall ornate open front doors, teal marble columns and cream marble floor lead to sunlit driveway, cypresses and distant mountains outside. Clearly a ground-level exit, not staircase or upstairs balcony. Comparable character framing to reference, not distant tiny person. Keep bottom 18% quiet for dialogue overlay. No other characters, no blood, no text/UI/lettering/watermark. Draw ONE scene, no panels."
+    },
+    {
+      "file": "chase_foyer_male_v1.png",
+      "prompt": "Use case: illustration-story. One portrait1024x1536 polished detailed semi-realistic anime painted GAME TRANSITION illustration. Input1 is police identity reference: identical handsome young male protagonist navy peaked police cap, navy police uniform, black gloves belt and boots, same face and proportions, dark pupils/irises natural eyes. Input2 is new matching ground-floor front doorway environment and lighting reference. NEW SCENE: police protagonist running OUT through that same giant open palace FRONT ENTRANCE pursuing escaped mafia, camera from inside behind him, dynamic rear three-quarter full-body running pose moving toward outdoor bright driveway. Flat ground-floor marble floor and doorway threshold, NO staircase. One handgun held DOWN in right hand, left arm running naturally, exactly2arms2legs, believable running anatomy, no crossed arms. White marble teal-and-gold columns and ornate open entrance doors, warm sunny daylight outside with cypresses and remote mountain view. No other characters, no mafia in this frame, no smoke or injury. Match reference art detail, architectural materials and character scale. Full-bleed single frame for 2-second pursuit cutaway, not collage. No text, no HOLD YOUR FIRE, no buttons/UI, no watermark."
+    }
+  ]
+}
