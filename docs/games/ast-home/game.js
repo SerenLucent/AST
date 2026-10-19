@@ -1,8 +1,8 @@
-import {scanAtlas,spriteIndex,registeredSprite,drawRegisteredSprite} from './sprite-geometry.mjs?v=20261019-planes1';
+import {scanAtlas,spriteIndex,registeredSprite,drawRegisteredSprite} from './sprite-geometry.mjs?v=20261019-whole2';
 import {TEST_KEY,readTestState,mountTestTools} from './test-session.mjs';
 import {request as astRequest} from './ast-bridge.js?v=20261012-bridge1';
 import {SharedHomeSession} from './shared-session.mjs?v=20261012-bridge1';
-import {COLS,ROWS,BUILD_ROWS,catalog,footprint,canPlace,point,cell,spriteLayout,migrateLayout} from './model.mjs?v=20261019-planes1';
+import {COLS,ROWS,BUILD_ROWS,catalog,footprint,canPlace,point,cell,spriteLayout,migrateLayout} from './model.mjs?v=20261019-whole2';
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d');
 const testMode=new URLSearchParams(location.search).get('mode')==='test';if(testMode)mountTestTools();
 const shared=new URLSearchParams(location.search).get('mode')==='shared';let revision=0,busy=false,walletReady=false,walletLoaded=false;

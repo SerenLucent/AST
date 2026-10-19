@@ -1,0 +1,17 @@
+[
+  {
+    "ratio": 0.60923,
+    "directions": 100,
+    "passed": true
+  },
+  {
+    "ratio": 0.6,
+    "directions": 100,
+    "passed": true
+  },
+  {
+    "ratio": 0.5,
+    "directions": 100,
+    "passed": true
+  }
+]

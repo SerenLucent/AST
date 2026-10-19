@@ -1,4 +1,4 @@
-import {registeredSprite} from './sprite-geometry.mjs?v=20261019-planes1';
+import {registeredSprite} from './sprite-geometry.mjs?v=20261019-whole2';
 // This logical square grid is the single source of truth for rendering and rules.
 export const WORLD={width:2048,height:1536,cols:24,rows:30,origin:{x:1000,y:210},tileX:30,tileY:15};
 export const AREAS={

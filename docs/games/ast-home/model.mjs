@@ -1,4 +1,4 @@
-import {registeredSprite} from './sprite-geometry.mjs?v=20261019-planes1';
+import {registeredSprite} from './sprite-geometry.mjs?v=20261019-whole2';
 export const COLS=12,ROWS=20;
 export const BUILD_ROWS=14; // Six rows behind the foreground wall are unavailable.
 export const origin={x:600,y:260},a={x:-40,y:20},b={x:40,y:20};
