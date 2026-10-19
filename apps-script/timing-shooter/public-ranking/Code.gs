@@ -1,11 +1,15 @@
+const RANKING_STAGE_IDS = ['stage1', 'stage2', 'stage3', 'stage4'];
+
 function emptyRankings() {
+  const stages = {};
+  RANKING_STAGE_IDS.forEach(id => { stages[id] = emptyStage(id); });
   return { schemaVersion: 2, game: 'timing-shooter', timeZone: 'Asia/Seoul', updatedAt: null,
-    stages: { stage1: emptyStage('stage1'), stage2: emptyStage('stage2') } };
+    stages: stages };
 }
 
 function rankingStage(value) {
   const id = value == null || value === '' ? 'stage1' : String(value);
-  if (id !== 'stage1' && id !== 'stage2') throw new Error('Invalid stage');
+  if (RANKING_STAGE_IDS.indexOf(id) === -1) throw new Error('Invalid stage');
   return id;
 }
 
@@ -28,7 +32,11 @@ function normalizeRankings(data) {
     return migrated;
   }
   if (data.schemaVersion !== 2 || !data.stages || typeof data.stages !== 'object' || Array.isArray(data.stages)) throw new Error('Invalid ranking file');
-  ['stage1', 'stage2'].forEach(id => {
+  RANKING_STAGE_IDS.forEach(id => {
+    // Earlier v2 files have only stages 1 and 2. Add new boards without replacing existing data.
+    if ((id === 'stage3' || id === 'stage4') && !Object.prototype.hasOwnProperty.call(data.stages, id)) {
+      data.stages[id] = emptyStage(id);
+    }
     const board = data.stages[id];
     if (!board || board.stageId !== id || !Array.isArray(board.allTime) || !Array.isArray(board.weekly)
         || !Array.isArray(board.receipts)) throw new Error('Invalid stage ranking');
@@ -164,7 +172,8 @@ function readRankings(settings) {
   if (response.getResponseCode() !== 200) throw new Error('Cannot read rankings');
   const body = JSON.parse(response.getContentText());
   const data = JSON.parse(Utilities.newBlob(Utilities.base64Decode(body.content.replace(/\s/g, ''))).getDataAsString('UTF-8'));
-  const migrated = data.schemaVersion === 1;
+  const migrated = data.schemaVersion === 1 || (data.schemaVersion === 2 && data.stages
+    && RANKING_STAGE_IDS.some(id => !Object.prototype.hasOwnProperty.call(data.stages, id)));
   return { sha: body.sha, data: normalizeRankings(data), migrated: migrated };
 }
 
@@ -193,7 +202,7 @@ function resetWeeklyRankings() {
   } finally { if (lock.hasLock()) lock.releaseLock(); }
 }
 
-// Run once after deploying v2. Read the latest GitHub revision under lock; never upload an old snapshot.
+// Run once after updating supported stages. Migrate the latest live revision under lock.
 function migrateStageRankings() {
   const settings = getSettings(), lock = LockService.getScriptLock();
   try {
@@ -201,7 +210,7 @@ function migrateStageRankings() {
     for (let attempt = 0; attempt < 3; attempt++) {
       const current = readRankings(settings);
       if (!current.migrated && current.sha) return;
-      const status = writeRankings(settings, current, 'Migrate existing rankings to stage1; initialize stage2');
+      const status = writeRankings(settings, current, 'Preserve stage rankings; initialize stages 1 through 4');
       if (status === 200 || status === 201) return;
       if (status !== 409 && status !== 422) throw new Error('Stage ranking migration failed');
     }

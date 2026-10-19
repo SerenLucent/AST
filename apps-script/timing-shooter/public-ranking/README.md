@@ -14,11 +14,11 @@ No remote data was changed by preparing these files. Do not overwrite live score
 
 ## Storage
 
-`rankings.json` schema version 2 contains `stages.stage1` and `stages.stage2`. Each stage owns `allTime`, `weekly`, `receipts`, `weekStart`, and `updatedAt`. Every new record/receipt contains `stageId`.
+`rankings.json` schema version 2 contains `stages.stage1` through `stages.stage4`. Each stage owns `allTime`, `weekly`, `receipts`, `weekStart`, and `updatedAt`. Every new record/receipt contains `stageId`. Existing two-stage v2 files gain empty stage3/stage4 boards without replacing stage1/stage2 data. Run `migrateStageRankings` once after this update to persist the new boards; it is safe to rerun.
 
 All old version-1 records become **stage1** records with names, scores, order, timestamps, and receipts preserved. Stage2 starts empty. The local legacy backup was verified against GitHub blob `a9b404bfcfa264e1d843c9f2afcf2681dd3d3756` on 2026-10-16.
 
-`leaderboard` and `status` GET requests use `stageId=stage1` or `stageId=stage2`. Score submissions include `result.stageId`. Missing stage IDs from old clients default to stage1; unsupported explicit stage IDs are rejected. Deduplication and TOP 10 qualification are per-stage.
+`leaderboard` and `status` GET requests use `stageId=stage1`, `stage2`, `stage3`, or `stage4`. Score submissions include `result.stageId`. Missing stage IDs from old clients default to stage1; unsupported explicit stage IDs are rejected. Deduplication and TOP 10 qualification are per-stage. The browser ranking UI must also support all four stage IDs before players can submit stage3/stage4 scores.
 
 The new client refuses to show a legacy server's stage1 response as stage2. Deploy the new ranking server before publishing the new client.
 

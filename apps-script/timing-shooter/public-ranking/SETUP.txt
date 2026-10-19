@@ -7,14 +7,16 @@ For the existing ranking project:
    GITHUB_BRANCH and SCORE_PATH script properties unchanged.
 3. Deploy a new version of the existing Web app. Keep the same /exec URL.
 4. Run migrateStageRankings once. It converts the latest live JSON to schema v2,
-   preserving all old records as stage1 and creating an empty stage2 board.
+   preserving legacy records as stage1. Existing stage1/stage2 boards are kept
+   unchanged, and missing stage3/stage4 boards are created empty.
 5. Keep the existing resetWeeklyRankings trigger. It now handles every stage.
    New installations can run installWeeklyResetTrigger once.
 
 Each stage has its own weekly and all-time TOP 10 RUNS, not one shared ranking.
 Weekly periods start Monday 00:00 Asia/Seoul; all-time records are retained.
 Missing stageId from legacy clients is treated as stage1.
-The new client blocks stage2 registration against an old ranking server.
+Supported stage IDs: stage1, stage2, stage3, stage4.
+The browser ranking UI also needs four-stage support for stage3/stage4 registration.
 
 Do not overwrite live rankings.json with an old snapshot or empty seed.
 The included rankings.stage-v2.json is a prepared example/snapshot, not a
