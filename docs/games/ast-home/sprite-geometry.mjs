@@ -8,11 +8,11 @@ export const SPRITE_ORDERS={
 export const RECTANGULAR_SPRITES=new Set(['wardrobe','table','sofa','elegant-sofa','coffee-table','bookshelf','piano','chair','studio-speaker','practice-desk','tv-console','lounge-chair','sideboard','banquet-table','dining-chair']);
 export function spriteIndex(type,rotation){return (SPRITE_ORDERS[type]||[0,1,2,3])[rotation%4]}
 const cross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
-export function groundContacts(points,w,h){
+export function groundContacts(points,w,h,minHeight=.30){
  const hull=[];for(const p of points){while(hull.length>1&&cross(hull.at(-2),hull.at(-1),p)>=0)hull.pop();hull.push(p)}
  const edges=hull.slice(1).map((p,i)=>({a:hull[i],b:p,dx:p.x-hull[i].x,dy:p.y-hull[i].y}));
- const left=edges.filter(e=>e.dx>w*.08&&e.dy>e.dx*.12&&e.dy<e.dx*2&&Math.min(e.a.y,e.b.y)>h*.30).sort((a,b)=>b.dx-a.dx)[0];
- const right=edges.filter(e=>e.dx>w*.08&&e.dy<-e.dx*.12&&e.dy>-e.dx*2&&Math.min(e.a.y,e.b.y)>h*.30).sort((a,b)=>b.dx-a.dx)[0];
+ const left=edges.filter(e=>e.dx>w*.08&&e.dy>e.dx*.12&&e.dy<e.dx*2&&Math.min(e.a.y,e.b.y)>h*minHeight).sort((a,b)=>b.dx-a.dx)[0];
+ const right=edges.filter(e=>e.dx>w*.08&&e.dy<-e.dx*.12&&e.dy>-e.dx*2&&Math.min(e.a.y,e.b.y)>h*minHeight).sort((a,b)=>b.dx-a.dx)[0];
  if(left&&right){const ml=left.dy/left.dx,mr=right.dy/right.dx,bl=left.a.y-ml*left.a.x,br=right.a.y-mr*right.a.x,fx=(br-bl)/(ml-mr),fy=ml*fx+bl;if(fx>left.a.x&&fx<right.b.x&&fy<h*1.12)return {left:left.a,front:{x:fx,y:fy},right:right.b,measured:true}}
  const bottom=points.reduce((a,b)=>b.y>a.y?b:a,{x:w/2,y:h});return {left:{x:0,y:h*.7},front:bottom,right:{x:w,y:h*.7},measured:false};
 }
@@ -25,7 +25,7 @@ export function scanAtlas(data,width,height){return [0,1,2,3].map(n=>{
  if(l>r||t>b)throw Error('빈 가구 이미지 방향입니다.');
  const points=[];for(let x=l;x<=r;x++){let y=b;while(y>=t&&data[(y*width+x)*4+3]<180)y--;if(y>=t)points.push({x:x+.5-l,y:y+1-t})}
  const upper=[];for(let x=l;x<=r;x++){let y=t;while(y<=b&&data[(y*width+x)*4+3]<180)y++;if(y<=b)upper.push({x:x+.5-l,y:b+1-y})}
- const roof=groundContacts(upper,r-l+1,b-t+1);
+ const roof=groundContacts(upper,r-l+1,b-t+1,0);
  const w=r-l+1,h=b-t+1,ground=groundContacts(points,w,h),lowest=points.reduce((a,b)=>b.y>a.y?b:a,{x:w/2,y:0});
  return {x:l,y:t,w,h,ground,roof,contactU:lowest.x/w,contactV:lowest.y/h};
 })}
@@ -59,3 +59,15 @@ export function registeredSprite(type,frame,quad){
 export function sourcePoint(matrix,p){const det=matrix.a*matrix.d-matrix.b*matrix.c;return {x:(matrix.d*(p.x-matrix.e)-matrix.c*(p.y-matrix.f))/det,y:(matrix.a*(p.y-matrix.f)-matrix.b*(p.x-matrix.e))/det}}
 export function pointInClip(p,clip){if(!clip)return true;let yes=false;for(let i=0,j=clip.length-1;i<clip.length;j=i++){const a=clip[i],b=clip[j];if((a.y>p.y)!==(b.y>p.y)&&p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x)yes=!yes}return yes}
 export function drawRegisteredSprite(ctx,image,frame,pose,alpha=1){for(const part of pose.parts){const m=part.matrix;ctx.save();ctx.globalAlpha=alpha;ctx.transform(m.a,m.b,m.c,m.d,m.e,m.f);if(part.clip){ctx.beginPath();part.clip.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.clip()}ctx.drawImage(image,frame.x,frame.y,frame.w,frame.h,0,0,frame.w,frame.h);ctx.restore()}}
+
+// The tabletop grid follows the visible top rather than the larger floor reservation.
+export function tableSurfaceMatrix(frame,pose,quad){
+ const r=frame.roof,g=frame.ground;
+ const ml=r?.measured?-(r.right.y-r.front.y)/(r.right.x-r.front.x):(g.front.y-g.left.y)/(g.front.x-g.left.x);
+ const mr=r?.measured?-(r.front.y-r.left.y)/(r.front.x-r.left.x):(g.right.y-g.front.y)/(g.right.x-g.front.x);
+ const x=r?.measured?r.front.x:frame.w-g.front.x,left=frame.w*.03,right=frame.w*.97;
+ // Extend the measured straight rails to the outer tabletop. A raster hull
+ // can split a long edge into several segments; those are not the table ends.
+ const source=[{x,y:2},{x:left,y:2+mr*(left-x)},{x:right,y:2+ml*(right-x)}];
+ return affineFromTriangles([quad[0],quad[1],quad[3]].map(p=>({x:p.x,y:p.y-45})),source.map(p=>transformPoint(pose.matrix,p)));
+}

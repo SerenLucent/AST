@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {registeredSprite,transformPoint,sourcePoint,spriteIndex,RECTANGULAR_SPRITES} from '../docs/games/ast-home/sprite-geometry.mjs';
+import {registeredSprite,transformPoint,sourcePoint,spriteIndex,RECTANGULAR_SPRITES,tableSurfaceMatrix} from '../docs/games/ast-home/sprite-geometry.mjs';
 assert.deepEqual([0,1,2,3].map(r=>spriteIndex('tv-console',r)),[1,0,2,3]);
 assert.deepEqual([0,1,2,3].map(r=>spriteIndex('banquet-table',r)),[1,0,3,2]);
 assert.deepEqual([0,1,2,3].map(r=>spriteIndex('wardrobe',r)),[0,1,3,2]);
@@ -12,3 +12,7 @@ for(const [tx,ty] of [[32.5,19.8],[30,18],[30,15],[40,20]])for(const type of REC
  const a=transformPoint(m,{x:0,y:20}),b=transformPoint(m,{x:600,y:320}),mid=transformPoint(m,{x:300,y:170});assert.ok(Math.hypot(mid.x-(a.x+b.x)/2,mid.y-(a.y+b.y)/2)<1e-8,'long edges cannot kink at a slice');
 }
 console.log('Whole-frame projection passed: all rectangular profiles, four floor planes, four rotations, parallel edge families, no slicing, verticals, cell containment and inverse picking');
+
+for(const measured of [false,true]){const f={...frame,roof:{measured,left:{x:0,y:400},front:{x:150,y:500},right:{x:600,y:250}}},quad=[{x:0,y:0},{x:-120,y:60},{x:120,y:180},{x:240,y:120}],pose=registeredSprite('banquet-table',f,quad),m=tableSurfaceMatrix(f,pose,quad);
+ for(const [u,v] of [[0,0],[1,0],[0,1],[1,1],[.4,.6]]){const p={x:quad[0].x+u*(quad[1].x-quad[0].x)+v*(quad[3].x-quad[0].x),y:quad[0].y-45+u*(quad[1].y-quad[0].y)+v*(quad[3].y-quad[0].y)},q=transformPoint(m,p),r=sourcePoint(m,q);assert.ok(Math.hypot(p.x-r.x,p.y-r.y)<1e-8,'visible tabletop cells and touch coordinates roundtrip')}
+}
