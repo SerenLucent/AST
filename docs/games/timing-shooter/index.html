@@ -2256,11 +2256,12 @@
       activeBgmSources = [];
     }
 
-    function startWebBgmSource(buffer, { loop = false, onended = null, when = 0 } = {}) {
+    function startWebBgmSource(buffer, { loop = false, onended = null, when = 0, loopEnd = 0 } = {}) {
       const context = ensureBgmContext();
       const source = context.createBufferSource();
       source.buffer = buffer;
       source.loop = loop;
+      source.loopEnd = loopEnd;
       source.connect(bgmGain);
       if (onended) {
         source.onended = onended;
@@ -2327,7 +2328,8 @@
           }
         });
         // Schedule both buffers on the audio clock; onended may be delayed by rendering.
-        startWebBgmSource(loopBuffer, { loop: true, when: startsAt + introBuffer.duration });
+        startWebBgmSource(loopBuffer, { loop: true, when: startsAt + introBuffer.duration,
+          loopEnd: loopSrc === 'sound/stage3_2.mp3' ? findBgmContentEnd(loopBuffer) : 0 });
         return true;
       } catch (error) {
         console.warn(`[BGM] ${mode} load/play failed:`, error);
@@ -2338,6 +2340,15 @@
 
     function resumeBgm() {
       return unlockBgm();
+    }
+
+    function findBgmContentEnd(buffer) {
+      // Stage 3's loop file contains a long silent tail. Keep its original audible samples intact.
+      const channels = Array.from({ length: buffer.numberOfChannels }, (_, index) => buffer.getChannelData(index));
+      for (let frame = buffer.length - 1; frame >= 0; frame--) {
+        if (channels.some(channel => Math.abs(channel[frame]) > 0.000001)) return (frame + 1) / buffer.sampleRate;
+      }
+      return buffer.duration;
     }
 
     function stopBgm() {
