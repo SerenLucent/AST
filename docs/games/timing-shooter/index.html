@@ -1662,16 +1662,16 @@
   <script src="opening_shot_effect.js?v=all-stages-1"></script>
   <script src="room_warning.js?v=trap-1"></script>
   <script src="campaign_story.js?v=foyer-chase-4"></script>
-  <script src="sanctuary_encounter.js?v=standard-dodge-3"></script>
+  <script src="sanctuary_encounter.js?v=two-rounds-4"></script>
   <script src="opening.js?v=stage-music-7"></script>
   <script src="hall_config.js?v=stairs-solo-5"></script>
   <script src="stage2_config.js?v=boss-dodge-10"></script>
-  <script src="stage3_config.js?v=boss-dodge-3"></script>
+  <script src="stage3_config.js?v=unique-hostages-5"></script>
   <script src="wharf_opening.js?v=stage-music-5"></script>
   <script src="hall.js?v=vs-pillar-cover-4"></script>
-  <script src="hostage.js?v=casino-staff-2"></script>
-  <script src="supply_crate.js?v=crate-two-4"></script>
-  <script src="stage4_config.js?v=ending-type-9"></script>
+  <script src="hostage.js?v=unique-staff-3"></script>
+  <script src="supply_crate.js?v=no-hostage-crates-5"></script>
+  <script src="stage4_config.js?v=two-balcony-rounds-10"></script>
   <script src="dodge.js?v=shared-inset-6"></script>
   <script src="boss.js?v=stage2-guards-8"></script>
   <script src="tutorial.js?v=direction-hints-7"></script>
@@ -1846,8 +1846,8 @@
     });
 
     function updateHostageInput() {
-      if (hostage.element && !hostage.hit && (activeTargets.some(target => target.color === hostage.color)
-        || supplyCrate.color === hostage.color)) refreshHostageColor(false);
+      if (hostage.colors.some(color => activeTargets.some(target => target.color === color)
+        || supplyCrate.color === color)) refreshHostageColor(false);
       hostage.setEnabled(gameStarted && !stageEnded && !floorTransition && !dodge.current && !dodge.queue.length
         && hasUnjudgedTargets() && !activeTargets.some(target => target.countering));
     }
@@ -1864,14 +1864,15 @@
     }, deliverCrateReward);
 
     function updateCrateInput() {
-      supplyCrate.setEnabled(gameStarted && !stageEnded && !floorTransition && !dodge.current
+      supplyCrate.setEnabled(!hall.config.disableSupplyCrates && gameStarted && !stageEnded && !floorTransition && !dodge.current
         && !dodge.queue.length && !activeTargets.some(target => target.countering));
     }
 
     function beginCrateTurn() {
       if (hall.config.boss || hall.config.special) return;
-      supplyCrate.nextTurn(activeTargets);
-      refreshHostageColor();
+      if (hall.config.disableSupplyCrates) supplyCrate.clear();
+      else supplyCrate.nextTurn(activeTargets);
+      refreshHostageColor(!hall.config.uniqueHostageColors);
       updateHostageInput();
       updateCrateInput();
     }
@@ -1918,6 +1919,7 @@
     let nextWaveReadyAt = 0;
     let bgmMode = '';
     let bgmSequenceToken = 0;
+    let stageBgmTimer = null;
     let audioStatusTimer = 0;
     let socket = null;
     let serverMode = false;
@@ -2054,16 +2056,16 @@
 
     function pickRandomColor() {
       const keys = Object.keys(colors).filter(color => color !== supplyCrate.color
-        && (!hostage.element || hostage.hit || color !== hostage.color));
+        && !hostage.colors.includes(color));
       return keys[Math.floor(Math.random() * keys.length)];
     }
 
     function colorForEnemy(color, target = null) {
-      const reserved = new Set([supplyCrate.color, hostage.element && !hostage.hit ? hostage.color : null]);
+      const reserved = new Set([supplyCrate.color, ...hostage.colors]);
       if (!reserved.has(color)) return color;
       const used = new Set(activeTargets.filter(enemy => enemy !== target && (!enemy.judged || enemy.countering))
         .map(enemy => enemy.color));
-      if (hostage.element && !hostage.hit) used.add(hostage.color);
+      hostage.colors.forEach(color => used.add(color));
       const available = Object.keys(colors).filter(key => !reserved.has(key));
       const distinct = available.filter(key => !used.has(key));
       const choices = distinct.length ? distinct : available;
@@ -2352,6 +2354,8 @@
     }
 
     function stopBgm() {
+      gameRuntime.clearTimeout(stageBgmTimer);
+      stageBgmTimer = null;
       bgmSequenceToken += 1;
       bgmMode = '';
       stopWebBgmSources();
@@ -2590,7 +2594,7 @@
           onBreach: () => prepareCombatAssets().catch((error) => console.warn('[Stage] Preload failed:', error)),
           onShot: () => {
             playOneShot(gunSound);
-            playStageBgm();
+            scheduleStageBgm();
           },
           onComplete: enterStageAfterOpening
         }).catch((error) => {
@@ -2617,6 +2621,15 @@
     function playStageBgm() {
       const tracks = stageMusic[currentStageId];
       return playBgmSequence(currentStageId, tracks.intro, tracks.loop);
+    }
+
+    function scheduleStageBgm() {
+      gameRuntime.clearTimeout(stageBgmTimer);
+      const stageId = currentStageId, token = bgmSequenceToken;
+      stageBgmTimer = gameRuntime.setTimeout(() => {
+        stageBgmTimer = null;
+        if (currentStageId === stageId && bgmSequenceToken === token) playStageBgm();
+      }, 1000);
     }
 
     function warmTutorialMusic() {
@@ -3912,6 +3925,7 @@
       }
       clearActiveTargets();
 
+      if (hall.config.uniqueHostageColors) refreshHostageColor();
       if (wave) {
         activeWaveId = wave.waveId;
         const useRoomSlots = currentFloor > 1 || currentStageId !== 'stage1';
@@ -3919,7 +3933,7 @@
         const targets = wave.targets.slice();
         if (hall.config.waveTargets) {
           const available = shuffleItems(Object.keys(colors).filter(color => color !== supplyCrate.color
-            && (!hostage.element || hostage.hit || color !== hostage.color)));
+            && !hostage.colors.includes(color)));
           const count = Math.min(hall.config.waveTargets, stageEnemyTotal - defeatedEnemies, available.length);
           // The legacy local server sends two targets; room rules may require three.
           while (targets.length < count) {
@@ -3928,8 +3942,10 @@
           }
           targets.length = count;
         }
+        const enemyColors = hall.config.uniqueHostageColors
+          ? shuffleItems(Object.keys(colors).filter(color => !hostage.colors.includes(color))) : null;
         targets.slice(0, stageEnemyTotal - defeatedEnemies).forEach((target, index) => {
-          makeTarget(target.color, useRoomSlots ? roomSlots[index % roomSlots.length] : slotById(target.slotId), {
+          makeTarget(enemyColors ? enemyColors[index] : target.color, useRoomSlots ? roomSlots[index % roomSlots.length] : slotById(target.slotId), {
             id: target.id,
             duration: target.duration,
             startAt: wave.startAt
@@ -3941,7 +3957,7 @@
 
       activeWaveId = `local_${Date.now()}`;
       const freeColors = Object.keys(colors).filter(color => color !== supplyCrate.color
-        && (!hostage.element || hostage.hit || color !== hostage.color));
+        && !hostage.colors.includes(color));
       const targetCount = Math.min(hall.config.waveTargets ?? config.waveTargets ?? 3, stageEnemyTotal - defeatedEnemies, freeColors.length);
       const availableSlots = [...spawnSlots].sort(() => Math.random() - 0.5).slice(0, targetCount);
       const waveColors = [];

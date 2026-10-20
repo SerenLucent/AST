@@ -14,6 +14,7 @@ class SanctuaryEncounter {
     this.config = config;
     this.active = true;
     this.cycle = 0;
+    this.round = 0;
     this.progress = 0;
     this.alive = new Set((config.actorSlots ?? []).map((_, index) => index));
     this.actors = [];
@@ -39,7 +40,7 @@ class SanctuaryEncounter {
     this.shots = [];
     this.phaseIndices = [...this.alive];
     this.nextShotAt = this.startedAt + (phase === 'defense' && this.isBalcony ? 600 : 0);
-    this.events.push({ phase, cycle: this.cycle, at: this.startedAt });
+    this.events.push({ phase, cycle: this.cycle, round: this.round, at: this.startedAt });
     if (phase === 'attack') this.fillAttackSlots(this.startedAt);
   }
 
@@ -176,11 +177,20 @@ class SanctuaryEncounter {
     if (this.isBalcony) {
       if (this.phase === 'attack') this.fillAttackSlots(gameRuntime.now());
       if (this.nextIndex < this.phaseIndices.length || this.resolved < this.phaseIndices.length) return;
+      if (!this.alive.size) {
+        if (this.round + 1 < (this.config.rounds ?? 1)) {
+          this.round++;
+          this.alive = new Set(this.config.actorSlots.map((_, index) => index));
+          this.actors.forEach(actor => { actor.style.opacity = '1'; });
+          this.begin('attack');
+        } else { this.cancel(); this.hooks.complete(); }
+        return;
+      }
       if (this.phase === 'attack' && this.alive.size) this.begin('defense');
       else if (this.phase === 'defense' && gameRuntime.now() >= this.nextShotAt) {
         this.cycle++;
         this.begin('attack');
-      } else if (!this.alive.size) { this.cancel(); this.hooks.complete(); }
+      }
     } else if (this.nextIndex === 6 && this.resolved === 6) {
       this.cancel(); this.hooks.complete();
     }

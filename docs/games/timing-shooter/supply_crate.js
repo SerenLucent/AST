@@ -28,6 +28,7 @@ class SupplyCrate {
   }
 
   nextTurn(targets, excluded = []) {
+    if (this.getHall().config.disableSupplyCrates) { this.clear(); return; }
     this.turn++;
     if (this.element && this.turn >= this.expiresTurn) this.clear();
     const used = new Set([...targets.map(target => target.color), ...excluded]);

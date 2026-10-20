@@ -72,8 +72,8 @@ window.TIMING_SHOOTER_STAGE4_PILLAR_ROOM = {
     { id: 'stairs_landing', worldX: .29, footY: .57, heightRatio: .24 },
     { id: 'stairs_door', worldX: .43, footY: .57, heightRatio: .24 }
   ]);
-  const balcony = room('맞은편 난간', 'backgrounds/stage4_sanctuary/wave_3_balcony_v1.png', 6, [], {
-    camera: .5, singleView: true, special: 'balcony', maxActiveTargets: 3,
+  const balcony = room('맞은편 난간', 'backgrounds/stage4_sanctuary/wave_3_balcony_v1.png', 12, [], {
+    camera: .5, singleView: true, special: 'balcony', maxActiveTargets: 3, rounds: 2,
     actorSlots: [.085, .251, .417, .583, .749, .915].map(x => ({ x, y: .34 }))
   });
   const trap = room('총구 함정 통로', 'backgrounds/stage4_sanctuary/wave_4_trap_v2.png', 6, [], window.TIMING_SHOOTER_STAGE4_TRAP_ROOM);

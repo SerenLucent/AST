@@ -1,0 +1,13 @@
+{
+  "tool": "built-in image_gen",
+  "assets": [
+    {
+      "file": "dealer_male_crouch_v2.png",
+      "prompt": "Use case: identity-preserve. Game character sprite edit. Reference is same male casino dealer hostage identity and costume: short dark brown side-parted hair, white rolled sleeve shirt, dark emerald green waistcoat black lapels gold buttons, black bow tie, dark slim trousers, black dress shoes. Redraw this SAME adult man into a low compact frightened crouch, knees tucked close, shoulders hunched, head bowed slightly but face/normal dark pupils visible, elbows drawn tightly IN toward ribs, one forearm shielding side of head and other hand close to chest. Hands naturally relaxed/cupped, NOT raised waving palms, NOT both hands open, NO arms stretched out. Read as a civilian taking cover from gunfire. Exactly2arms2legs, anatomically natural hands and joints. Fullbody head and shoes uncut, front three-quarter pose matching reference style, centered within square1024x1024 canvas, character fills about90% canvas height with small consistent margin, feet aligned near bottom. High-detail semi-realistic anime painted game cutout, match existing warm side lighting and clothing textures. Genuine transparent RGBA background, NO ground plane, NO shadow patch/background, no objects, weapons, text, watermark or UI. One character only."
+    },
+    {
+      "file": "dealer_female_crouch_v2.png",
+      "prompt": "Use case: identity-preserve. One transparent game sprite. Reference is SAME young adult female casino dealer hostage with dark brown hair in neat bun, white rolled sleeves shirt, emerald green waistcoat with black lapels/gold buttons, black bow tie, fitted dark trousers, black flat dress shoes. Redraw her into compact scared defensive crouch taking cover: knees close together, crouched low on bent legs, torso hunched, shoulders curled inward, head lowered slightly but face and dark pupils visible. Elbows held closely against body, one forearm raised protectively beside cheek, other hand gripping that forearm near chest; fingers naturally bent not open waving. NO outstretched arms, NO high raised open palms. Slim natural adult proportions, exactly2arms2legs, natural joints, clear hands not tangled. Fully show head to both shoes, centered square1024x1024, about90% canvas height with small consistent margin/feet near bottom, front three-quarter angle like reference. Same polished semi-realistic anime painterly detail and warm side lighting as existing sprite. Genuine transparent RGBA background, no ground plane/shadow patch/objects, no weapons, blood, text, watermark or UI. Only the woman."
+    }
+  ]
+}

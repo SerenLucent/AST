@@ -13,6 +13,7 @@ window.TIMING_SHOOTER_STAGE3 = {
   ],
   upperFloor: {
     name: '카지노 테이블 홀', camera: 0,
+    uniqueHostageColors: true, disableSupplyCrates: true,
     background: 'backgrounds/stage3_casino/wave_2_tables_v1.png',
     entryMale: 'backgrounds/stage3_casino/hold_1_to_2_male_v2.png',
     entryCoop: 'backgrounds/stage3_casino/hold_1_to_2_coop_v1.png',
@@ -29,16 +30,16 @@ window.TIMING_SHOOTER_STAGE3 = {
     ],
     hostages: [
       {
-        crouch: 'sprites/hostages/stage3/dealer_male_crouch_v1.png',
+        crouch: 'sprites/hostages/stage3/dealer_male_crouch_v2.png',
         fallen: 'sprites/hostages/stage3/dealer_male_fallen_v1.png',
-        slot: { worldX: .10, footY: .78, heightRatio: .19 },
-        slot2p: { worldX: .90, footY: .78, heightRatio: .19 }, hitHoldMs: 4000
+        slot: { worldX: .10, footY: .78, heightRatio: .228 },
+        slot2p: { worldX: .90, footY: .78, heightRatio: .228 }, hitHoldMs: 4000, uniqueColor: true
       },
       {
-        crouch: 'sprites/hostages/stage3/dealer_female_crouch_v1.png',
+        crouch: 'sprites/hostages/stage3/dealer_female_crouch_v2.png',
         fallen: 'sprites/hostages/stage3/dealer_female_fallen_v1.png',
-        slot: { worldX: .39, footY: .68, heightRatio: .18 },
-        slot2p: { worldX: .61, footY: .68, heightRatio: .18 }, hitHoldMs: 4000
+        slot: { worldX: .39, footY: .68, heightRatio: .216 },
+        slot2p: { worldX: .61, footY: .68, heightRatio: .216 }, hitHoldMs: 4000, uniqueColor: true
       }
     ]
   },

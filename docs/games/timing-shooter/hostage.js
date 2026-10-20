@@ -118,6 +118,8 @@ class HostageGroup {
   get element() { return this.primary?.element ?? null; }
   get hit() { return !this.members.some(member => member.element && !member.hit); }
   get color() { return this.primary?.color ?? null; }
+  get colors() { return [...new Set(this.members.filter(member => member.element && !member.hit)
+    .map(member => member.color).filter(Boolean))]; }
   set color(value) { this.members.forEach(member => { member.color = value; }); }
   get body() { return this.primary?.body; }
   get reticle() { return this.primary?.reticle; }
@@ -142,6 +144,15 @@ class HostageGroup {
   refreshColor(targets, change = true, excluded = []) {
     const primary = this.primary;
     if (!primary || primary.hit) return;
+    if (this.members.some(member => member.config?.uniqueColor)) {
+      const reserved = [...excluded];
+      for (const member of this.members) {
+        if (!member.element || member.hit) continue;
+        member.refreshColor(targets, change, reserved);
+        if (member.color) reserved.push(member.color);
+      }
+      return;
+    }
     primary.refreshColor(targets, change, excluded);
     // Staff share one reserved color, leaving room for enemy and supply colors.
     for (const member of this.members) {
