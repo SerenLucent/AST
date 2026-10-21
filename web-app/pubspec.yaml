@@ -1,0 +1,35 @@
+name: ast_team_web
+description: Independent iPhone and browser edition of AST.
+publish_to: none
+version: 0.1.0+1
+environment:
+  sdk: ^3.7.2
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.5.3
+  http: ^1.3.0
+  crypto: ^3.0.6
+  package_info_plus: ^8.3.1
+  file_picker: ^10.3.7
+  audioplayers: 6.6.0
+  web: ^1.1.1
+  nwc_player_lab:
+    path: packages/nwc_player_lab
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/app_icon.png
+    - assets/images/ast_coin_v1.png
+    - assets/sounds/ast_coin_collect.wav
+  fonts:
+    - family: ScoreText
+      fonts:
+        - asset: packages/nwc_player_lab/assets/fonts/NotoSansKR.ttf
+    - family: ScoreMusic
+      fonts:
+        - asset: packages/nwc_player_lab/assets/fonts/Bravura.otf

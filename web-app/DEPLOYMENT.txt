@@ -1,0 +1,58 @@
+AST Web — independent iPhone/browser edition
+
+Public URL: https://serenlucent.github.io/AST/ast-web/
+Source: web-app/
+Static output on GitHub: docs/ast-web/
+The Android application, APK update JSON, original Apps Script and existing
+games are not replaced. Existing team data and AST balances are shared.
+
+Server
+server/Code.gs belongs in a NEW Apps Script project, not the Android project.
+Deploy as owner; allow anyone to reach the endpoint. Actions require an opaque
+web session token. Private keys and passwords remain in Script Properties.
+LEGACY_API_URL / LEGACY_APP_KEY connect to the existing AST gateway.
+WEB_PASSWORD supports the existing shared team password (minimum 11 chars).
+WEB_ADMIN_PASSWORD is separate (minimum 12 chars).
+WEB_ADMIN_IDS is comma-separated; default admin_naokist.
+Optional GAME_API_URL / GAME_APP_KEY enable timing-shooter score submission.
+The endpoint, which is not a secret, is in web/web-config.json.
+
+Shared-password limitation
+This preserves a trusted-team shared-password model, not individual identity
+verification. Someone knowing that password can use another allowed member ID.
+If the same password remains in public legacy JSON, outsiders can discover it.
+No website login can make existing public GitHub data private.
+
+Login persistence
+Session token is stored locally, validated by the gateway, with 30-day idle
+expiry renewed when used. Logout/password change/member removal invalidates it.
+Different browsers and home-screen installations may need separate login.
+Do not place server keys, passwords or GitHub tokens in web assets or defines.
+
+Build (inside web-app)
+flutter pub get
+powershell -File tool/prepare-assets.ps1 -GameSourceRoot <latest-clean-AST-checkout>
+flutter test test/player_test.dart --no-pub
+node --test test/server.test.cjs
+flutter build web --release --base-href /AST/ast-web/ --pwa-strategy=none --no-wasm-dry-run --no-pub
+node tool/verify-build.cjs
+
+Publish build/web/* into docs/ast-web/ using a clean checkout. Keep all existing
+docs/games content and remote-data JSON files unchanged. The Pages workflow
+must include docs/ast-web/** as a push trigger; it uploads the entire docs tree.
+Never copy .dart_tool, build intermediates, verification or local configs into
+the source snapshot. Keep the separate web folder's .gitignore.
+
+Verification
+Desktop Chromium: file chooser opens NWCTXT and compressed NWC, score display,
+playback progress, stop, invalid-file recovery and return to AST home checked.
+Automated tests cover NWC decoding, 20 MB/extension guards, non-silent piano PCM,
+small-screen initial layout and server sessions/authorization (23 tests).
+Physical iPhone/Safari audio, Files/iCloud picking and home-screen session
+behavior still require a real-device check. No background-audio guarantee.
+Only NWC/NWCTXT, max 20 MB; older binary NWC may require NWCTXT conversion.
+
+iPhone
+Open the public URL in Safari, Share > Add to Home Screen. Open the AST icon
+and sign in there. Tap NWC Player > Example score > Play for a quick audio test.
+Playback starts from a user tap. First load downloads the web runtime/fonts.

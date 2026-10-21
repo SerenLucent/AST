@@ -1,0 +1,9 @@
+.dart_tool/
+.flutter-plugins*
+build/
+verification/
+*.local.json
+*.log
+packages/**/.dart_tool/
+packages/**/build/
+packages/**/.flutter-plugins*

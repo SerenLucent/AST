@@ -1,0 +1,4653 @@
+<!doctype html>
+<html lang="ko">
+<head><base href="https://serenlucent.github.io/AST/games/timing-shooter/"><script>(() => {
+  'use strict';
+  const kind = location.pathname.includes('/ast-home/') ? 'ast-home' : 'timing-shooter';
+  const channel = 'ast-web-' + kind;
+  const target = location.origin;
+  if (parent === window) return;
+  const post = data => parent.postMessage(JSON.stringify({channel, ...data}), target);
+  if (kind === 'ast-home') {
+    window.AstHome = {postMessage(raw) {
+      const data = JSON.parse(raw);
+      post({id: data.id, payload: data.payload});
+    }};
+  } else {
+    window.AstGameScores = {postMessage(raw) {
+      const data = JSON.parse(raw);
+      if (data.type === 'exitGame') { post({exit: true}); return; }
+      post({id: data.runId || crypto.randomUUID(), payload: data});
+    }};
+  }
+  window.addEventListener('message', event => {
+    if (event.source !== parent || event.origin !== target || typeof event.data !== 'string') return;
+    let data; try {data = JSON.parse(event.data)} catch {return}
+    if (data.channel !== channel) return;
+    if (kind === 'ast-home') window.astHomeResponse?.(data);
+    else if (data.error) {
+      // Do not claim the score was saved when the server rejected it.
+      let message = document.getElementById('ast-web-save-error');
+      if (!message) {message = document.createElement('p'); message.id='ast-web-save-error'; message.setAttribute('role','alert'); document.body.appendChild(message)}
+      message.textContent = '점수 저장 실패: ' + data.error;
+      message.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#fff3e0;color:#842d0c;padding:12px;font:14px sans-serif';
+    }
+  });
+})();
+</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Timing Shooter Prototype</title>
+  <style>
+    :root {
+      --target-size: 36px;
+      --perfect-size: 52px;
+      --circle-size: 120px;
+      --judge-size: 61px;
+      --button-size: 43px;
+      --enemy-height: 245px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      justify-content: center;
+    }
+
+    #stage {
+      position: relative;
+      width: min(100vw, 430px);
+      height: 100dvh;
+      min-height: 620px;
+      overflow: hidden;
+      background: #000 url("backgrounds/mafia_mansion_empty_01.png") center center / cover no-repeat;
+      touch-action: manipulation;
+    }
+
+    #stage img { -webkit-touch-callout: none; -webkit-user-drag: none; }
+    #pad { touch-action: none; }
+
+    #stage:not(.game-running) #judgement,
+    #stage:not(.game-running) #hud,
+    #stage:not(.game-running) #netStatus,
+    #stage:not(.game-running) #itemGaugeHud,
+    #stage:not(.game-running) #itemTray,
+    #stage:not(.game-running) #inventory,
+    #stage:not(.game-running) #activeEffects,
+    #stage:not(.game-running) #enemyCounter,
+    #stage:not(.game-running) #pad {
+      display: none;
+    }
+
+    #stage.shake {
+      animation: stage-shake 260ms ease-in-out 3;
+    }
+
+    #stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.42) 72%),
+        rgba(0, 0, 0, 0.18);
+      pointer-events: none;
+    }
+
+    .front-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 90;
+      display: flex;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .front-screen.hidden {
+      display: none;
+    }
+
+    #screenFade {
+      position: absolute;
+      inset: 0;
+      z-index: 120;
+      opacity: 0;
+      background: #000;
+      pointer-events: none;
+      transition: opacity 500ms ease;
+    }
+
+    #screenFade.visible {
+      opacity: 1;
+    }
+
+    #loadingScreen {
+      position: absolute;
+      inset: 0;
+      z-index: 140;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      color: #ffdc45;
+      font-size: 21px;
+      font-weight: 700;
+      text-align: center;
+      padding: 24px;
+    }
+
+    #loadingScreen[hidden] { display: none; }
+
+    #floorLoading {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      background: #000;
+    }
+    #floorLoading[hidden] { display: none; }
+    #floorLoading img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 30% center;
+    }
+    #floorLoading img.baked-caption {
+      position: absolute;
+      top: -10%;
+      height: 110%;
+    }
+    #floorLoadingCaption {
+      position: absolute;
+      top: 6%;
+      width: 100%;
+      padding: 0 12px;
+      color: #ffe28b;
+      font-size: 24px;
+      font-weight: 900;
+      text-align: center;
+      text-shadow: 0 2px 4px #000;
+    }
+
+    #titleScreen {
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: column;
+      background: #000 url("sprites/Main/main_title.png") center center / cover no-repeat;
+    }
+
+    #modeScreen::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.12) 45%, rgba(0, 0, 0, 0.62)),
+        radial-gradient(circle at 50% 26%, rgba(255, 206, 105, 0.1), rgba(0, 0, 0, 0.2) 62%);
+      pointer-events: none;
+    }
+
+    .tap-to-start {
+      position: absolute;
+      left: 50%;
+      bottom: 24%;
+      z-index: 1;
+      transform: translateX(-50%);
+      color: #f7e6b8;
+      font-size: clamp(19px, 5.8vw, 28px);
+      font-weight: 900;
+      letter-spacing: 0;
+      text-shadow: 0 3px 0 rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 206, 112, 0.58);
+      white-space: nowrap;
+      animation: tap-blink 1s steps(2, end) infinite;
+      pointer-events: none;
+    }
+
+    #modeScreen {
+      flex-direction: column;
+      justify-content: center;
+      gap: 11px;
+      padding: max(12px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom));
+      background: #05070a url("sprites/Main/background.png") center center / cover no-repeat;
+    }
+
+    #modeScreen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(2px);
+    }
+
+    .mode-title {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      padding-top: 0;
+      color: #f4dfaa;
+      font-size: clamp(22px, 6.2vw, 32px);
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 0;
+      text-shadow: 0 4px 0 rgba(0, 0, 0, 0.8), 0 0 18px rgba(255, 195, 90, 0.44);
+    }
+
+    .mode-card-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      gap: 9px;
+      width: 100%;
+      padding: 2px 12px 0;
+      overflow: visible;
+    }
+
+    .mode-card {
+      flex: 0 1 calc((100% - 64px) / 2);
+      max-width: 160px;
+      aspect-ratio: 1086 / 1448;
+      padding: 0;
+      border: 2px solid rgba(255, 220, 150, 0.46);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.42);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 0 18px rgba(255, 185, 88, 0.14);
+      transform: translateY(0);
+      transition: transform 120ms ease, filter 120ms ease, border-color 120ms ease;
+    }
+
+    .mode-card img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+
+    .mode-card:active {
+      transform: translateY(5px) scale(0.985);
+      filter: brightness(1.12);
+      border-color: rgba(255, 240, 190, 0.95);
+    }
+
+    .mode-card.selected {
+      border-color: #ffd84a;
+      filter: brightness(1.14) saturate(1.08);
+      box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.5),
+        0 0 0 2px rgba(255, 216, 74, 0.35),
+        0 0 24px rgba(255, 216, 74, 0.48);
+    }
+
+    .mode-description {
+      position: relative;
+      z-index: 1;
+      width: calc(100% - 28px);
+      height: 184px;
+      margin: 2px auto 0;
+      padding: 16px 16px 14px;
+      border: 1px solid rgba(235, 196, 118, 0.5);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(10, 14, 20, 0.86), rgba(5, 7, 12, 0.78));
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      color: rgba(246, 226, 184, 0.92);
+      font-size: clamp(13px, 3.8vw, 16px);
+      font-weight: 800;
+      line-height: 1.45;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .mode-description strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #ffd874;
+      font-size: clamp(17px, 5vw, 22px);
+      letter-spacing: 0;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.8);
+    }
+
+    #startGameButton {
+      position: relative;
+      z-index: 1;
+      width: min(72%, 280px);
+      min-height: 54px;
+      margin: 2px auto 0;
+      border: 1px solid rgba(255, 219, 124, 0.82);
+      border-radius: 8px;
+      color: #1a1208;
+      background: linear-gradient(180deg, #ffe78e, #d9962e);
+      box-shadow: 0 8px 0 rgba(70, 37, 10, 0.72), 0 0 22px rgba(255, 205, 88, 0.35);
+      font-size: clamp(17px, 5vw, 22px);
+      font-weight: 900;
+      letter-spacing: 0;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    #startGameButton:active {
+      transform: translateY(7px);
+      box-shadow: 0 1px 0 rgba(70, 37, 10, 0.72), 0 0 18px rgba(255, 205, 88, 0.42);
+    }
+
+    .target-set {
+      position: absolute;
+      z-index: 2;
+      width: var(--circle-size);
+      height: var(--circle-size);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .target-set img {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      display: block;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .enemy-img {
+      z-index: 1;
+      top: 70%;
+      width: auto;
+      height: var(--enemy-height);
+      filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.6));
+      transform: translate(-50%, -50%);
+    }
+
+    .enemy-img.reaction {
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+
+    .enemy-knockdown {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 1;
+      transform: translate(-50%, -50%);
+      background-size: 400% 200%;
+      background-repeat: no-repeat;
+      pointer-events: none;
+      filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.6));
+    }
+
+    .target-img {
+      z-index: 2;
+      width: var(--target-size);
+      height: var(--target-size);
+    }
+
+    .perfect-line-img {
+      z-index: 3;
+      width: var(--perfect-size);
+      height: var(--perfect-size);
+    }
+
+    .perfect-line-img.sniper-assisted {
+      transform: translate(-50%, -50%) scale(1.55);
+      filter: drop-shadow(0 0 10px rgba(255, 235, 150, 0.85));
+    }
+
+    .circle-img {
+      z-index: 4;
+      width: var(--circle-size);
+      height: var(--circle-size);
+      will-change: transform;
+    }
+
+    .judge-img {
+      z-index: 5;
+      width: var(--judge-size);
+      height: var(--judge-size);
+      opacity: 0;
+      transition: opacity 55ms linear;
+    }
+
+    .judge-img.visible {
+      opacity: 1;
+    }
+
+    .judge-img.sniper-assisted {
+      transform: translate(-50%, -50%) scale(1.45);
+      filter: drop-shadow(0 0 12px rgba(255, 235, 150, 0.75));
+    }
+
+    #judgement {
+      position: absolute;
+      left: 50%;
+      top: 18%;
+      z-index: 10;
+      transform: translate(-50%, -50%);
+      font-size: clamp(42px, 12vw, 104px);
+      font-weight: 900;
+      letter-spacing: 0;
+      text-shadow: 0 4px 0 rgba(0, 0, 0, 0.75), 0 0 24px currentColor;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #judgement.show {
+      animation: judgement-pop 540ms ease-out forwards;
+    }
+
+    .judgement-popup {
+      position: absolute;
+      z-index: 10;
+      transform: translate(-50%, -50%);
+      font-size: clamp(22px, 5vw, 42px);
+      font-weight: 900;
+      letter-spacing: 0;
+      text-shadow: 0 4px 0 rgba(0, 0, 0, 0.75), 0 0 24px currentColor;
+      pointer-events: none;
+      white-space: nowrap;
+      animation: judgement-pop 540ms ease-out forwards;
+    }
+
+    .combo-popup {
+      position: absolute;
+      left: 50%;
+      top: max(260px, 28%);
+      z-index: 12;
+      transform: translate(-50%, -50%);
+      color: #ffd85a;
+      font-size: clamp(24px, 7vw, 54px);
+      font-weight: 900;
+      letter-spacing: 0;
+      text-shadow:
+        0 4px 0 rgba(0, 0, 0, 0.85),
+        0 0 18px rgba(255, 200, 60, 0.9),
+        0 0 32px rgba(255, 110, 30, 0.55);
+      pointer-events: none;
+      white-space: nowrap;
+      animation: combo-pop 720ms ease-out forwards;
+    }
+
+    .damage-popup {
+      position: absolute;
+      z-index: 11;
+      transform: translate(-50%, -50%);
+      color: #ff2f2f;
+      font-size: clamp(24px, 6vw, 48px);
+      font-weight: 800;
+      letter-spacing: 0;
+      -webkit-text-stroke: 4.8px #fff;
+      paint-order: stroke fill;
+      text-shadow:
+        -3px -3px 0 #fff,
+        3px -3px 0 #fff,
+        -3px 3px 0 #fff,
+        3px 3px 0 #fff,
+        -5px 0 0 #fff,
+        5px 0 0 #fff,
+        0 -5px 0 #fff,
+        0 5px 0 #fff,
+        0 4px 0 rgba(0, 0, 0, 0.72),
+        0 0 16px rgba(255, 40, 40, 0.35);
+      pointer-events: none;
+      white-space: nowrap;
+      animation: damage-rise 430ms ease-out forwards;
+    }
+
+    .item-name-popup {
+      position: absolute;
+      left: 50%;
+      top: max(300px, 33%);
+      z-index: 13;
+      transform: translate(-50%, -50%);
+      font-size: clamp(18px, 4.9vw, 38px);
+      font-weight: 900;
+      letter-spacing: 0;
+      -webkit-text-stroke: 3.4px #fff;
+      paint-order: stroke fill;
+      pointer-events: none;
+      white-space: nowrap;
+      text-shadow:
+        -3px -3px 0 #fff,
+        3px -3px 0 #fff,
+        -3px 3px 0 #fff,
+        3px 3px 0 #fff,
+        -4px 0 0 #fff,
+        4px 0 0 #fff,
+        0 -4px 0 #fff,
+        0 4px 0 #fff,
+        0 4px 0 rgba(0, 0, 0, 0.75),
+        0 0 18px currentColor;
+      animation: item-name-pop 1050ms ease-out forwards;
+    }
+
+    .item-name-popup.weapon {
+      color: #ff3030;
+    }
+
+    .item-name-popup.support {
+      color: #35e868;
+    }
+
+    .bullet-effect {
+      position: absolute;
+      z-index: 9;
+      width: 160px;
+      height: auto;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      mix-blend-mode: screen;
+      filter: saturate(1.2) brightness(1.08);
+    }
+
+    .muzzle-flash {
+      position: absolute;
+      z-index: 8;
+      width: 86px;
+      height: auto;
+      transform: translate(-50%, -50%) scaleX(-1);
+      pointer-events: none;
+      mix-blend-mode: screen;
+      filter: saturate(1.35) brightness(1.18);
+    }
+
+    .enemy-hp {
+      position: absolute;
+      left: 50%;
+      z-index: 6;
+      width: 142px;
+      height: 17px;
+      transform: translate(-50%, -50%) scale(0.65);
+      pointer-events: none;
+    }
+
+    .enemy-hp-fill {
+      position: absolute;
+      left: calc(50% - 58.5px);
+      top: calc(50% - 5px);
+      z-index: 1;
+      width: 117px;
+      height: 10px;
+      border-radius: 999px;
+      background:
+        linear-gradient(180deg, rgba(255, 160, 150, 0.95), rgba(178, 0, 18, 0.95) 48%, rgba(92, 0, 8, 0.98)),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.14) 0 6px, rgba(0, 0, 0, 0.08) 6px 12px);
+      box-shadow: inset 0 1px 0 rgba(255, 230, 220, 0.42), 0 0 8px rgba(255, 35, 35, 0.28);
+      transition: width 360ms ease-out;
+    }
+
+    .enemy-hp-frame {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+    }
+
+    .machine-push-prompt {
+      position: absolute;
+      left: 50%;
+      z-index: 8;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.7)) drop-shadow(0 0 10px rgba(255, 238, 120, 0.55));
+    }
+
+    .machine-push-prompt.visible {
+      display: flex;
+    }
+
+    .machine-push-prompt img {
+      position: static;
+      width: 24px;
+      height: 24px;
+      transform: none;
+      animation: machine-button-mash 260ms ease-in-out infinite;
+    }
+
+    .machine-push-prompt span {
+      color: #ffe66d;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0;
+      -webkit-text-stroke: 2px #000;
+      paint-order: stroke fill;
+      text-shadow: 0 0 10px rgba(255, 210, 60, 0.72);
+      animation: machine-push-blink 520ms steps(2, end) infinite;
+    }
+
+    .hit-blood-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 45;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      animation: hit-blood-flash 760ms ease-out forwards;
+    }
+
+    #hud {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 30;
+      width: min(310px, calc(100% - 100px));
+      padding: 10px 12px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(11, 16, 22, 0.86), rgba(7, 10, 14, 0.72));
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34);
+      pointer-events: none;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .hud-label {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    #scoreValue {
+      color: #ffffff;
+      font-size: 38px;
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: 0;
+      text-shadow: 0 0 14px rgba(255, 220, 130, 0.28), 0 3px 0 rgba(0, 0, 0, 0.52);
+    }
+
+    .hp-row,
+    .effect-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .hp-row {
+      margin-bottom: 8px;
+    }
+
+    .hp-track {
+      position: relative;
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.13);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 2px 4px rgba(0, 0, 0, 0.48);
+    }
+
+    #hpFill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #db3241 0%, #ff5261 100%);
+      box-shadow: 0 0 14px rgba(255, 82, 97, 0.28);
+      transition: width 180ms ease-out;
+    }
+
+    #hpText {
+      min-width: 58px;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 11px;
+      font-weight: 900;
+      text-align: right;
+    }
+
+    .effect-row {
+      position: absolute;
+      left: 0;
+      right: 150px;
+      bottom: 48px;
+      z-index: 7;
+      display: none;
+      grid-template-columns: 38px 1fr 36px;
+      gap: 7px;
+      align-items: center;
+      height: 38px;
+      pointer-events: none;
+    }
+
+    .effect-row[data-slot="2"] {
+      bottom: 86px;
+    }
+
+    .effect-row[data-slot="3"] {
+      bottom: 124px;
+    }
+
+    .effect-row.visible {
+      display: grid;
+    }
+
+    .effect-track {
+      position: relative;
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.13);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+    }
+
+    .effect-gauge-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffd45b 0%, #ff7445 100%);
+      transition: width 120ms linear;
+    }
+
+    .effect-gauge-text {
+      min-width: 36px;
+      color: rgba(255, 238, 184, 0.92);
+      font-size: 10px;
+      font-weight: 900;
+      text-align: right;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.85), 0 0 8px rgba(255, 195, 82, 0.38);
+    }
+
+    #netStatus {
+      display: none;
+      position: absolute;
+      left: 10px;
+      top: 94px;
+      z-index: 30;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.45);
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+      pointer-events: none;
+    }
+
+    #exitGame {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 31;
+      width: 56px;
+      min-height: 44px;
+      border: 1px solid #ffffff60;
+      border-radius: 6px;
+      color: #fff;
+      background: #12171ee6;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #audioControls { position: absolute; left: 12px; bottom: 20px; z-index: 96; display: flex; gap: 6px; }
+    #audioControls[hidden] { display: none; }
+    #audioControls button { width: 52px; height: 36px; border: 1px solid #ffffff70; border-radius: 4px; background: #12171ee6; color: #ffd629; font-size: 12px; font-weight: 700; cursor: pointer; }
+    #audioControls button[aria-pressed="false"] { color: #b6bbc2; text-decoration: line-through; }
+    #stage.game-running #audioControls, #stage.duel-running #audioControls { left: auto; right: 80px; top: 12px; bottom: auto; }
+    #stage.game-running #audioControls button, #stage.duel-running #audioControls button { width: 44px; height: 30px; }
+
+    .player-label { color: #fff; font-size: 14px; font-weight: 900; margin-bottom: 3px; }
+    #enemyCounter {
+      position: absolute; top: 65px; right: 12px; z-index: 30;
+      display: flex; align-items: center; gap: 4px; pointer-events: none;
+    }
+    .enemy-face { position: relative; width: 30px; height: 36px; overflow: hidden; }
+    .enemy-face img { position: absolute; width: 96px; max-width: none; left: -24px; top: -2px; }
+    #enemiesRemaining { color: #fff; font-size: 30px; font-weight: 900; text-shadow: 0 2px 3px #000; }
+    #activeEffects {
+      position: absolute; left: 12px; top: 134px; width: min(310px, calc(100% - 100px));
+      z-index: 30; pointer-events: none;
+    }
+    #activeEffects .effect-row {
+      position: static; height: 30px; margin-bottom: 4px;
+      grid-template-columns: 30px minmax(0, 1fr) 36px;
+    }
+    #activeEffects .active-item-icon { width: 30px; height: 26px; }
+    #inventory {
+      position: absolute; left: 14px; bottom: 92px; z-index: 20;
+      width: min(252px, calc(100% - 170px)); display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;
+    }
+    .inventory-slot {
+      position: relative; height: 62px; min-width: 0; padding: 4px;
+      border: 1px solid #ffe0a0; border-radius: 8px;
+      background: linear-gradient(#ffdb9d, #d98e48); cursor: pointer;
+    }
+    .inventory-slot:disabled { background: #131a22b8; border-color: #ffffff50; cursor: default; }
+    .inventory-slot img { width: 100%; height: 100%; object-fit: contain; }
+    .inventory-slot span { position: absolute; right: 3px; bottom: 2px; font-size: 10px; font-weight: 900; color: #23150b; }
+    .inventory-slot:active:not(:disabled) { transform: translateY(3px); }
+    #stage:not(.game-running) #exitGame,
+    #exitGame[hidden], #exitConfirm[hidden] { display: none; }
+    #exitConfirm {
+      position: absolute;
+      inset: 0;
+      z-index: 70;
+      display: grid;
+      place-items: center;
+      background: #000b;
+    }
+    .exit-dialog {
+      width: min(280px, calc(100% - 48px));
+      padding: 28px 20px 20px;
+      border: 1px solid #ffffff50;
+      border-radius: 8px;
+      background: #191d23;
+      color: #fff;
+      text-align: center;
+    }
+    .exit-dialog h2 { margin: 0 0 24px; font-size: 22px; }
+    .exit-actions { display: flex; gap: 12px; }
+    .exit-actions button { flex: 1; min-height: 44px; border: 1px solid #ffffff60; border-radius: 6px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    #exitYes { background: #b32b34; color: #fff; }
+    #exitNo { background: #e6e9ef; color: #20242c; }
+
+    #stageClear,
+    #gameOver {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      background: #0008;
+      color: #ffd629;
+      font-size: 40px;
+      font-weight: 900;
+      text-align: center;
+      text-shadow: 0 3px 6px #000;
+    }
+
+    #stageClear[hidden], #gameOver[hidden] { display: none; }
+    .clear-results {
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      width: min(330px, calc(100% - 48px));
+      transform: translateX(-50%);
+    }
+    .clear-title {
+      margin: 0 0 32px;
+      font-size: 40px;
+      line-height: 1.15;
+      animation: clear-stamp 440ms ease-out both;
+    }
+    .clear-score-row {
+      margin-top: 22px;
+      visibility: hidden;
+      color: #fff;
+    }
+    .clear-score-row.revealed {
+      visibility: visible;
+      animation: clear-stamp 360ms ease-out both;
+    }
+    .clear-score-label { display: block; font-size: 15px; line-height: 1.5; }
+    .clear-score-value { display: block; font-size: 32px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+    #clearShootRow { color: #ffe18b; }
+    #clearHpRow { color: #7dffa6; }
+    #clearTotalRow { padding-top: 20px; border-top: 1px solid #ffffff60; }
+    .clear-score-row.summing .clear-score-value { animation: clear-score-pulse 400ms ease-out; }
+    @keyframes clear-stamp {
+      0% { opacity: 0; transform: scale(1.35); }
+      65% { opacity: 1; transform: scale(0.96); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes clear-score-pulse {
+      50% { transform: scale(1.12); color: #fff; }
+    }
+    #gameOver {
+      color: #ff3434;
+      opacity: 0;
+      animation: game-over-reveal 450ms ease-out 1100ms forwards;
+    }
+    @keyframes game-over-reveal {
+      to { opacity: 1; }
+    }
+    .return-to-title {
+      width: 100%;
+      min-height: 44px;
+      padding: 8px;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      font: 700 16px Arial, sans-serif;
+      cursor: pointer;
+      animation: tap-blink 1s steps(2, end) infinite;
+    }
+    .return-to-title[hidden] { display: none; }
+    #returnToTitle { position: absolute; top: calc(50% + 52px); left: 0; }
+    #clearReturnToTitle { margin-top: 28px; }
+    #stage.game-over #pad,
+    #stage.game-over #itemGaugeHud,
+    #stage.game-over #itemTray {
+      opacity: 0;
+      transition: opacity 300ms ease-out;
+    }
+
+    @keyframes damage-rise {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.82);
+      }
+      16% {
+        opacity: 1;
+        transform: translate(-50%, -58%) scale(1.08);
+      }
+      42% {
+        opacity: 1;
+        transform: translate(-50%, -112%) scale(1);
+      }
+      82% {
+        opacity: 1;
+        transform: translate(-50%, -112%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -112%) scale(0.98);
+      }
+    }
+
+    @keyframes judgement-pop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.78);
+      }
+      16% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.08);
+      }
+      70% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -58%) scale(0.96);
+      }
+    }
+
+    @keyframes combo-pop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -34%) scale(0.76);
+      }
+      20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.16);
+      }
+      70% {
+        opacity: 1;
+        transform: translate(-50%, -54%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -72%) scale(1.03);
+      }
+    }
+
+    @keyframes item-name-pop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -34%) scale(0.78);
+      }
+      18% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.12);
+      }
+      72% {
+        opacity: 1;
+        transform: translate(-50%, -52%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -70%) scale(0.98);
+      }
+    }
+
+    @keyframes machine-button-mash {
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+      }
+      48% {
+        transform: translateY(4px) scale(0.92);
+      }
+    }
+
+    @keyframes machine-push-blink {
+      0%,
+      49% {
+        opacity: 1;
+      }
+      50%,
+      100% {
+        opacity: 0.42;
+      }
+    }
+
+    @keyframes stage-shake {
+      0% {
+        transform: translate(0, 0);
+      }
+      20% {
+        transform: translate(-7px, 5px);
+      }
+      40% {
+        transform: translate(6px, -4px);
+      }
+      60% {
+        transform: translate(-5px, -3px);
+      }
+      80% {
+        transform: translate(4px, 3px);
+      }
+      100% {
+        transform: translate(0, 0);
+      }
+    }
+
+    @keyframes hit-blood-flash {
+      0% {
+        opacity: 0;
+      }
+      14% {
+        opacity: 0.52;
+      }
+      48% {
+        opacity: 0.32;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    #pad {
+      position: absolute;
+      right: 12px;
+      bottom: 92px;
+      z-index: 20;
+      width: 132px;
+      height: 132px;
+    }
+
+    .pad-button {
+      position: absolute;
+      width: var(--button-size);
+      height: var(--button-size);
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      filter: drop-shadow(0 7px 0 rgba(0, 0, 0, 0.55)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.18));
+      transform: translateY(0);
+    }
+
+    .pad-button[data-color="b"] {
+      left: 44px;
+      top: 0;
+    }
+
+    .pad-button[data-color="g"] {
+      left: 0;
+      top: 44px;
+    }
+
+    .pad-button[data-color="y"] {
+      left: 44px;
+      bottom: 0;
+    }
+
+    .pad-button[data-color="r"] {
+      right: 0;
+      top: 44px;
+    }
+
+    .pad-button:active,
+    .pad-button.pressed {
+      transform: translateY(7px);
+      filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.7)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.38));
+    }
+
+    .pad-button img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #itemTray {
+      position: absolute;
+      left: 14px;
+      bottom: 170px;
+      z-index: 20;
+      width: min(166px, calc(100% - 170px));
+      height: 172px;
+      pointer-events: none;
+    }
+
+    #itemTray.raised-1 {
+      bottom: 122px;
+    }
+
+    #itemTray.raised-2 {
+      bottom: 164px;
+    }
+
+    #itemTray.raised-3 {
+      bottom: 202px;
+    }
+
+    .item-choice {
+      position: absolute;
+      width: calc(50% - 4px);
+      height: 52px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(38, 45, 55, 0.88), rgba(13, 17, 23, 0.88));
+      color: rgba(255, 255, 255, 0.52);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0;
+      box-shadow: 0 7px 0 rgba(0, 0, 0, 0.48), 0 0 18px rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    .item-choice:active {
+      transform: translateY(7px);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.68), 0 0 24px rgba(255, 66, 48, 0.38);
+    }
+
+    .item-choice {
+      display: none;
+      color: #24170e;
+      border-color: rgba(255, 222, 165, 0.86);
+      background: linear-gradient(180deg, rgba(255, 219, 157, 0.96), rgba(217, 142, 72, 0.96));
+      box-shadow: 0 7px 0 rgba(82, 41, 15, 0.58), 0 0 18px rgba(255, 180, 80, 0.24);
+    }
+
+    .item-choice img {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      max-width: calc(100% - 6px);
+      max-height: 46px;
+      transform: translate(-50%, -50%);
+      filter: brightness(1.14) saturate(1.12) contrast(1.06) drop-shadow(0 2px 2px rgba(80, 35, 10, 0.38));
+      pointer-events: none;
+    }
+
+    .active-item-icon {
+      display: none;
+      width: 38px;
+      height: 32px;
+      border: 1px solid rgba(255, 222, 165, 0.86);
+      border-radius: 7px;
+      background: linear-gradient(180deg, rgba(255, 219, 157, 0.96), rgba(217, 142, 72, 0.96));
+      box-shadow: 0 4px 0 rgba(82, 41, 15, 0.58), 0 0 12px rgba(255, 180, 80, 0.24);
+      pointer-events: none;
+    }
+
+    .active-item-icon.visible {
+      display: block;
+    }
+
+    .active-item-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 3px;
+      filter: brightness(1.32) saturate(1.18) contrast(1.06);
+    }
+
+    :is(.item-choice, .inventory-slot, .active-item-icon)[data-item-id="magnum"] { --weapon-tag: #ef3038; }
+    :is(.item-choice, .inventory-slot, .active-item-icon)[data-item-id="shotgun"] { --weapon-tag: #fff12c; }
+    :is(.item-choice, .inventory-slot, .active-item-icon)[data-item-id="machine_gun"] { --weapon-tag: #2479ff; }
+    :is(.item-choice, .inventory-slot, .active-item-icon)[data-item-id="sniper"] { --weapon-tag: #20c94f; }
+    :is(.item-choice, .inventory-slot, .active-item-icon):is([data-item-id="magnum"], [data-item-id="shotgun"], [data-item-id="machine_gun"], [data-item-id="sniper"])::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 20px;
+      height: 20px;
+      border-top-left-radius: 6px;
+      background: var(--weapon-tag);
+      clip-path: polygon(0 0, 100% 0, 0 100%);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .active-item-icon { position: relative; }
+    .active-item-icon[data-item-id]::after { width: 10px; height: 10px; border-top-left-radius: 5px; }
+
+    .item-choice.visible {
+      display: block;
+    }
+
+    .item-choice[data-slot="1"] {
+      left: 0;
+      top: 0;
+    }
+
+    .item-choice[data-slot="2"] {
+      right: 0;
+      top: 0;
+    }
+
+    .item-choice[data-slot="3"] {
+      left: 0;
+      top: 60px;
+    }
+
+    .item-choice[data-slot="4"] {
+      right: 0;
+      top: 60px;
+    }
+
+    .item-choice[data-slot="5"] {
+      left: 0;
+      bottom: 0;
+    }
+
+    .item-choice[data-slot="6"] {
+      right: 0;
+      bottom: 0;
+    }
+
+    #itemGaugeHud {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 8px;
+      z-index: 24;
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 8px;
+      align-items: end;
+      height: 86px;
+      pointer-events: none;
+    }
+
+    .item-level-label {
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      align-self: end;
+      margin-bottom: 7px;
+      color: #ffeaa2;
+      font-weight: 900;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.72), 0 0 8px rgba(255, 187, 55, 0.35);
+    }
+
+    .item-level-label span {
+      font-size: 9px;
+      letter-spacing: 0;
+    }
+
+    #itemGaugeLevel {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .item-gauge-wrap {
+      position: relative;
+      height: 48px;
+      grid-column: 2;
+      grid-row: 1;
+      align-self: end;
+    }
+
+    .item-gauge-track {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 16px;
+      height: 11px;
+      overflow: hidden;
+      border: 2px solid rgba(45, 29, 12, 0.86);
+      border-radius: 999px;
+      background: rgba(12, 13, 15, 0.78);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+        inset 0 2px 4px rgba(0, 0, 0, 0.62),
+        0 2px 0 rgba(0, 0, 0, 0.7);
+    }
+
+    .gauge-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0%;
+      height: 100%;
+      z-index: 1;
+      transition: width 170ms ease-out, filter 170ms ease-out;
+    }
+
+    .gauge-fill.no-transition {
+      transition: none;
+    }
+
+    #itemGaugeFill1 {
+      background: linear-gradient(90deg, #40d8ec 0%, #45d16f 46%, #ffd45b 100%);
+      box-shadow: 0 0 14px rgba(64, 216, 236, 0.32);
+    }
+
+    #itemGaugeFill2 {
+      background: linear-gradient(90deg, #3aa5ff 0%, #9f75ff 52%, #ff58c8 100%);
+      box-shadow: 0 0 16px rgba(159, 117, 255, 0.35);
+    }
+
+    #itemGaugeFill3 {
+      background: linear-gradient(90deg, #ff5b2e 0%, #ffcf2e 46%, #fff7b8 100%);
+      box-shadow: 0 0 18px rgba(255, 91, 46, 0.48);
+    }
+
+    #itemGaugeDrainFill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 3;
+      width: 0%;
+      height: 100%;
+      opacity: 0;
+      background:
+        linear-gradient(90deg,
+          #40d8ec 0%,
+          #45d16f 15%,
+          #ffd45b 33.333%,
+          #3aa5ff 33.334%,
+          #9f75ff 52%,
+          #ff58c8 66.666%,
+          #ff5b2e 66.667%,
+          #ffcf2e 82%,
+          #fff7b8 100%);
+      box-shadow: 0 0 18px rgba(255, 160, 70, 0.38);
+      pointer-events: none;
+    }
+
+    .gauge-boundary {
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      z-index: 4;
+      width: 2px;
+      background: rgba(255, 240, 170, 0.72);
+      box-shadow: 0 0 6px rgba(255, 230, 110, 0.72), 0 0 0 1px rgba(0, 0, 0, 0.5);
+    }
+
+    .gauge-boundary[data-boundary="1"] {
+      left: 33.333%;
+    }
+
+    .gauge-boundary[data-boundary="2"] {
+      left: 66.666%;
+    }
+
+    #itemGaugePercent {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      min-width: 34px;
+      transform: translateX(-50%);
+      color: rgba(255, 246, 202, 0.96);
+      font-size: 10px;
+      font-weight: 900;
+      text-align: center;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.85), 0 0 8px rgba(255, 204, 82, 0.48);
+      white-space: nowrap;
+    }
+
+    .gauge-reward-button {
+      position: absolute;
+      top: -10px;
+      z-index: 6;
+      display: none;
+      width: 46px;
+      height: 22px;
+      padding: 0;
+      border: 1px solid rgba(255, 232, 129, 0.92);
+      border-radius: 6px;
+      background: linear-gradient(180deg, rgba(255, 225, 104, 0.98), rgba(212, 95, 32, 0.98));
+      color: #2a1207;
+      font-size: 8px;
+      font-weight: 900;
+      line-height: 0.9;
+      letter-spacing: 0;
+      box-shadow: 0 4px 0 rgba(71, 28, 8, 0.7), 0 0 14px rgba(255, 85, 43, 0.5);
+      transform: translateX(-50%);
+      cursor: pointer;
+      pointer-events: auto;
+      animation: item-ready-pulse 820ms ease-in-out infinite alternate, item-reward-float 1300ms ease-in-out infinite;
+    }
+
+    .gauge-reward-button::before,
+    .gauge-reward-button::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+
+    .gauge-reward-button::before {
+      bottom: -9px;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 9px solid #ffe881;
+    }
+
+    .gauge-reward-button::after {
+      bottom: -7px;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 8px solid #d45f20;
+    }
+
+    .gauge-reward-button.visible {
+      display: block;
+    }
+
+    .gauge-reward-button[data-level="1"] {
+      left: 16.666%;
+    }
+
+    .gauge-reward-button[data-level="2"] {
+      left: 50%;
+    }
+
+    .gauge-reward-button[data-level="3"] {
+      left: 83.333%;
+    }
+
+    .gauge-reward-button:active {
+      animation: none;
+      transform: translate(-50%, 4px);
+      box-shadow: 0 1px 0 rgba(71, 28, 8, 0.84), 0 0 18px rgba(255, 85, 43, 0.52);
+    }
+
+    @keyframes item-ready-pulse {
+      from {
+        filter: brightness(1);
+      }
+      to {
+        filter: brightness(1.22);
+      }
+    }
+
+    @keyframes item-reward-float {
+      0%, 100% { transform: translate(-50%, 0); }
+      50% { transform: translate(-50%, -4px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .gauge-reward-button { animation: none; }
+    }
+
+    @keyframes tap-blink {
+      0%,
+      49% {
+        opacity: 1;
+      }
+      50%,
+      100% {
+        opacity: 0.28;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="opening.css?v=shot-effect-5">
+  <link rel="stylesheet" href="room_warning.css?v=center-2">
+  <link rel="stylesheet" href="campaign_story.css?v=ending-type-4">
+  <link rel="stylesheet" href="sanctuary_encounter.css?v=attack-reference-ring-4">
+  <link rel="stylesheet" href="wharf_opening.css?v=stage2-distance-3">
+  <link rel="stylesheet" href="cutscene_caption.css?v=casino-caption-3">
+  <link rel="stylesheet" href="tutorial.css?v=item-guide-6">
+  <link rel="stylesheet" href="boss_aftermath.css?v=boss-aftermath-2">
+  <link rel="stylesheet" href="supply_crate.css?v=crate-two-4">
+  <link rel="stylesheet" href="hall.css?v=game-over-5">
+  <link rel="stylesheet" href="hostage.css?v=hostage-ring-2">
+  <link rel="stylesheet" href="dodge.css?v=gold-bullet-8">
+  <link rel="stylesheet" href="duel.css?v=release-20261016">
+  <link rel="stylesheet" href="mission_briefing.css?v=sanctuary-10">
+</head>
+<body>
+  <main id="stage">
+    <div id="loadingScreen" role="status" aria-live="polite">게임을 실행중입니다</div>
+    <section id="floorLoading" aria-label="Ascending stairs" hidden>
+      <img id="floorLoadingImage" alt="Police officer ascending the stairs">
+      <div id="floorLoadingCaption">HOLD YOUR FIRE</div>
+    </section>
+    <section id="titleScreen" class="front-screen hidden" aria-label="title screen">
+      <div class="tap-to-start">TAP TO START</div>
+    </section>
+    <section id="modeScreen" class="front-screen hidden" aria-label="mode select">
+      <h1 class="mode-title">SELECT GAME MODE</h1>
+      <div class="mode-card-row">
+        <button id="mode1pButton" class="mode-card selected" type="button" data-mode="1p" aria-label="1P Mode">
+          <img src="sprites/UI/1P Mode.png" alt="">
+        </button>
+        <button id="mode2pButton" class="mode-card" type="button" data-mode="2p" aria-label="2P Mode" hidden disabled>
+          <img src="sprites/UI/2P Mode.png" alt="">
+        </button>
+        <button id="modeVsButton" class="mode-card" type="button" data-mode="vs" aria-label="VS Mode">
+          <img src="sprites/UI/VS Mode.png" alt="">
+        </button>
+      </div>
+      <div id="modeDescription" class="mode-description">
+        <strong>1P MODE</strong>
+        1인 플레이 모드. 혼자서 모든 적을 다 처치한다.
+      </div>
+      <button id="startGameButton" type="button">START GAME</button>
+    </section>
+    <div id="judgement"></div>
+    <section id="hud" aria-label="score and item gauge">
+      <div class="player-label">1P</div>
+      <div class="score-row">
+        <div class="hud-label">SCORE</div>
+        <div id="scoreValue">0</div>
+      </div>
+      <div class="hp-row">
+        <div class="hp-track">
+          <div id="hpFill"></div>
+        </div>
+        <div id="hpText">HP 100</div>
+      </div>
+    </section>
+    <div id="netStatus" hidden><span id="netLabel">LOCAL</span></div>
+    <div id="activeEffects" aria-label="active items"></div>
+    <button id="exitGame" type="button">나가기</button>
+    <div id="audioControls" aria-label="소리 설정" hidden>
+      <button id="toggleBgm" type="button" aria-pressed="true" title="배경음 끄기" aria-label="배경음 끄기">BGM</button>
+      <button id="toggleSfx" type="button" aria-pressed="true" title="효과음 끄기" aria-label="효과음 끄기">SFX</button>
+    </div>
+    <div id="enemyCounter" aria-label="remaining enemies"><span class="enemy-face"><img src="sprites/enemies/mafia_gunman_aim_01.png" alt=""></span><span id="enemiesRemaining">22</span></div>
+    <div id="exitConfirm" role="dialog" aria-modal="true" aria-labelledby="exitQuestion" hidden>
+      <div class="exit-dialog">
+        <h2 id="exitQuestion">포기하시겠습니까?</h2>
+        <div class="exit-actions"><button id="exitYes" type="button">예</button><button id="exitNo" type="button">아니오</button></div>
+      </div>
+    </div>
+    <div id="stageClear" role="status" hidden>
+      <div class="clear-results">
+        <h2 class="clear-title">Stage Clear</h2>
+        <div id="clearShootRow" class="clear-score-row"><span class="clear-score-label">SHOOT SCORE</span><strong id="clearShootScore" class="clear-score-value">0</strong></div>
+        <div id="clearHpRow" class="clear-score-row"><span class="clear-score-label">HP SCORE</span><strong id="clearHpScore" class="clear-score-value">0</strong></div>
+        <div id="clearTotalRow" class="clear-score-row"><span class="clear-score-label">TOTAL SCORE</span><strong id="clearTotalScore" class="clear-score-value">0</strong></div>
+        <button id="clearReturnToTitle" class="return-to-title" type="button" hidden>탭하여 대화 보기</button>
+      </div>
+      <section class="boss-dialogue" aria-label="보스의 진술" hidden>
+        <img class="boss-dialogue-portrait" alt="">
+        <div class="boss-dialogue-copy"><strong class="boss-dialogue-name"></strong><p class="boss-dialogue-text"></p></div>
+        <button class="boss-dialogue-next return-to-title" type="button">탭하여 수사 브리핑으로</button>
+      </section>
+    </div>
+    <div id="gameOver" role="status" hidden>Game Over<button id="returnToTitle" class="return-to-title" type="button" hidden>TAP TO RETURN TO TITLE</button></div>
+    <div id="inventory" aria-label="stored items">
+      <button class="inventory-slot" type="button" disabled aria-label="empty item slot 1"></button>
+      <button class="inventory-slot" type="button" disabled aria-label="empty item slot 2"></button>
+      <button class="inventory-slot" type="button" disabled aria-label="empty item slot 3"></button>
+    </div>
+    <div id="itemTray">
+      <button class="item-choice" data-slot="1" type="button"></button>
+      <button class="item-choice" data-slot="2" type="button"></button>
+      <button class="item-choice" data-slot="3" type="button"></button>
+      <button class="item-choice" data-slot="4" type="button"></button>
+      <button class="item-choice" data-slot="5" type="button"></button>
+      <button class="item-choice" data-slot="6" type="button"></button>
+    </div>
+    <div id="itemGaugeHud">
+      <div id="effectGaugeRow" class="effect-row">
+        <div class="active-item-icon"></div>
+        <div class="effect-track">
+          <div class="effect-gauge-fill"></div>
+        </div>
+        <div class="effect-gauge-text">100%</div>
+      </div>
+      <div id="effectGaugeRow2" class="effect-row" data-slot="2">
+        <div class="active-item-icon"></div>
+        <div class="effect-track">
+          <div class="effect-gauge-fill"></div>
+        </div>
+        <div class="effect-gauge-text">100%</div>
+      </div>
+      <div id="effectGaugeRow3" class="effect-row" data-slot="3">
+        <div class="active-item-icon"></div>
+        <div class="effect-track">
+          <div class="effect-gauge-fill"></div>
+        </div>
+        <div class="effect-gauge-text">100%</div>
+      </div>
+      <div class="item-level-label">
+        <span>LEVEL</span>
+        <strong id="itemGaugeLevel">0</strong>
+      </div>
+      <div class="item-gauge-wrap">
+        <button class="gauge-reward-button" data-level="1" type="button">GET<br>ITEM</button>
+        <button class="gauge-reward-button" data-level="2" type="button">GET<br>ITEM</button>
+        <button class="gauge-reward-button" data-level="3" type="button">GET<br>ITEM</button>
+        <div class="item-gauge-track">
+          <div id="itemGaugeFill1" class="gauge-fill"></div>
+          <div id="itemGaugeFill2" class="gauge-fill"></div>
+          <div id="itemGaugeFill3" class="gauge-fill"></div>
+          <div id="itemGaugeDrainFill"></div>
+          <div class="gauge-boundary" data-boundary="1"></div>
+          <div class="gauge-boundary" data-boundary="2"></div>
+        </div>
+        <div id="itemGaugePercent">0%</div>
+      </div>
+    </div>
+    <div id="pad">
+      <button class="pad-button" data-color="y" aria-label="yellow button">
+        <img src="sprites/target_y.png" alt="">
+      </button>
+      <button class="pad-button" data-color="r" aria-label="red button">
+        <img src="sprites/target_r.png" alt="">
+      </button>
+      <button class="pad-button" data-color="b" aria-label="blue button">
+        <img src="sprites/target_b.png" alt="">
+      </button>
+      <button class="pad-button" data-color="g" aria-label="green button">
+        <img src="sprites/target_g.png" alt="">
+      </button>
+    </div>
+    <div id="screenFade"></div>
+  </main>
+  <audio id="bgm" preload="auto"></audio>
+  <audio id="gunSound" src="sound/gun.mp3" preload="auto"></audio>
+  <audio id="titleTapSound" src="sound/effect/magnum.mp3" preload="auto"></audio>
+  <audio id="missSound" src="sound/miss.mp3" preload="auto"></audio>
+
+  <script>
+    window.TIMING_SHOOTER_CONFIG = window.TIMING_SHOOTER_CONFIG || {};
+  </script>
+  <script src="game_runtime.js"></script>
+  <script src="judgement_config.js?v=hp-damage-1"></script>
+  <script src="opening_config.js?v=remaster-eyes-arms-2"></script>
+  <script src="opening_shot_effect.js?v=all-stages-1"></script>
+  <script src="room_warning.js?v=trap-1"></script>
+  <script src="campaign_story.js?v=foyer-chase-4"></script>
+  <script src="sanctuary_encounter.js?v=attack-reference-ring-5"></script>
+  <script src="opening.js?v=stage-music-7"></script>
+  <script src="hall_config.js?v=stairs-solo-5"></script>
+  <script src="stage2_config.js?v=boss-dodge-10"></script>
+  <script src="stage3_config.js?v=unique-hostages-5"></script>
+  <script src="wharf_opening.js?v=stage-music-5"></script>
+  <script src="hall.js?v=vs-pillar-cover-4"></script>
+  <script src="hostage.js?v=unique-staff-3"></script>
+  <script src="supply_crate.js?v=no-hostage-crates-5"></script>
+  <script src="stage4_config.js?v=two-balcony-rounds-10"></script>
+  <script src="dodge.js?v=shared-inset-6"></script>
+  <script src="boss.js?v=stage2-guards-8"></script>
+  <script src="tutorial.js?v=direction-hints-7"></script>
+  <script src="boss_aftermath.js?v=casino-aftermath-3"></script>
+  <script src="ast_integration.js?v=stage-id-2"></script>
+  <script src="multiplayer_config.js?v=heartbeat-5"></script>
+  <script src="multiplayer_client.js?v=heartbeat-5"></script>
+  <script src="duel.js?v=heartbeat-26"></script>
+  <script src="duel_config.js?v=half-second-shots-7"></script>
+  <script src="duel_combat.js?v=muzzle-camera-19"></script>
+  <script src="mission_briefing.js?v=sanctuary-unlocked-11"></script>
+  <script src="enemy_variants.js?v=slim-heads-8"></script>
+  <script>
+    const stage = document.getElementById('stage');
+    const roomWarning = new RoomWarning(stage);
+    const campaignStory = new CampaignStory(stage, swap => runFadeTransition({ fadeOutMs: 1000, fadeInMs: 1000, swap }));
+    const sanctuary = new SanctuaryEncounter(stage, {
+      sprite: () => chooseEnemyVariant()?.aim ?? enemySprites.aim,
+      screenX: x => hall.screenX(x),
+      color: attack => attack && hasActiveItem('magnum') ? 'r' : pickRandomColor(),
+      duration: attack => attack
+        ? (hasActiveItem('slow_down') ? randomBetween(4000, 5000) : randomBetween(config.spawnDurationMs.min, config.spawnDurationMs.max)) * perfectProgress
+        : randomBetween(config.dodge.durationMs.min, config.dodge.durationMs.max),
+      defenseHoldMs: () => config.dodge.resultHoldMs,
+      dodgeConfig: () => config.dodge,
+      shotgun: () => hasActiveItem('shotgun'),
+      window: (grade, attack) => attack
+        ? config.judgementMs[grade] * (hasActiveItem('sniper') ? sniperJudgementMultiplier : 1)
+        : config.dodge.judgementMs[grade] * (hall.config.special === 'trap' ? 500 / 650 : 1),
+      attack: (grade, shot, { silentSound = false } = {}) => {
+        const name = grade[0].toUpperCase() + grade.slice(1);
+        const x = hall.screenX(shot.slot.x), y = stage.clientHeight * shot.slot.y;
+        if (!silentSound) playJudgementSound(name);
+        showJudgement(name, sanctuary.palette[shot.color], x, y - 35);
+        if (grade === 'miss') resetCombo();
+        else {
+          showBulletEffect(x, y);
+          const bonus = registerComboHit();
+          addScore(scoreForHit(damageForJudgement(name), {}));
+          addItemGaugeFor(name, bonus);
+        }
+      },
+      defend: grade => {
+        playPooledEffect(grade === 'miss' || grade === 'bad' ? 'sound/gun.mp3' : 'sound/miss.mp3', .8);
+        if (grade !== 'miss' && grade !== 'bad') hall.playDodge(1);
+        damagePlayer(config.dodge.damage[grade]);
+      },
+      progress: count => { enemiesRemaining.textContent = String(Math.max(0, stageEnemyTotal - count)); },
+      complete: () => completeStage()
+    });
+    let previousGameTap = null;
+    stage.addEventListener('touchend', event => {
+      const target = event.target;
+      const editable = target instanceof Element && target.closest('input, textarea, select, [contenteditable]');
+      const clickControl = target instanceof Element && target.closest('button, a') && !target.closest('#pad');
+      if (editable || clickControl || event.touches.length || event.changedTouches.length !== 1) {
+        previousGameTap = null;
+        return;
+      }
+      const touch = event.changedTouches[0];
+      const now = performance.now();
+      // The pad uses pointerdown; cancelling a repeated touchend preserves firing.
+      if (previousGameTap && now - previousGameTap.time < 350
+        && Math.hypot(touch.clientX - previousGameTap.x, touch.clientY - previousGameTap.y) < 40) {
+        if (event.cancelable) event.preventDefault();
+      }
+      previousGameTap = { time: now, x: touch.clientX, y: touch.clientY };
+    }, { passive: false });
+    const titleScreen = document.getElementById('titleScreen');
+    const modeScreen = document.getElementById('modeScreen');
+    const startGameButton = document.getElementById('startGameButton');
+    const modeDescription = document.getElementById('modeDescription');
+    const modeCards = [...document.querySelectorAll('.mode-card')];
+    const screenFade = document.getElementById('screenFade');
+    const judgement = document.getElementById('judgement');
+    const scoreValue = document.getElementById('scoreValue');
+    const hpFill = document.getElementById('hpFill');
+    const hpText = document.getElementById('hpText');
+    const itemGaugeFills = [
+      document.getElementById('itemGaugeFill1'),
+      document.getElementById('itemGaugeFill2'),
+      document.getElementById('itemGaugeFill3')
+    ];
+    const itemGaugeDrainFill = document.getElementById('itemGaugeDrainFill');
+    const itemGaugeLevel = document.getElementById('itemGaugeLevel');
+    const itemGaugePercent = document.getElementById('itemGaugePercent');
+    const gaugeRewardButtons = [...document.querySelectorAll('.gauge-reward-button')];
+    const effectGaugeRows = [...document.querySelectorAll('.effect-row')];
+    effectGaugeRows.forEach((row) => document.getElementById('activeEffects').appendChild(row));
+    const inventoryButtons = [...document.querySelectorAll('.inventory-slot')];
+    const itemChoices = [...document.querySelectorAll('.item-choice')];
+    const itemTray = document.getElementById('itemTray');
+    const netStatus = document.getElementById('netStatus');
+    const netLabel = document.getElementById('netLabel');
+    const enemiesRemaining = document.getElementById('enemiesRemaining');
+    const stageClearScreen = document.getElementById('stageClear');
+    const gameOverScreen = document.getElementById('gameOver');
+    const returnToTitleButton = document.getElementById('returnToTitle');
+    const buttons = [...document.querySelectorAll('.pad-button')];
+    const bgm = document.getElementById('bgm');
+    const gunSound = document.getElementById('gunSound');
+    const titleTapSound = document.getElementById('titleTapSound');
+    const missSound = document.getElementById('missSound');
+    const config = window.TIMING_SHOOTER_CONFIG;
+    const mansionOpening = new OpeningSequence(stage, window.TIMING_SHOOTER_OPENING);
+    let wharfOpening = null;
+    let casinoOpening = null;
+    let sanctuaryOpening = null;
+    let sanctuaryEscaped = false;
+    let sanctuaryEscapePending = false;
+    let sanctuaryTransition = null;
+    let opening = mansionOpening;
+    let campaignConfig = window.TIMING_SHOOTER_HALL;
+    let currentStageId = 'stage1';
+    window.TIMING_SHOOTER_STAGE_ID = currentStageId;
+    let hall = new HallScene(stage, window.TIMING_SHOOTER_HALL);
+    const bossAftermath = new BossAftermath(stage, () => hall);
+    hall.onCameraChange = () => {
+      activeTargets.forEach(positionHallTarget);
+      hostage.position();
+      supplyCrate.position();
+    };
+    let counterRetryTimer = null;
+    let dodgeTurnTimer = null;
+    const dodge = new DodgeSequence(stage, window.TIMING_SHOOTER_CONFIG.dodge, (target, damage, judgement, shot) => {
+      if (!target.element.isConnected) return 0;
+      target.dodgeTurns = Math.min(2, (target.dodgeTurns ?? 0) + 1);
+      showEnemyMuzzleFlash(target);
+      if (['perfect', 'great', 'good'].includes(judgement)) {
+        hall.playDodge(currentFloor === 2 ? -1 : 1);
+        playPooledEffect('sound/miss.mp3', 0.8);
+      } else {
+        playPooledEffect('sound/gun.mp3', 0.8);
+      }
+      if (damage > 0 && !hasActiveItem('armor_vest')) {
+        if (judgement === 'bad' || judgement === 'miss') shakeStage();
+        damagePlayer(damage);
+      }
+      target.counterResolved = shot.finalShot;
+      return hasActiveItem('armor_vest') ? 0 : damage;
+    }, scheduleCounterRetries);
+    const tutorial = new TutorialSequence(stage, window.TIMING_SHOOTER_CONFIG.dodge, (src) => playPooledEffect(src, 0.8));
+
+    const colors = {
+      y: { target: 'target_y.png', perfect: 'perfect_target_y.png', circle: 'circle_y.png', judge: 'judge_y.png' },
+      r: { target: 'target_r.png', perfect: 'perfect_target_r.png', circle: 'circle_r.png', judge: 'judge_r.png' },
+      b: { target: 'target_b.png', perfect: 'perfect_target_b.png', circle: 'circle_b.png', judge: 'judge_b.png' },
+      g: { target: 'target_g.png', perfect: 'perfect_target_g.png', circle: 'circle_g.png', judge: 'judge_g.png' }
+    };
+
+    const enemySprites = {
+      aim: 'sprites/enemies/mafia_gunman_aim_01.png',
+      hit: 'sprites/enemies/mafia_gunman_hit_01.png',
+      graze: 'sprites/enemies/mafia_gunman_graze_01.png',
+      knockdown: 'sprites/enemies/mafia_knockdown_atlas_v1.png'
+    };
+
+    const hostage = new HostageGroup(stage, () => hall, (civilian) => {
+      playJudgementSound('Good');
+      showBulletEffect(civilian.x, civilian.y);
+      clearActiveItem();
+      storedItems.fill(null);
+      setItemChoicesOpen(false);
+      renderInventory();
+      resetCombo();
+      document.querySelectorAll('.combo-popup, .item-name-popup').forEach(popup => popup.remove());
+      const warning = document.createElement('div');
+      warning.className = 'hostage-warning';
+      warning.textContent = 'OH NO!';
+      stage.append(warning);
+      gameRuntime.setTimeout(() => warning.remove(), 1000);
+    });
+
+    function updateHostageInput() {
+      if (hostage.colors.some(color => activeTargets.some(target => target.color === color)
+        || supplyCrate.color === color)) refreshHostageColor(false);
+      hostage.setEnabled(gameStarted && !stageEnded && !floorTransition && !dodge.current && !dodge.queue.length
+        && hasUnjudgedTargets() && !activeTargets.some(target => target.countering));
+    }
+
+    function refreshHostageColor(change = true) {
+      const magnum = hasActiveItem('magnum');
+      hostage.refreshColor(activeTargets, magnum ? false : change,
+        [...(magnum ? ['r'] : []), ...(supplyCrate.color ? [supplyCrate.color] : [])]);
+    }
+
+    const supplyCrate = new SupplyCrate(stage, () => hall, (crate) => {
+      playJudgementSound('Good');
+      showBulletEffect(crate.x, crate.y);
+    }, deliverCrateReward);
+
+    function updateCrateInput() {
+      supplyCrate.setEnabled(!hall.config.disableSupplyCrates && gameStarted && !stageEnded && !floorTransition && !dodge.current
+        && !dodge.queue.length && !activeTargets.some(target => target.countering));
+    }
+
+    function beginCrateTurn() {
+      if (hall.config.boss || hall.config.special) return;
+      if (hall.config.disableSupplyCrates) supplyCrate.clear();
+      else supplyCrate.nextTurn(activeTargets);
+      refreshHostageColor(!hall.config.uniqueHostageColors);
+      updateHostageInput();
+      updateCrateInput();
+    }
+
+    let spawnSlots = window.TIMING_SHOOTER_HALL.slots;
+
+    const targetSize = 36;
+    const perfectSize = 52;
+    const circleBaseSize = 120;
+    const targetAimOffsetY = -29;
+    const perfectDiameter = perfectSize;
+    const targetDiameter = targetSize;
+    const judgeHideDiameter = perfectDiameter - ((perfectDiameter - targetDiameter) / 2);
+
+    const startScale = 1.55;
+    const endScale = 0.22;
+    const perfectScale = perfectDiameter / circleBaseSize;
+    const perfectProgress = (startScale - perfectScale) / (startScale - endScale);
+    const perfectWindowMs = config.judgementMs?.perfect ?? 90;
+    const greatWindowMs = config.judgementMs?.great ?? 150;
+    const goodWindowMs = config.judgementMs?.good ?? 230;
+    const badWindowMs = config.judgementMs?.bad ?? 340;
+    const judgeShowBeforePerfectMs = config.judgeCueMs?.showBeforePerfect ?? 180;
+    const judgeHideAfterPerfectMs = config.judgeCueMs?.hideAfterPerfect ?? 150;
+    const autoMissMs = config.autoMissMs ?? 360;
+    const judgementHoldMs = config.targetHoldMs ?? 560;
+    const sniperJudgementMultiplier = 10;
+    const missCounterDelayAfterTextMs = 1000;
+    const enemyMuzzleFlashMs = 1000;
+    const targetRetryAfterCounterMs = 2000;
+    const firstWaveDelayMs = 2000;
+    const machineGunHoldMs = 2000;
+    const machineGunMaxShots = 5;
+    const machineGunPromptIdleMs = 600;
+    const enemyHpBarMaxWidth = 117;
+    const enemyMuzzleOffsetXRatio = -36 / 210;
+    const enemyMuzzleOffsetYRatio = -97 / 210;
+    const enemyMuzzleFlashWidthRatio = 86 / 210;
+    const enemyMuzzleFineTuneXRatio = 0.1043;
+    const enemyMuzzleFineTuneYRatio = 0.16;
+
+    let activeTargets = [];
+    let nextSpawnTimer = 0;
+    let nextWaveReadyAt = 0;
+    let bgmMode = '';
+    let bgmSequenceToken = 0;
+    let stageBgmTimer = null;
+    let audioStatusTimer = 0;
+    let socket = null;
+    let serverMode = false;
+    let activeWaveId = null;
+    let localFallbackTimer = 0;
+    let ownServerLabel = 'SERVER';
+    let score = 0;
+    let displayedScore = 0;
+    let scoreAnimationFrame = 0;
+    let combo = 0;
+    let hp = 100;
+    let itemGauge = 0;
+    let selectedRewardLevel = 1;
+    let itemChoicesOpen = false;
+    let activeItems = [];
+    const storedItems = [null, null, null];
+    let currentItemChoices = [];
+    let gameStarted = false;
+    let stageEnemyTotal = window.TIMING_SHOOTER_HALL.enemyTotal;
+    let currentFloor = 1;
+    let bossBattle = null;
+    let floorTransition = false;
+    let defeatedEnemies = 0;
+    let stageCleared = false;
+    let stageEnded = false;
+    let tickStarted = false;
+    let transitionLocked = false;
+    let selectedMode = '1p';
+    let firstWaveReadyAt = 0;
+    let pausedAnimations = [];
+    let pausedAudio = [];
+    let pausedBgmContext = false;
+
+    function showExitDialog() {
+      if (!gameStarted || stageEnded || gameRuntime.paused) return;
+      gameRuntime.pause();
+      pausedAnimations = stage.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running');
+      pausedAnimations.forEach(animation => animation.pause());
+      const audio = [...document.querySelectorAll('audio'), ...[...effectSoundPools.values()].flat()];
+      pausedAudio = audio.filter(sound => !sound.paused && !sound.ended);
+      pausedAudio.forEach(sound => sound.pause());
+      pausedBgmContext = bgmContext?.state === 'running';
+      if (pausedBgmContext) bgmContext.suspend().catch(() => {});
+      document.getElementById('exitConfirm').hidden = false;
+      document.getElementById('exitNo').focus();
+    }
+
+    document.getElementById('exitGame').addEventListener('click', showExitDialog);
+    document.getElementById('exitNo').addEventListener('click', () => {
+      if (!gameRuntime.paused) return;
+      document.getElementById('exitConfirm').hidden = true;
+      gameRuntime.resume();
+      pausedAnimations.forEach(animation => { if (animation.playState === 'paused') animation.play(); });
+      pausedAudio.forEach(sound => sound.play().catch(() => {}));
+      if (pausedBgmContext) bgmContext.resume().catch(() => {});
+      document.getElementById('exitGame').focus();
+    });
+    document.getElementById('exitYes').addEventListener('click', () => {
+      if (!gameRuntime.paused || stageEnded) return;
+      stopCombat();
+      returnToBriefing();
+    });
+
+    const itemGaugeMax = 100;
+    const itemGaugeCap = 300;
+    const itemDurationByRewardLevel = {
+      1: 20000,
+      2: 35000,
+      3: 50000
+    };
+    const itemGaugeGainMultiplier = 3;
+    const gaugeByJudgement = {
+      Perfect: 5,
+      Great: 3,
+      Good: 1
+    };
+    const itemDefs = [
+      { id: 'medkit', name: 'Med Kit', icon: 'sprites/items/medkit_icon.png', instant: true },
+      { id: 'machine_gun', name: 'Machine Gun', icon: 'sprites/items/machine_gun_icon.png' },
+      { id: 'sniper', name: 'Sniper', icon: 'sprites/items/sniper_icon.png' },
+      { id: 'magnum', name: 'Magnum', icon: 'sprites/items/magnum_icon.png' },
+      { id: 'armor_vest', name: 'Armor Vest', icon: 'sprites/items/armor_vest_icon.png' },
+      { id: 'slow_down', name: 'Slow Down', icon: 'sprites/items/slow_down_icon.png' },
+      { id: 'power_up', name: 'Power Up', icon: 'sprites/items/power_up_icon.png' },
+      { id: 'shotgun', name: 'Shotgun', icon: 'sprites/items/shotgun_icon.png' }
+    ];
+    const supportItemIds = new Set(['armor_vest', 'slow_down', 'power_up']);
+    const gunItemIds = new Set(['machine_gun', 'sniper', 'magnum', 'shotgun']);
+    const itemPresentation = {
+      medkit: { label: 'LIFE UP', voice: 'sound/Items/lifeup.mp3', tone: 'support' },
+      machine_gun: { label: 'MACHINE GUN', voice: 'sound/Items/machinegun.mp3', tone: 'weapon' },
+      sniper: { label: 'SNIPER', voice: 'sound/Items/sniper.mp3', tone: 'weapon' },
+      magnum: { label: 'MAGNUM', voice: 'sound/Items/magnum.mp3', tone: 'weapon' },
+      armor_vest: { label: 'ARMOR VEST', voice: 'sound/Items/amorvest.mp3', tone: 'weapon' },
+      slow_down: { label: 'SLOW DOWN', voice: 'sound/Items/slowdown.mp3', tone: 'support' },
+      power_up: { label: 'POWER UP', voice: 'sound/Items/powerup.mp3', tone: 'support' },
+      shotgun: { label: 'SHOT GUN', voice: 'sound/Items/shotgun.mp3', tone: 'weapon' }
+    };
+    const gunEffectSrc = {
+      machine_gun: 'sound/effect/machinegun.mp3',
+      sniper: 'sound/effect/sniper.mp3',
+      magnum: 'sound/effect/magnum.mp3',
+      shotgun: 'sound/effect/shotgun.mp3'
+    };
+    const effectSoundPools = new Map();
+
+    const modeDetails = {
+      '1p': {
+        title: '1P MODE',
+        body: '1인 플레이 모드. 혼자서 모든 적을 다 처치한다.'
+      },
+      '2p': {
+        title: '2P MODE',
+        body: '2인 플레이 모드. 적을 반 나눠서 처치한다. 한번에 적을 처치하지 못했다면 다른 플레이어가 도와줄 수 있다.'
+      },
+      vs: {
+        title: 'VERSUS MODE',
+        body: '두 플레이어의 대결 모드. 한 턴씩 주어진 공격패턴에 따라 쏘면 다른 플레이어는 같은 패턴을 입력하여 회피할 수 있다. 공격자의 각 탄환의 공격 성공여부는 방어자의 회피입력이 끝나고 공개된다.'
+      }
+    };
+
+    const bgmVolume = 0.35;
+    bgm.volume = bgmVolume;
+    gunSound.volume = 0.8;
+    missSound.volume = 0.85;
+
+    function randomBetween(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(randomBetween(min, max + 1));
+    }
+
+    function pickRandomColor() {
+      const keys = Object.keys(colors).filter(color => color !== supplyCrate.color
+        && !hostage.colors.includes(color));
+      return keys[Math.floor(Math.random() * keys.length)];
+    }
+
+    function colorForEnemy(color, target = null) {
+      const reserved = new Set([supplyCrate.color, ...hostage.colors]);
+      if (!reserved.has(color)) return color;
+      const used = new Set(activeTargets.filter(enemy => enemy !== target && (!enemy.judged || enemy.countering))
+        .map(enemy => enemy.color));
+      hostage.colors.forEach(color => used.add(color));
+      const available = Object.keys(colors).filter(key => !reserved.has(key));
+      const distinct = available.filter(key => !used.has(key));
+      const choices = distinct.length ? distinct : available;
+      return choices[Math.floor(Math.random() * choices.length)];
+    }
+
+    function setNetStatus(text) {
+      netLabel.textContent = text;
+    }
+
+    function reportAudioStatus(text) {
+      gameRuntime.clearTimeout(audioStatusTimer);
+      const previousText = netLabel.textContent;
+      setNetStatus(text);
+      audioStatusTimer = gameRuntime.setTimeout(() => {
+        if (netLabel.textContent === text) {
+          setNetStatus(previousText);
+        }
+      }, 1800);
+    }
+
+    const bgmPreloads = new Map();
+    const bgmBuffers = new Map();
+    const bgmDownloads = new Map();
+    const audioCueBuffers = new Map();
+    let bgmContext = null;
+    let bgmGain = null;
+    let cueGain = null;
+    const audioPreferences = { bgm: true, sfx: true };
+    try {
+      const saved = JSON.parse(localStorage.getItem('timingShooterAudio') || '{}');
+      for (const kind of ['bgm', 'sfx']) if (typeof saved[kind] === 'boolean') audioPreferences[kind] = saved[kind];
+    } catch (_) {}
+    const managedAudio = new Map();
+    function registerAudio(audio, kind = 'sfx') {
+      managedAudio.set(audio, kind);
+      audio.muted = !audioPreferences[kind];
+      return audio;
+    }
+    function applyAudioPreferences() {
+      if (bgmGain) bgmGain.gain.value = audioPreferences.bgm ? bgmVolume : 0;
+      if (cueGain) cueGain.gain.value = audioPreferences.sfx ? .9 : 0;
+      managedAudio.forEach((kind, audio) => { audio.muted = !audioPreferences[kind]; });
+      for (const [kind, label, id] of [['bgm', '배경음', 'toggleBgm'], ['sfx', '효과음', 'toggleSfx']]) {
+        const button = document.getElementById(id);
+        const title = `${label} ${audioPreferences[kind] ? '끄기' : '켜기'}`;
+        button.setAttribute('aria-pressed', String(audioPreferences[kind]));
+        button.setAttribute('aria-label', title); button.title = title;
+      }
+    }
+    document.querySelectorAll('audio').forEach(audio => registerAudio(audio, audio === bgm ? 'bgm' : 'sfx'));
+    for (const [kind, id] of [['bgm', 'toggleBgm'], ['sfx', 'toggleSfx']]) {
+      document.getElementById(id).addEventListener('click', () => {
+        audioPreferences[kind] = !audioPreferences[kind];
+        applyAudioPreferences();
+        try { localStorage.setItem('timingShooterAudio', JSON.stringify(audioPreferences)); } catch (_) {}
+      });
+    }
+    applyAudioPreferences();
+    let bgmUnlocked = false;
+    let activeBgmSources = [];
+    let activeCueSources = [];
+    const modeVoiceSrc = {
+      '1p': 'sound/1pmode.mp3',
+      '2p': 'sound/2pmode.mp3',
+      vs: 'sound/versusmode.mp3'
+    };
+
+    function preloadBgm(src) {
+      if (bgmPreloads.has(src)) return;
+      const audio = new Audio(src);
+      audio.preload = 'auto';
+      audio.load();
+      bgmPreloads.set(src, audio);
+    }
+
+    function ensureBgmContext() {
+      if (bgmContext) return bgmContext;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      bgmContext = new AudioContextClass();
+      bgmGain = bgmContext.createGain();
+      bgmGain.gain.value = audioPreferences.bgm ? bgmVolume : 0;
+      bgmGain.connect(bgmContext.destination);
+      cueGain = bgmContext.createGain();
+      cueGain.gain.value = audioPreferences.sfx ? .9 : 0;
+      cueGain.connect(bgmContext.destination);
+      return bgmContext;
+    }
+
+    async function unlockBgm({ quiet = false } = {}) {
+      const context = ensureBgmContext();
+      if (!context) return false;
+      try {
+        if (context.state !== 'running') {
+          await context.resume();
+        }
+        bgmUnlocked = context.state === 'running';
+        return bgmUnlocked;
+      } catch (error) {
+        console.warn('[BGM] unlock failed:', error);
+        if (!quiet) {
+          reportAudioStatus('AUDIO BLOCKED');
+        }
+        return false;
+      }
+    }
+
+    function downloadBgm(src) {
+      if (bgmDownloads.has(src)) return bgmDownloads.get(src);
+      const promise = fetch(src)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Failed to load ${src}: ${response.status}`);
+          }
+          return response.arrayBuffer();
+        })
+        .catch((error) => {
+          bgmDownloads.delete(src);
+          throw error;
+        });
+      bgmDownloads.set(src, promise);
+      return promise;
+    }
+
+    function loadBgmBuffer(src) {
+      if (bgmBuffers.has(src)) return bgmBuffers.get(src);
+      const context = ensureBgmContext();
+      if (!context) return Promise.reject(new Error('Web Audio is unavailable'));
+      const promise = downloadBgm(src)
+        .then((arrayBuffer) => context.decodeAudioData(arrayBuffer.slice(0)))
+        .catch((error) => {
+          bgmBuffers.delete(src);
+          throw error;
+        });
+      bgmBuffers.set(src, promise);
+      return promise;
+    }
+
+    function loadAudioCueBuffer(src) {
+      if (audioCueBuffers.has(src)) return audioCueBuffers.get(src);
+      const context = ensureBgmContext();
+      const promise = fetch(src)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Failed to load ${src}: ${response.status}`);
+          }
+          return response.arrayBuffer();
+        })
+        .then((arrayBuffer) => context.decodeAudioData(arrayBuffer));
+      audioCueBuffers.set(src, promise);
+      return promise;
+    }
+
+    async function playAudioCue(src, { interrupt = true } = {}) {
+      await unlockBgm();
+      if (!bgmUnlocked) return false;
+      try {
+        const buffer = await loadAudioCueBuffer(src);
+        if (interrupt) {
+          activeCueSources.forEach((source) => {
+            try { source.stop(); } catch {}
+          });
+          activeCueSources = [];
+        }
+        const context = ensureBgmContext();
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(cueGain);
+        source.onended = () => {
+          activeCueSources = activeCueSources.filter((item) => item !== source);
+        };
+        source.start(0);
+        activeCueSources.push(source);
+        return true;
+      } catch (error) {
+        console.warn(`[AUDIO CUE] ${src} failed:`, error);
+        reportAudioStatus('AUDIO LOAD FAIL');
+        return false;
+      }
+    }
+
+    function stopWebBgmSources() {
+      activeBgmSources.forEach((source) => {
+        try {
+          source.onended = null;
+          source.stop();
+        } catch {}
+      });
+      activeBgmSources = [];
+    }
+
+    function startWebBgmSource(buffer, { loop = false, onended = null, when = 0, loopEnd = 0 } = {}) {
+      const context = ensureBgmContext();
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.loop = loop;
+      source.loopEnd = loopEnd;
+      source.connect(bgmGain);
+      if (onended) {
+        source.onended = onended;
+      }
+      source.start(when);
+      activeBgmSources.push(source);
+      return source;
+    }
+
+    function showJudgement(text, color, x = stage.clientWidth / 2, y = stage.clientHeight * 0.18) {
+      const popup = document.createElement('div');
+      popup.className = 'judgement-popup';
+      popup.textContent = text;
+      popup.style.color = color;
+      popup.style.left = `${x}px`;
+      popup.style.top = `${Math.max(42, y)}px`;
+      stage.appendChild(popup);
+      gameRuntime.setTimeout(() => popup.remove(), judgementHoldMs + 120);
+    }
+
+    async function playBgmLoop(mode, src) {
+      if (bgmMode === mode && activeBgmSources.length > 0) return true;
+      preloadBgm(src);
+      bgmMode = mode;
+      bgmSequenceToken += 1;
+      const token = bgmSequenceToken;
+      stopWebBgmSources();
+      try {
+        await unlockBgm({ quiet: mode === 'title' });
+        if (!bgmUnlocked || token !== bgmSequenceToken || bgmMode !== mode) return false;
+        const buffer = await loadBgmBuffer(src);
+        if (token !== bgmSequenceToken || bgmMode !== mode) return false;
+        startWebBgmSource(buffer, { loop: true });
+        return true;
+      } catch (error) {
+        console.warn(`[BGM] ${src} load/play failed:`, error);
+        reportAudioStatus('AUDIO LOAD FAIL');
+        return false;
+      }
+    }
+
+    async function playBgmSequence(mode, introSrc, loopSrc) {
+      if (bgmMode === mode && activeBgmSources.length > 0) return true;
+      preloadBgm(introSrc);
+      preloadBgm(loopSrc);
+      bgmMode = mode;
+      bgmSequenceToken += 1;
+      const token = bgmSequenceToken;
+      stopWebBgmSources();
+      try {
+        await unlockBgm();
+        if (!bgmUnlocked || token !== bgmSequenceToken || bgmMode !== mode) return false;
+        const [introBuffer, loopBuffer] = await Promise.all([
+          loadBgmBuffer(introSrc),
+          loadBgmBuffer(loopSrc)
+        ]);
+        if (token !== bgmSequenceToken || bgmMode !== mode) return false;
+        const startsAt = ensureBgmContext().currentTime + 0.03;
+        startWebBgmSource(introBuffer, {
+          when: startsAt,
+          onended: () => {
+            if (token !== bgmSequenceToken || bgmMode !== mode) return;
+            activeBgmSources = activeBgmSources.filter((source) => source.buffer !== introBuffer);
+          }
+        });
+        // Schedule both buffers on the audio clock; onended may be delayed by rendering.
+        startWebBgmSource(loopBuffer, { loop: true, when: startsAt + introBuffer.duration,
+          loopEnd: ['sound/stage3_2.mp3', 'sound/stage4_2.mp3'].includes(loopSrc) ? findBgmContentEnd(loopBuffer) : 0 });
+        return true;
+      } catch (error) {
+        console.warn(`[BGM] ${mode} load/play failed:`, error);
+        reportAudioStatus('AUDIO LOAD FAIL');
+        return false;
+      }
+    }
+
+    function resumeBgm() {
+      return unlockBgm();
+    }
+
+    function findBgmContentEnd(buffer) {
+      // These loop recordings contain silent tails. Keep their original audible samples intact.
+      const channels = Array.from({ length: buffer.numberOfChannels }, (_, index) => buffer.getChannelData(index));
+      for (let frame = buffer.length - 1; frame >= 0; frame--) {
+        if (channels.some(channel => Math.abs(channel[frame]) > 0.000001)) return (frame + 1) / buffer.sampleRate;
+      }
+      return buffer.duration;
+    }
+
+    function stopBgm() {
+      gameRuntime.clearTimeout(stageBgmTimer);
+      stageBgmTimer = null;
+      bgmSequenceToken += 1;
+      bgmMode = '';
+      stopWebBgmSources();
+      bgm.pause();
+      bgm.currentTime = 0;
+      bgm.volume = bgmVolume;
+    }
+
+    function ensureTitleBgm() {
+      if (gameStarted || transitionLocked || opening.active || titleScreen.classList.contains('hidden')) return;
+      playBgmLoop('title', 'sound/title.mp3');
+    }
+
+    function waitMs(ms) {
+      return new Promise((resolve) => gameRuntime.setTimeout(resolve, ms));
+    }
+
+    function playGunAndWait(audio = gunSound) {
+      playOneShot(audio);
+      return new Promise((resolve) => {
+        const fallbackMs = Number.isFinite(audio.duration) && audio.duration > 0
+          ? (audio.duration * 1000) + 80
+          : 1200;
+        const timer = gameRuntime.setTimeout(done, fallbackMs);
+        function done() {
+          gameRuntime.clearTimeout(timer);
+          audio.removeEventListener('ended', done);
+          resolve();
+        }
+        audio.addEventListener('ended', done, { once: true });
+      });
+    }
+
+    async function runFadeTransition({ fadeOutMs = 500, fadeInMs = 500, swap }) {
+      screenFade.style.transition = `opacity ${fadeOutMs}ms ease`;
+      screenFade.classList.add('visible');
+      await waitMs(fadeOutMs);
+      await swap();
+      screenFade.style.transition = `opacity ${fadeInMs}ms ease`;
+      screenFade.classList.remove('visible');
+      await waitMs(fadeInMs);
+    }
+
+    async function showModeSelect() {
+      if (transitionLocked) return;
+      transitionLocked = true;
+      stopBgm();
+      const unlockDone = unlockBgm();
+      const gunDone = playGunAndWait(titleTapSound);
+      const fadeDone = runFadeTransition({
+        fadeOutMs: 500,
+        fadeInMs: 500,
+        swap: () => {
+          titleScreen.classList.add('hidden');
+          modeScreen.classList.remove('hidden');
+          selectMode(selectedMode);
+        }
+      });
+      await Promise.all([unlockDone, gunDone, fadeDone]);
+      await playBgmSequence('select', 'sound/select_1.mp3', 'sound/select_2.mp3');
+      playAudioCue('sound/selectmode.mp3');
+      transitionLocked = false;
+    }
+
+    let rouletteLoopBuffer = null;
+    function startRouletteAudio() {
+      let source = null;
+      let gain = null;
+      const handle = {
+        stopped: false,
+        get source() { return source; },
+        stop() {
+          if (handle.stopped) return;
+          handle.stopped = true;
+          if (source) { try { source.stop(); } catch {} source.disconnect(); }
+          gain?.disconnect();
+        }
+      };
+      handle.ready = (async () => {
+        await unlockBgm();
+        const buffer = await loadAudioCueBuffer('sound/roulette.mp3');
+        if (handle.stopped) return;
+        const context = ensureBgmContext();
+        if (!rouletteLoopBuffer) {
+          let first = buffer.length;
+          let last = 0;
+          for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const samples = buffer.getChannelData(channel);
+            for (let index = 0; index < samples.length; index++) {
+              if (Math.abs(samples[index]) > 0.001) { first = Math.min(first, index); last = Math.max(last, index); }
+            }
+          }
+          if (last <= first) { first = 0; last = buffer.length - 1; }
+          const length = last - first + 1;
+          const overlap = Math.max(1, Math.min(Math.floor(buffer.sampleRate * .01), Math.floor(length / 4)));
+          const loop = context.createBuffer(buffer.numberOfChannels, length, buffer.sampleRate);
+          // Blend the tail into the head; resume after the blended head on every repeat.
+          for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const samples = buffer.getChannelData(channel).subarray(first, last + 1);
+            const output = loop.getChannelData(channel);
+            output.set(samples);
+            for (let index = 0; index < overlap; index++) {
+              const mix = (index + 1) / overlap;
+              output[length - overlap + index] = samples[length - overlap + index] * (1 - mix) + samples[index] * mix;
+            }
+          }
+          rouletteLoopBuffer = { buffer: loop, start: overlap / buffer.sampleRate };
+        }
+        source = context.createBufferSource();
+        source.buffer = rouletteLoopBuffer.buffer;
+        source.loop = true;
+        source.loopStart = rouletteLoopBuffer.start;
+        source.loopEnd = source.buffer.duration;
+        gain = context.createGain(); gain.gain.value = .6;
+        source.connect(gain); gain.connect(cueGain);
+        source.start(0, source.loopStart);
+      })().catch(error => console.warn('[Roulette] Audio loop failed:', error));
+      return handle;
+    }
+
+    const duel = new DuelScene(stage, {
+      onRouletteAudio: startRouletteAudio,
+      onMatchStart: () => playBgmLoop('duel', 'sound/versus.mp3'),
+      onMatchStop: () => { if (bgmMode === 'duel') stopBgm(); },
+      onCombatSound: (grade, defense) => {
+        if (defense) {
+          const src = ['perfect', 'great', 'good'].includes(grade) ? 'sound/miss.mp3' : 'sound/gun.mp3';
+          playPooledEffect(src, 0.8);
+        } else {
+          playOneShot(grade === 'miss' ? missSound : gunSound);
+        }
+      },
+      onExit: () => {
+        modeScreen.classList.remove('hidden');
+        playBgmSequence('select', 'sound/select_1.mp3', 'sound/select_2.mp3');
+      }
+    });
+    registerAudio(duel.combat.roulette); registerAudio(duel.combat.confirm);
+
+    function prepareDuelAssets() {
+      return Promise.all([duel.prepare(), loadAudioCueBuffer('sound/roulette.mp3'), loadBgmBuffer('sound/versus.mp3')]);
+    }
+
+    async function startDuelMode() {
+      if (transitionLocked || gameStarted || duel.active) return;
+      transitionLocked = true;
+      startGameButton.disabled = true;
+      try {
+        await prepareDuelAssets();
+        duel.root.querySelector('.duel-mode-card').replaceChildren();
+        duel.root.inert = true;
+        modeScreen.classList.add('mission-transition');
+        await animateModeCard(modeCards.find(card => card.dataset.mode === 'vs'), duel.root.querySelector('.duel-mode-card'), () => {
+          titleScreen.classList.add('hidden');
+          modeScreen.classList.add('hidden');
+          duel.start();
+        }, stage);
+      } catch (error) {
+        console.error('[Duel] Could not load scenes:', error);
+        modeDescription.textContent = '장면을 불러오지 못했습니다. 다시 시작해 주세요.';
+      } finally {
+        duel.root.inert = false;
+        modeScreen.classList.remove('mission-transition');
+        transitionLocked = false;
+        startGameButton.disabled = false;
+      }
+    }
+
+    function selectCampaignStage(stageNumber = 1) {
+      const nextConfig = { 1: window.TIMING_SHOOTER_HALL, 2: window.TIMING_SHOOTER_STAGE2, 3: window.TIMING_SHOOTER_STAGE3, 4: window.TIMING_SHOOTER_STAGE4 }[stageNumber] ?? window.TIMING_SHOOTER_HALL;
+      const nextStageId = nextConfig.id ?? 'stage1';
+      if (currentStageId === nextStageId) return;
+      opening.finish();
+      currentStageId = nextStageId;
+      window.TIMING_SHOOTER_STAGE_ID = currentStageId;
+      campaignConfig = nextConfig;
+      sanctuaryEscaped = false;
+      sanctuaryEscapePending = false;
+      hall.destroy();
+      hall = new HallScene(stage, nextConfig);
+      hall.onCameraChange = () => {
+        activeTargets.forEach(positionHallTarget);
+        hostage.position();
+        supplyCrate.position();
+      };
+      hall.setCamera(nextConfig.camera ?? .5);
+      if (stageNumber === 4) {
+        sanctuaryOpening ??= new WharfOpeningSequence(stage, nextConfig.opening);
+        opening = sanctuaryOpening;
+      } else if (stageNumber === 3) {
+        casinoOpening ??= new WharfOpeningSequence(stage, nextConfig.opening);
+        opening = casinoOpening;
+      } else if (stageNumber === 2) {
+        wharfOpening ??= new WharfOpeningSequence(stage, nextConfig.opening);
+        opening = wharfOpening;
+      } else opening = mansionOpening;
+      spawnSlots = nextConfig.slots;
+      stageEnemyTotal = nextConfig.enemyTotal;
+      currentFloor = 1;
+      bossBattle = null;
+      defeatedEnemies = 0;
+      combatAssetsReady = null;
+      supplyCrate.resetRoom(stageEnemyTotal, nextConfig.waveTargets ?? config.waveTargets ?? 2);
+      enemiesRemaining.textContent = String(stageEnemyTotal);
+    }
+
+    async function startGameMode({ fromTitle = false, stageNumber = 1 } = {}) {
+      if (gameStarted || transitionLocked || opening.active) return;
+      selectCampaignStage(stageNumber);
+      transitionLocked = true;
+      if (fromTitle) playOneShot(titleTapSound);
+      startGameButton.disabled = true;
+      showLoading('Now Loading...');
+      stopBgm();
+      const unlockDone = unlockBgm();
+      const assetsReady = Promise.all([opening.prepare(), prepareCombatAssets(), warmStageMusic(), warmTutorialMusic(), waitMs(350)]);
+      const fadeDone = runFadeTransition({
+        fadeOutMs: 500,
+        fadeInMs: 400,
+        swap: async () => {
+          await assetsReady;
+          titleScreen.classList.add('hidden');
+          modeScreen.classList.add('hidden');
+          hideLoading();
+          tutorial.start();
+          playBgmSequence('tutorial', 'sound/tutorial_1.mp3', 'sound/tutorial_2.mp3');
+        }
+      });
+      try {
+        await Promise.all([unlockDone, fadeDone]);
+        await tutorial.done;
+        if (bgmMode === 'tutorial') stopBgm();
+        opening.play({
+          mode: selectedMode,
+          transition: swap => runFadeTransition({ fadeOutMs: 1000, fadeInMs: 1000, swap }),
+          onBreach: () => prepareCombatAssets().catch((error) => console.warn('[Stage] Preload failed:', error)),
+          onShot: () => {
+            playOneShot(gunSound);
+            scheduleStageBgm();
+          },
+          onComplete: enterStageAfterOpening
+        }).catch((error) => {
+          console.error('[Opening] Scene failed:', error);
+          enterStageAfterOpening();
+        });
+      } catch (error) {
+        console.error('[Opening] Could not load scene:', error);
+        screenFade.classList.remove('visible');
+        startGameButton.disabled = false;
+        hideLoading();
+      } finally {
+        transitionLocked = false;
+      }
+    }
+
+    const stageMusic = {
+      stage1: { intro: 'sound/stage1_1.mp3', loop: 'sound/stage1_2.mp3' },
+      stage2: { intro: 'sound/stage2_1.mp3', loop: 'sound/stage2_2.mp3' },
+      stage3: { intro: 'sound/stage3_1.mp3', loop: 'sound/stage3_2.mp3' },
+      stage4: { intro: 'sound/stage4_1.mp3', loop: 'sound/stage4_2.mp3' }
+    };
+
+    function playStageBgm() {
+      const tracks = stageMusic[currentStageId];
+      return playBgmSequence(currentStageId, tracks.intro, tracks.loop);
+    }
+
+    function scheduleStageBgm() {
+      gameRuntime.clearTimeout(stageBgmTimer);
+      const stageId = currentStageId, token = bgmSequenceToken;
+      stageBgmTimer = gameRuntime.setTimeout(() => {
+        stageBgmTimer = null;
+        if (currentStageId === stageId && bgmSequenceToken === token) playStageBgm();
+      }, 1000);
+    }
+
+    function warmTutorialMusic() {
+      return Promise.all([
+        loadBgmBuffer('sound/tutorial_1.mp3'),
+        loadBgmBuffer('sound/tutorial_2.mp3')
+      ]).catch(error => console.warn('[BGM] Tutorial preload failed:', error));
+    }
+
+    function warmStageMusic({ decode = true } = {}) {
+      const load = decode ? loadBgmBuffer : downloadBgm;
+      const tracks = stageMusic[currentStageId];
+      return Promise.all([
+        load(tracks.intro),
+        load(tracks.loop)
+      ]).catch((error) => console.warn('[BGM] Stage preload failed:', error));
+    }
+
+    let combatAssetsReady = null;
+    const combatPreloads = [];
+    function prepareCombatAssets() {
+      if (combatAssetsReady) return combatAssetsReady;
+      const sources = [...Object.values(enemySprites), 'sprites/items/supply_crate_atlas_v1.png', 'sprites/UI/hp_frame.png',
+        campaignConfig.bossRoom.boss.sprite, campaignConfig.bossRoom.boss.hitSprite,
+        'sprites/effects/hit_blood_overlay.png',
+        ...[1, 2, 3].map((frame) => `sprites/effects/bullet_effect_${frame}.png`),
+        ...['b', 'g', 'r', 'y'].flatMap((color) =>
+          ['target', 'perfect_target', 'circle', 'judge'].map((name) => `sprites/${name}_${color}.png`))];
+      if (currentStageId === 'stage4') sources.push(...campaignConfig.rooms.slice(1)
+        .map(room => selectedMode === '2p' ? room.entryCoop : room.entryMale));
+      const images = sources.map((src) => {
+        const image = new Image();
+        image.src = src;
+        combatPreloads.push(image);
+        return image.decode();
+      });
+      combatAssetsReady = Promise.all([hall.prepare(), currentStageId === 'stage4'
+        ? campaignStory.prepare([campaignConfig.escape, ...campaignConfig.ending])
+        : bossAftermath.prepare(currentStageId), prepareEnemyVariants(), ...images]).catch((error) => {
+        combatAssetsReady = null;
+        combatPreloads.length = 0;
+        throw error;
+      });
+      return combatAssetsReady;
+    }
+
+    async function enterStageAfterOpening() {
+      if (gameStarted) return;
+      transitionLocked = true;
+      await prepareCombatAssets();
+      await runFadeTransition({
+        fadeOutMs: 1000,
+        fadeInMs: 1000,
+        swap: async () => {
+          opening.finish();
+          hall.setCamera(campaignConfig.camera ?? .5);
+          document.querySelector('#hud .player-label').textContent = currentStageId === 'stage1' ? '1P' : `1P · STAGE ${currentStageId.replace('stage', '')}`;
+          gameStarted = true;
+          stage.classList.add('game-running');
+          firstWaveReadyAt = gameRuntime.now() + 450 + firstWaveDelayMs;
+          updateHp();
+          updateItemGauge();
+          runAfterFirstWaveDelay(connectWebSocket);
+          if (!tickStarted) {
+            tickStarted = true;
+            gameRuntime.requestAnimationFrame(tick);
+          }
+        }
+      });
+      transitionLocked = false;
+    }
+
+    const missionBriefing = new MissionBriefing(modeScreen, stageNumber => startGameMode({ stageNumber }));
+
+    function returnToBriefing() {
+      // Reload resets combat timers, sockets, items and room state before another sortie.
+      const url = new URL(window.location.href);
+      url.searchParams.set('returnBriefing', currentStageId.replace('stage', ''));
+      window.location.replace(url.href);
+    }
+
+    function selectMode(mode, { voice = false } = {}) {
+      const changed = selectedMode !== mode;
+      selectedMode = mode;
+      modeCards.forEach((card) => {
+        card.classList.toggle('selected', card.dataset.mode === mode);
+      });
+      const detail = modeDetails[mode] ?? modeDetails['1p'];
+      modeDescription.innerHTML = `<strong>${detail.title}</strong>${detail.body}`;
+      if (mode === 'vs') prepareDuelAssets().catch(error => console.warn('[Duel] Background preload failed:', error));
+      if (voice && changed && modeVoiceSrc[mode]) {
+        playAudioCue(modeVoiceSrc[mode]);
+      }
+    }
+
+    function playOneShot(audio) {
+      registerAudio(audio);
+      audio.pause();
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
+
+    function playPooledEffect(src, volume = 0.88) {
+      if (!effectSoundPools.has(src)) {
+        effectSoundPools.set(src, []);
+      }
+      const pool = effectSoundPools.get(src);
+      let audio = pool.find((item) => item.paused || item.ended);
+      if (!audio) {
+        audio = new Audio(src);
+        registerAudio(audio);
+        audio.preload = 'auto';
+        pool.push(audio);
+      }
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = volume;
+      audio.play().catch((error) => {
+        console.warn(`[SFX] ${src} play failed:`, error);
+      });
+    }
+
+    function playJudgementSound(judgementName) {
+      if (judgementName === 'Miss') {
+        playOneShot(missSound);
+        return;
+      }
+      const activeGun = activeGunItem();
+      const effectSrc = activeGun ? gunEffectSrc[activeGun.id] : '';
+      if (effectSrc) {
+        playPooledEffect(effectSrc);
+        return;
+      }
+      playOneShot(gunSound);
+    }
+
+    function showItemName(item) {
+      const presentation = itemPresentation[item.id];
+      if (!presentation) return;
+      document.querySelectorAll('.item-name-popup').forEach((popup) => popup.remove());
+      const popup = document.createElement('div');
+      popup.className = `item-name-popup ${presentation.tone}`;
+      popup.textContent = presentation.label;
+      stage.appendChild(popup);
+      gameRuntime.setTimeout(() => popup.remove(), 1150);
+    }
+
+    function playItemCue(item) {
+      const presentation = itemPresentation[item.id];
+      if (!presentation?.voice) return;
+      playAudioCue(presentation.voice);
+    }
+
+    function announceItem(item) {
+      showItemName(item);
+      playItemCue(item);
+    }
+
+    function hasActiveItem(id) {
+      return activeItems.some((item) => item.id === id);
+    }
+
+    function activeEffectCount() {
+      return activeItems.length;
+    }
+
+    function activeSupportCount() {
+      return activeItems.filter((item) => isSupportItem(item)).length;
+    }
+
+    function isSupportItem(item) {
+      return supportItemIds.has(item.id);
+    }
+
+    function isGunItem(item) {
+      return gunItemIds.has(item.id);
+    }
+
+    function activeGunItem() {
+      return activeItems.find((item) => isGunItem(item)) || null;
+    }
+
+    function sortActiveItems() {
+      activeItems.sort((a, b) => {
+        if (isGunItem(a) && !isGunItem(b)) return -1;
+        if (!isGunItem(a) && isGunItem(b)) return 1;
+        return a.startedAt - b.startedAt;
+      });
+    }
+
+    function damageForJudgement(judgementName) {
+      const range = config.damageByJudgement?.[judgementName.toLowerCase()] ?? { min: 0, max: 0 };
+      const multiplier = hasActiveItem('power_up') ? 1.2 : 1;
+      return Math.round(randomInt(range.min, range.max) * multiplier);
+    }
+
+    function hpDamageForJudgement(judgementName) {
+      const base = config.hpDamageByJudgement[judgementName.toLowerCase()] ?? 0;
+      return base > 0 ? base + (hasActiveItem('power_up') ? config.powerUpHpBonus : 0) : 0;
+    }
+
+    function applyEnemyHpDamage(target, amount) {
+      if (target.isBoss) bossBattle.hit(amount);
+      else target.hp = Math.max(0, target.hp - amount);
+      drainEnemyHp(target, 0);
+    }
+
+    function formatScore(value) {
+      return Math.floor(value).toLocaleString('en-US');
+    }
+
+    function animateScoreTo(nextScore, gainedScore) {
+      gameRuntime.cancelAnimationFrame(scoreAnimationFrame);
+
+      const startScore = displayedScore;
+      const startTime = gameRuntime.now();
+      const duration = Math.min(520, Math.max(170, gainedScore * 5));
+
+      function step(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        displayedScore = Math.round(startScore + ((nextScore - startScore) * eased));
+        scoreValue.textContent = formatScore(displayedScore);
+
+        if (progress < 1) {
+          scoreAnimationFrame = gameRuntime.requestAnimationFrame(step);
+        } else {
+          displayedScore = nextScore;
+          scoreValue.textContent = formatScore(displayedScore);
+        }
+      }
+
+      scoreAnimationFrame = gameRuntime.requestAnimationFrame(step);
+    }
+
+    function addScore(value) {
+      if (value <= 0) return;
+      score += value;
+      animateScoreTo(score, value);
+    }
+
+    function scoreForHit(damage, target) {
+      const comboMultiplier = 1 + Math.floor(combo / 5) * 0.05;
+      const retryMultiplier = 1 - Math.min(2, target.dodgeTurns ?? 0) * 0.2;
+      return Math.round(damage * comboMultiplier * retryMultiplier);
+    }
+
+    function showCombo() {
+      if (combo < 5) return;
+      document.querySelectorAll('.combo-popup').forEach((popup) => popup.remove());
+      const popup = document.createElement('div');
+      popup.className = 'combo-popup';
+      popup.textContent = `${combo} combo!!`;
+      stage.appendChild(popup);
+      gameRuntime.setTimeout(() => popup.remove(), 780);
+    }
+
+    function comboGaugeBonus() {
+      return Math.floor(combo / 5);
+    }
+
+    function registerComboHit() {
+      combo += 1;
+      showCombo();
+      return comboGaugeBonus();
+    }
+
+    function resetCombo() {
+      combo = 0;
+    }
+
+    function updateHp() {
+      hp = Math.max(0, Math.min(100, hp));
+      hpFill.style.width = `${hp}%`;
+      hpText.textContent = `HP ${Math.round(hp)}`;
+    }
+
+    function damagePlayer(value) {
+      if (stageEnded || value <= 0 || hasActiveItem('armor_vest')) return;
+      hp -= value;
+      updateHp();
+      showHitBloodOverlay();
+      if (hp === 0 && gameStarted) endGame();
+    }
+
+    function rewardLevel() {
+      return selectedRewardLevel;
+    }
+
+    function isItemGaugeReady(level = 1) {
+      return itemGauge >= itemGaugeMax * level;
+    }
+
+    function updateItemGauge() {
+      const cappedGauge = Math.min(itemGauge, itemGaugeCap);
+      const totalPercent = Math.floor(cappedGauge);
+      const currentLevel = Math.min(3, Math.floor(cappedGauge / itemGaugeMax));
+      itemGaugeFills.forEach((fill, index) => {
+        const levelStart = index * itemGaugeMax;
+        const levelProgress = Math.max(0, Math.min(cappedGauge - levelStart, itemGaugeMax));
+        fill.style.width = `${(levelProgress / itemGaugeCap) * 100}%`;
+        fill.style.left = `${(levelStart / itemGaugeCap) * 100}%`;
+        fill.classList.toggle('ready', levelProgress >= itemGaugeMax);
+      });
+
+      gaugeRewardButtons.forEach((button) => {
+        const level = Number(button.dataset.level);
+        button.classList.toggle('visible', isItemGaugeReady(level) && !itemChoicesOpen && storedItems.includes(null));
+      });
+      itemGaugeLevel.textContent = `${currentLevel}`;
+      itemGaugePercent.textContent = `${totalPercent}%`;
+      const percentX = Math.max(0, Math.min(totalPercent / 300, 1)) * 100;
+      itemGaugePercent.style.left = `${percentX}%`;
+      itemGaugePercent.style.transform = percentX <= 4
+        ? 'translateX(0)'
+        : percentX >= 96
+          ? 'translateX(-100%)'
+          : 'translateX(-50%)';
+    }
+
+    function animateGaugeDrain(fromGauge, toGauge) {
+      const fromPercent = Math.max(0, Math.min(fromGauge / itemGaugeCap, 1)) * 100;
+      const toPercent = Math.max(0, Math.min(toGauge / itemGaugeCap, 1)) * 100;
+      itemGaugeDrainFill.style.transition = 'none';
+      itemGaugeDrainFill.style.opacity = '1';
+      itemGaugeDrainFill.style.width = `${fromPercent}%`;
+      itemGaugeFills.forEach((fill) => fill.classList.add('no-transition'));
+      updateItemGauge();
+      void itemGaugeDrainFill.offsetWidth;
+      itemGaugeFills.forEach((fill) => fill.classList.remove('no-transition'));
+      itemGaugeDrainFill.style.transition = 'width 520ms ease-out, opacity 160ms ease-out 520ms';
+      itemGaugeDrainFill.style.width = `${toPercent}%`;
+      itemGaugeDrainFill.style.opacity = '0';
+      gameRuntime.setTimeout(() => {
+        itemGaugeDrainFill.style.transition = 'none';
+        itemGaugeDrainFill.style.width = `${toPercent}%`;
+      }, 720);
+    }
+
+    function setItemChoicesOpen(open) {
+      itemChoicesOpen = open;
+      itemChoices.forEach((button, index) => {
+        button.classList.toggle('visible', open && index < currentItemChoices.length);
+      });
+      if (!open) {
+        currentItemChoices = [];
+      }
+      renderActiveItems();
+      updateItemGauge();
+    }
+
+    function resetItemGauge() {
+      itemGauge = 0;
+      selectedRewardLevel = 1;
+      updateItemGauge();
+      setItemChoicesOpen(false);
+    }
+
+    function addItemGaugeFor(judgementName, bonus = 0) {
+      const gain = gaugeByJudgement[judgementName] ?? 0;
+      const totalGain = (gain + bonus) * itemGaugeGainMultiplier;
+      if (totalGain <= 0 || itemGauge >= itemGaugeCap) return;
+      itemGauge = Math.min(itemGauge + totalGain, itemGaugeCap);
+      updateItemGauge();
+    }
+
+    function shuffleItems(items) {
+      const copy = [...items];
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function openItemChoices() {
+      const guns = shuffleItems(itemDefs.filter((item) => gunItemIds.has(item.id))).slice(0, 2);
+      const support = ['power_up', 'slow_down', 'medkit', 'armor_vest']
+        .map((id) => itemDefs.find((item) => item.id === id));
+      currentItemChoices = [...guns, ...support];
+      itemChoices.forEach((button, index) => {
+        const item = currentItemChoices[index];
+        button.innerHTML = item ? `<img src="${item.icon}" alt="${item.name}">` : '';
+        button.dataset.itemId = item?.id ?? '';
+        button.setAttribute('aria-label', item?.name ?? 'empty item');
+      });
+      setItemChoicesOpen(true);
+    }
+
+    function renderActiveItems() {
+      effectGaugeRows.forEach((row, index) => {
+        const item = activeItems[index];
+        const icon = row.querySelector('.active-item-icon');
+        const fill = row.querySelector('.effect-gauge-fill');
+        const text = row.querySelector('.effect-gauge-text');
+        row.classList.toggle('visible', Boolean(item));
+        icon.innerHTML = item ? `<img src="${item.icon}" alt="">` : '';
+        icon.dataset.itemId = item?.id ?? '';
+        icon.classList.toggle('visible', Boolean(item));
+        if (!item) {
+          fill.style.width = '100%';
+          text.textContent = '0%';
+          return;
+        }
+        const remainingMs = Math.max(0, item.endsAt - gameRuntime.now());
+        const percent = Math.max(0, Math.min((remainingMs / item.durationMs) * 100, 100));
+        fill.style.width = `${percent}%`;
+        text.textContent = `${Math.ceil(percent)}%`;
+      });
+    }
+
+    function applyTimedItemStartEffect(item) {
+      if (item.id === 'magnum') {
+        applyMagnumToActiveTargets();
+      } else if (item.id === 'slow_down') {
+        const now = gameRuntime.now();
+        activeTargets.forEach((target) => {
+          if (target.judged) return;
+          const elapsed = Math.max(0, now - target.startTime);
+          const progress = Math.min(elapsed / target.duration, 0.72);
+          target.duration = randomBetween(4000, 5000);
+          if (now >= target.startTime) target.startTime = now - (target.duration * progress);
+          target.perfectTime = target.startTime + (target.duration * perfectProgress);
+        });
+      }
+    }
+
+    function startTimedItem(item, level = rewardLevel()) {
+      const durationMs = itemDurationByRewardLevel[level];
+      const now = gameRuntime.now();
+      const nextItem = {
+        ...item,
+        level,
+        durationMs,
+        startedAt: now,
+        endsAt: now + durationMs
+      };
+
+      if (isGunItem(item)) {
+        activeItems = activeItems.filter((entry) => !isGunItem(entry));
+      } else if (isSupportItem(item)) {
+        activeItems = activeItems.filter((entry) => entry.id !== item.id);
+        if (activeSupportCount() >= 2) {
+          const oldestSupportIndex = activeItems.findIndex((entry) => isSupportItem(entry));
+          if (oldestSupportIndex >= 0) {
+            activeItems.splice(oldestSupportIndex, 1);
+          }
+        }
+      }
+
+      activeItems.push(nextItem);
+      sortActiveItems();
+      stopInactiveMachineGunRoutes();
+
+      applyTimedItemStartEffect(nextItem);
+      renderActiveItems();
+    }
+
+    function clearActiveItem() {
+      activeItems = [];
+      stopInactiveMachineGunRoutes();
+      renderActiveItems();
+      updateItemGauge();
+    }
+
+    function updateActiveItemGauge() {
+      stopInactiveMachineGunRoutes();
+      if (activeItems.length === 0) {
+        renderActiveItems();
+        return;
+      }
+      const now = gameRuntime.now();
+      activeItems = activeItems.filter((item) => item.endsAt > now);
+      stopInactiveMachineGunRoutes();
+      renderActiveItems();
+    }
+
+    function runAfterFirstWaveDelay(callback) {
+      if (stageEnded || floorTransition) return;
+      const remainingMs = Math.max(0, firstWaveReadyAt - gameRuntime.now());
+      gameRuntime.setTimeout(() => { if (!stageEnded && !floorTransition) callback(); }, remainingMs);
+    }
+
+    function selectItem(item) {
+      if (!gameStarted || stageEnded || gameRuntime.paused || !itemChoicesOpen) return;
+      const slot = storedItems.indexOf(null);
+      const level = rewardLevel();
+      if (slot < 0 || !isItemGaugeReady(level)) return;
+      storedItems[slot] = { ...item, level };
+      setItemChoicesOpen(false);
+      spendItemGauge(level);
+      renderInventory();
+    }
+
+    function renderInventory() {
+      inventoryButtons.forEach((button, index) => {
+        const item = storedItems[index];
+        button.disabled = !item || item.arriving || stageEnded;
+        button.innerHTML = item && !item.arriving ? `<img src="${item.icon}" alt=""><span>Lv.${item.level}</span>` : '';
+        button.dataset.itemId = item && !item.arriving ? item.id : '';
+        button.setAttribute('aria-label', item ? `Use ${item.name}, level ${item.level}` : `empty item slot ${index + 1}`);
+      });
+      updateItemGauge();
+    }
+
+    function useStoredItem(index) {
+      if (!gameStarted || stageEnded || floorTransition || gameRuntime.paused) return;
+      const item = storedItems[index];
+      if (!item || item.arriving) return;
+      storedItems[index] = null;
+      announceItem(item);
+      if (item.id === 'medkit') {
+        hp = Math.min(100, hp + ({ 1: 10, 2: 30, 3: 50 }[item.level] ?? 10));
+        updateHp();
+      } else {
+        startTimedItem(item, item.level);
+      }
+      renderInventory();
+    }
+
+    function deliverCrateReward(origin) {
+      const slot = storedItems.indexOf(null);
+      const item = slot < 0 ? itemDefs.find(item => item.id === 'medkit')
+        : itemDefs[Math.floor(Math.random() * itemDefs.length)];
+      const stored = { ...item, level: 1, arriving: true };
+      if (slot >= 0) {
+        storedItems[slot] = stored;
+        renderInventory();
+      }
+      const image = document.createElement('div');
+      image.className = 'crate-reward-flight';
+      const icon = new Image();
+      icon.src = item.icon;
+      icon.alt = '';
+      const label = document.createElement('span');
+      label.textContent = slot < 0 ? '+20' : 'Lv.1';
+      image.append(icon, label);
+      stage.append(image);
+      const startedAt = gameRuntime.now();
+      const duration = 800;
+      const targetElement = slot < 0 ? hpFill : inventoryButtons[slot];
+      const advance = now => {
+        if (!image.isConnected || stageEnded) { image.remove(); return; }
+        const progress = Math.min(1, (now - startedAt) / duration);
+        const rect = targetElement.getBoundingClientRect();
+        const stageRect = stage.getBoundingClientRect();
+        const x = rect.left - stageRect.left + rect.width / 2;
+        const y = rect.top - stageRect.top + rect.height / 2;
+        const travel = Math.max(0, (progress - 0.25) / 0.75);
+        const eased = travel * travel;
+        image.style.left = `${origin.x + (x - origin.x) * eased - 31}px`;
+        image.style.top = `${origin.y + (y - origin.y) * eased - Math.sin(progress * Math.PI) * 65 - 31}px`;
+        image.style.transform = `scale(${1.15 - travel * 0.15})`;
+        if (progress < 1) { gameRuntime.requestAnimationFrame(advance); return; }
+        image.remove();
+        if (slot < 0) {
+          hp = Math.min(100, hp + 20);
+          updateHp();
+        } else if (storedItems[slot] === stored) {
+          delete stored.arriving;
+          renderInventory();
+        }
+      };
+      gameRuntime.requestAnimationFrame(advance);
+    }
+
+    function spendItemGauge(level) {
+      const previousGauge = itemGauge;
+      itemGauge = Math.max(0, itemGauge - (itemGaugeMax * level));
+      selectedRewardLevel = 1;
+      if (level === 3 && previousGauge - itemGauge >= itemGaugeMax * 3) {
+        animateGaugeDrain(previousGauge, itemGauge);
+      } else {
+        updateItemGauge();
+      }
+    }
+
+    function showDamage(value, x, y) {
+      if (value <= 0) return;
+
+      const popup = document.createElement('div');
+      popup.className = 'damage-popup';
+      popup.textContent = `${value}`;
+      popup.style.left = `${x}px`;
+      popup.style.top = `${y}px`;
+      stage.appendChild(popup);
+      gameRuntime.setTimeout(() => popup.remove(), 900);
+    }
+
+    function drainEnemyHp(target, amount = 100) {
+      if (!target?.enemyHpFill) return;
+      target.hp = target.isBoss ? bossBattle.hp : Math.max(0, target.hp - target.maxHp * amount / 100);
+      target.visualHp = target.isBoss ? bossBattle.percent : target.hp / target.maxHp * 100;
+      target.enemyHpFill.style.width = `${(enemyHpBarMaxWidth * target.visualHp) / 100}px`;
+    }
+
+    function showBulletEffect(x, y) {
+      const frames = [
+        'sprites/effects/bullet_effect_1.png',
+        'sprites/effects/bullet_effect_2.png',
+        'sprites/effects/bullet_effect_3.png'
+      ];
+      const effect = document.createElement('img');
+      effect.className = 'bullet-effect';
+      effect.src = frames[0];
+      effect.alt = '';
+      effect.style.left = `${x}px`;
+      effect.style.top = `${y}px`;
+      stage.appendChild(effect);
+
+      gameRuntime.setTimeout(() => { effect.src = frames[1]; }, 55);
+      gameRuntime.setTimeout(() => { effect.src = frames[2]; }, 110);
+      gameRuntime.setTimeout(() => effect.remove(), 230);
+    }
+
+    function showEnemyMuzzleFlash(target) {
+      const flash = document.createElement('img');
+      flash.className = 'muzzle-flash';
+      flash.src = 'sprites/effects/bullet_effect_1.png';
+      flash.alt = '';
+      target.muzzleFlashes ??= new Set();
+      target.muzzleFlashes.add(flash);
+      positionEnemyMuzzleFlashes(target);
+      stage.appendChild(flash);
+      gameRuntime.setTimeout(() => {
+        target.muzzleFlashes.delete(flash);
+        flash.remove();
+      }, enemyMuzzleFlashMs);
+    }
+
+    function positionEnemyMuzzleFlashes(target) {
+      if (!target.muzzleFlashes?.size) return;
+      const flashWidth = target.enemyHeight * enemyMuzzleFlashWidthRatio;
+      const boss = target.isBoss ? hall.config.boss : null;
+      const offsetX = boss?.muzzleOffsetXRatio ?? (enemyMuzzleOffsetXRatio + enemyMuzzleFineTuneXRatio);
+      const offsetY = boss?.muzzleOffsetYRatio ?? (enemyMuzzleOffsetYRatio + enemyMuzzleFineTuneYRatio);
+      const bakedMuzzle = boss?.embedded ? hall.project(boss.muzzle.x, boss.muzzle.y) : null;
+      const x = bakedMuzzle?.x ?? target.x + target.enemyHeight * offsetX;
+      const y = bakedMuzzle?.y ?? target.enemyCenterY + target.enemyHeight * offsetY;
+      target.muzzleFlashes.forEach(flash => {
+        flash.style.width = `${bakedMuzzle ? 72 : flashWidth}px`;
+        flash.style.left = `${x}px`;
+        flash.style.top = `${y}px`;
+      });
+    }
+
+    function shakeStage() {
+      stage.classList.remove('shake');
+      void stage.offsetWidth;
+      stage.classList.add('shake');
+      gameRuntime.setTimeout(() => stage.classList.remove('shake'), 820);
+    }
+
+    function showHitBloodOverlay() {
+      document.querySelectorAll('.hit-blood-overlay').forEach((overlay) => overlay.remove());
+      const overlay = document.createElement('img');
+      overlay.className = 'hit-blood-overlay';
+      overlay.src = 'sprites/effects/hit_blood_overlay.png';
+      overlay.alt = '';
+      stage.appendChild(overlay);
+      gameRuntime.setTimeout(() => overlay.remove(), 820);
+    }
+
+    function setTargetAimingVisible(target, visible) {
+      const opacity = visible ? '1' : '0';
+      target.target.style.opacity = opacity;
+      target.perfect.style.opacity = opacity;
+      target.circle.style.opacity = opacity;
+      target.judge.classList.remove('visible');
+      target.judge.style.opacity = visible ? '' : '0';
+    }
+
+    function setMachinePromptVisible(target, visible) {
+      target.machinePrompt?.classList.toggle('visible', Boolean(visible && hasActiveItem('machine_gun')
+        && target.machineGunState && !target.judged));
+    }
+
+    function stopInactiveMachineGunRoutes() {
+      if (hasActiveItem('machine_gun')) return;
+      for (const target of [...activeTargets]) {
+        setMachinePromptVisible(target, false);
+        if (target.machineGunState) {
+          target.machineGunState = null;
+          finishTarget(target, 'hit');
+        }
+      }
+    }
+
+    function setEnemySprite(target, sprite, reaction = false) {
+      target.enemy.src = target.isBoss
+        ? (reaction ? hall.config.boss.hitSprite : hall.config.boss.sprite)
+        : (target.enemyVariant?.aim ?? sprite);
+      target.enemy.classList.toggle('reaction', reaction && !target.isBoss);
+    }
+
+    function restartTargetTiming(target) {
+      if (!target?.element.isConnected) return;
+      const now = gameRuntime.now();
+      target.duration = hasActiveItem('slow_down')
+        ? randomBetween(4000, 5000)
+        : randomBetween(config.spawnDurationMs?.min ?? 1180, config.spawnDurationMs?.max ?? 2600);
+      target.startTime = now;
+      target.perfectTime = target.startTime + (target.duration * perfectProgress);
+      target.judged = false;
+      target.countering = false;
+      target.counterResolved = false;
+      if (hasActiveItem('magnum')) setTargetColor(target, 'r');
+      target.machineGunHit = false;
+      target.machineGunState = null;
+      target.hp = target.isBoss ? bossBattle.hp : target.maxHp;
+      target.visualHp = target.isBoss ? bossBattle.percent : 100;
+      target.enemyHpFill.style.width = `${(enemyHpBarMaxWidth * target.visualHp) / 100}px`;
+      setMachinePromptVisible(target, false);
+      setEnemySprite(target, enemySprites.aim, false);
+      target.circle.style.transform = `translate(-50%, -50%) scale(${startScale})`;
+      setTargetAimingVisible(target, true);
+    }
+
+    function scheduleCounterRetries() {
+      gameRuntime.clearTimeout(counterRetryTimer);
+      if (dodge.current || activeTargets.some((target) => target.countering && !target.counterResolved)) return;
+      counterRetryTimer = gameRuntime.setTimeout(() => {
+        if (dodge.current || activeTargets.some((target) => target.countering && !target.counterResolved)) return;
+        activeTargets.filter((target) => target.countering).forEach((target) => {
+          if (target.isBoss) {
+            target.countering = false;
+            target.counterResolved = false;
+          } else restartTargetTiming(target);
+        });
+        if (hall.config.boss) advanceBossTurnWhenReady();
+      }, targetRetryAfterCounterMs);
+    }
+
+    function handleMissCounterattack(target) {
+      if (!target || target.countering) return;
+      target.countering = true;
+      target.counterResolved = false;
+      gameRuntime.clearTimeout(counterRetryTimer);
+      target.judged = true;
+      setTargetAimingVisible(target, false);
+
+      const shotDelay = judgementHoldMs + 120 + missCounterDelayAfterTextMs;
+      target.counterReadyAt = gameRuntime.now() + shotDelay;
+      startDodgeTurnWhenReady();
+
+    }
+
+    function startDodgeTurnWhenReady() {
+      gameRuntime.clearTimeout(dodgeTurnTimer);
+      if (hasUnjudgedTargets() || dodge.current || dodge.queue.length) return;
+      const failed = activeTargets.filter((target) => target.countering && !target.counterResolved);
+      if (!failed.length) return;
+      const readyAt = Math.max(...failed.map((target) => target.counterReadyAt));
+      dodgeTurnTimer = gameRuntime.setTimeout(() => {
+        if (hasUnjudgedTargets() || dodge.current || dodge.queue.length) return;
+        dodge.enqueueBatch(failed.filter((target) => target.element.isConnected));
+      }, Math.max(0, readyAt - gameRuntime.now()));
+    }
+
+    function clearActiveTargets() {
+      gameRuntime.clearTimeout(dodgeTurnTimer);
+      gameRuntime.clearTimeout(counterRetryTimer);
+      dodge.clear();
+      activeTargets.forEach((target) => {
+        target.muzzleFlashes?.forEach(flash => flash.remove());
+        target.muzzleFlashes?.clear();
+        target.element.remove();
+      });
+      activeTargets = [];
+    }
+
+    function stopCombat() {
+      sanctuary.cancel();
+      campaignStory.cancel();
+      roomWarning.clear();
+      supplyCrate.clear();
+      document.querySelectorAll('.crate-reward-flight').forEach(image => image.remove());
+      hostage.clear();
+      document.querySelectorAll('.hostage-warning').forEach(popup => popup.remove());
+      hall.cancelDodge();
+      stageEnded = true;
+      gameStarted = false;
+      gameRuntime.clearTimeout(nextSpawnTimer);
+      gameRuntime.clearTimeout(localFallbackTimer);
+      clearActiveTargets();
+      setItemChoicesOpen(false);
+      buttons.forEach((button) => {
+        button.disabled = true;
+        button.classList.remove('pressed');
+      });
+      gaugeRewardButtons.forEach((button) => { button.disabled = true; });
+      itemChoices.forEach((button) => { button.disabled = true; });
+      inventoryButtons.forEach((button) => { button.disabled = true; });
+      stage.classList.remove('shake');
+      document.getElementById('exitGame').hidden = true;
+    }
+
+    function completeStage() {
+      if (stageEnded || floorTransition) return;
+      if (currentStageId === 'stage4' && hall.config.bossPhase === 1) {
+        const target = activeTargets.find(target => target.isBoss);
+        handleSanctuaryBossCheckpoint(target);
+        if (target && !target.countering) finishBossTurnTarget(target);
+        return;
+      }
+      if (currentFloor < (campaignConfig.rooms?.length ?? 4)) {
+        const nextFloor = currentFloor + 1;
+        const rooms = campaignConfig;
+        const nextConfig = rooms.rooms?.[nextFloor - 1] ?? (nextFloor === 2 ? rooms.upperFloor : nextFloor === 3 ? rooms.diningRoom : rooms.bossRoom);
+        enterNextRoom(nextConfig, nextFloor).catch((error) => {
+          console.error('[Room] Could not prepare scene:', error);
+          const screen = document.getElementById('floorLoading');
+          screen.hidden = false;
+          document.getElementById('floorLoadingCaption').hidden = false;
+          document.getElementById('floorLoadingCaption').classList.remove('hold-fire-art');
+          document.getElementById('floorLoadingCaption').textContent = 'LOADING FAILED · TAP TO RETRY';
+          document.getElementById('floorLoading').addEventListener('pointerdown', () => {
+            floorTransition = false;
+            completeStage();
+          }, { once: true });
+        });
+        return;
+      }
+      stageCleared = true;
+      stopCombat();
+      stage.classList.add('stage-cleared');
+      if (currentStageId === 'stage4') {
+        finishSeasonOne().catch(error => console.error('[Ending]', error));
+        return;
+      }
+      bossAftermath.showDefeat(currentStageId);
+      stageClearScreen.dataset.clearPhase = 'results';
+      stageClearScreen.dataset.resultsComplete = 'false';
+      stageClearScreen.querySelector('.clear-results').hidden = false;
+      stageClearScreen.querySelector('.boss-dialogue').hidden = true;
+      document.getElementById('clearReturnToTitle').hidden = true;
+      stageClearScreen.hidden = false;
+      animateClearResults();
+    }
+
+    async function finishSeasonOne() {
+      await campaignStory.play(campaignConfig.ending);
+      await runFadeTransition({ fadeOutMs: 1000, fadeInMs: 1000, swap: () => {
+      campaignStory.layer.hidden = true;
+      stageClearScreen.dataset.clearPhase = 'results';
+      stageClearScreen.dataset.resultsComplete = 'false';
+      stageClearScreen.querySelector('.clear-results').hidden = false;
+      stageClearScreen.querySelector('.boss-dialogue').hidden = true;
+      document.getElementById('clearReturnToTitle').hidden = true;
+      stageClearScreen.hidden = false;
+      } });
+      await animateClearResults();
+    }
+
+    function handleSanctuaryBossCheckpoint(target) {
+      if (currentStageId !== 'stage4' || hall.config.bossPhase !== 1 || sanctuaryEscaped
+          || !target?.isBoss || bossBattle.hp > bossBattle.maxHp / 2) return false;
+      sanctuaryEscapePending = true;
+      return true;
+    }
+
+    function beginSanctuaryEscape() {
+      sanctuaryEscaped = true;
+      sanctuaryEscapePending = false;
+      const remainingHp = Math.max(1, bossBattle.hp);
+      const startedAt = gameRuntime.now();
+      floorTransition = true;
+      gameStarted = false;
+      gameRuntime.clearTimeout(nextSpawnTimer);
+      clearActiveTargets();
+      sanctuaryTransition = (async () => {
+        const completed = await campaignStory.play([campaignConfig.escape]);
+        floorTransition = false;
+        if (!completed || stageEnded) return;
+        activeItems.forEach(item => { item.endsAt += gameRuntime.now() - startedAt; });
+        await enterNextRoom({ ...campaignConfig.rooms[6], preserveBossHp: remainingHp }, 7);
+      })().catch(error => {
+        floorTransition = false;
+        console.error('[Boss escape]', error);
+      });
+    }
+
+    async function enterNextRoom(config, nextFloor) {
+      if (floorTransition || stageEnded) return;
+      floorTransition = true;
+      sanctuary.cancel();
+      supplyCrate.clear();
+      const startedAt = gameRuntime.now();
+      const clearedWave = activeWaveId;
+      gameStarted = false;
+      hall.cancelDodge();
+      gameRuntime.clearTimeout(nextSpawnTimer);
+      gameRuntime.clearTimeout(localFallbackTimer);
+      clearActiveTargets();
+      setItemChoicesOpen(false);
+      await waitMs(config.transitionDelayMs ?? 3000);
+      const screen = document.getElementById('floorLoading');
+      const image = document.getElementById('floorLoadingImage');
+      document.getElementById('floorLoadingCaption').textContent = 'HOLD YOUR FIRE';
+      document.getElementById('floorLoadingCaption').classList.toggle('hold-fire-art', Boolean(config.captionArt));
+      document.getElementById('floorLoadingCaption').hidden = Boolean(config.bakedEntryCaption);
+      screen.setAttribute('aria-label', config.name ? `${config.name} 진입` : nextFloor === 4 ? 'Entering boss room' : nextFloor === 3 ? 'Entering dining room' : 'Ascending stairs');
+      image.alt = config.name ? `경찰이 ${config.name}으로 이동한다` : nextFloor === 4 ? 'Police entering the small door behind the dining table' : nextFloor === 3 ? 'Police entering the dining room' : 'Police ascending the stairs';
+      // Crop baked-in lettering out, then use the common caption without clipping its text.
+      image.classList.toggle('baked-caption', Boolean(config.captionInImage));
+      image.style.objectFit = config.entryFit ?? 'cover';
+      image.style.objectPosition = config.entryPosition ?? '30% center';
+      image.src = nextFloor >= 3 || config.entryMale
+        ? (selectedMode === '2p' && config.entryCoop ? config.entryCoop : config.entryMale)
+        : config.stairsMale;
+      await image.decode();
+      await runFadeTransition({ fadeOutMs: 1000, fadeInMs: 1000, swap: () => {
+        campaignStory.layer.hidden = true;
+        screen.hidden = false;
+        stage.classList.remove('game-running');
+      } });
+      const nextHall = new HallScene(stage, config);
+      try {
+        const bossImage = new Image();
+        const bossHitImage = new Image();
+        if (config.boss) bossImage.src = config.boss.sprite;
+        if (config.boss) bossHitImage.src = config.boss.hitSprite;
+        await Promise.all([nextHall.prepare(), config.boss ? bossImage.decode() : Promise.resolve(), config.boss ? bossHitImage.decode() : Promise.resolve(), hostage.prepare(config.hostages ?? config.hostage),
+          currentStageId === 'stage4' && config.boss
+            ? loadBgmBuffer('sound/versus.mp3').catch(error => console.warn('[BGM] Final boss preload failed:', error)) : Promise.resolve(),
+          waitMs(config.loadingHoldMs)]);
+      } catch (error) {
+        nextHall.destroy();
+        throw error;
+      }
+      await runFadeTransition({ fadeOutMs: 1000, fadeInMs: 1000, swap: () => {
+        hall.destroy();
+        hall = nextHall;
+        hall.onCameraChange = () => {
+          activeTargets.forEach(positionHallTarget);
+          hostage.position();
+          supplyCrate.position();
+        };
+        hall.setCamera(config.camera);
+        spawnSlots = config.slots;
+        currentFloor = nextFloor;
+        bossBattle = config.boss ? new BossBattle(config.boss) : null;
+        if (bossBattle && config.preserveBossHp != null) bossBattle.hp = config.preserveBossHp;
+        hostage.enter(config.hostages ?? config.hostage);
+        stageEnemyTotal = config.enemyTotal;
+        supplyCrate.resetRoom(stageEnemyTotal, config.waveTargets ?? window.TIMING_SHOOTER_CONFIG.waveTargets ?? 2);
+        defeatedEnemies = 0;
+        nextWaveReadyAt = 0;
+        enemiesRemaining.textContent = String(stageEnemyTotal);
+        activeItems.forEach((item) => { item.endsAt += gameRuntime.now() - startedAt; });
+        floorTransition = false;
+        gameStarted = true;
+        stage.classList.add('game-running');
+        screen.hidden = true;
+        firstWaveReadyAt = gameRuntime.now() + 350 + firstWaveDelayMs;
+      } });
+      if (config.warning) {
+        floorTransition = true;
+        const warningStartedAt = gameRuntime.now();
+        const completed = await roomWarning.show(config.warning);
+        floorTransition = false;
+        if (!completed || stageEnded) return;
+        activeItems.forEach(item => { item.endsAt += gameRuntime.now() - warningStartedAt; });
+        firstWaveReadyAt = gameRuntime.now() + firstWaveDelayMs;
+      }
+      if (serverMode) sendSocket({ type: 'waveCleared', waveId: clearedWave });
+      else runAfterFirstWaveDelay(spawnWave);
+    }
+
+    async function animateClearResults() {
+      const shootScore = score;
+      const remainingHp = Math.floor(hp);
+      const shootRow = document.getElementById('clearShootRow');
+      const hpRow = document.getElementById('clearHpRow');
+      const totalRow = document.getElementById('clearTotalRow');
+      const hpScoreValue = document.getElementById('clearHpScore');
+      const totalScoreValue = document.getElementById('clearTotalScore');
+      gameRuntime.cancelAnimationFrame(scoreAnimationFrame);
+      displayedScore = shootScore;
+      scoreValue.textContent = formatScore(shootScore);
+      await waitMs(650);
+      document.getElementById('clearShootScore').textContent = formatScore(shootScore);
+      shootRow.classList.add('revealed');
+      await waitMs(650);
+      hpRow.classList.add('revealed');
+      await waitMs(360);
+      for (let converted = 1; converted <= remainingHp; converted++) {
+        await waitMs(24);
+        hp = remainingHp - converted;
+        updateHp();
+        hpScoreValue.textContent = formatScore(converted * 100);
+      }
+      await waitMs(450);
+      const totalScore = shootScore + remainingHp * 100;
+      totalRow.classList.add('revealed');
+      shootRow.classList.add('summing');
+      hpRow.classList.add('summing');
+      const startedAt = gameRuntime.now();
+      const updateTotal = (now) => {
+        const progress = Math.min(1, (now - startedAt) / 850);
+        totalScoreValue.textContent = formatScore(Math.round(totalScore * (1 - (1 - progress) ** 3)));
+        if (progress < 1) gameRuntime.requestAnimationFrame(updateTotal);
+        else {
+          stageClearScreen.dataset.resultsComplete = 'true';
+          document.getElementById('clearReturnToTitle').textContent = currentStageId === 'stage4'
+            ? '수사 브리핑으로 돌아가기' : '탭하여 대화 보기';
+          document.getElementById('clearReturnToTitle').hidden = false;
+          window.astSubmitClearScore({ stageId: currentStageId, shootScore, remainingHp, hpScore: remainingHp * 100, totalScore });
+        }
+      };
+      gameRuntime.requestAnimationFrame(updateTotal);
+    }
+
+    function endGame() {
+      if (stageEnded) return;
+      stopCombat();
+      hall.playDefeat();
+      gameOverScreen.hidden = false;
+    }
+
+    gameOverScreen.addEventListener('animationend', (event) => {
+      if (event.target !== gameOverScreen || event.animationName !== 'game-over-reveal') return;
+      gameRuntime.setTimeout(() => { returnToTitleButton.hidden = false; }, 3000);
+    });
+    [stageClearScreen, gameOverScreen].forEach((screen) => {
+      screen.addEventListener('click', () => {
+        if (screen === stageClearScreen) {
+          if (screen.hidden || screen.dataset.resultsComplete !== 'true') return;
+          if (screen.dataset.clearPhase === 'dialogue') returnToBriefing();
+          else if (currentStageId === 'stage4') returnToBriefing();
+          else bossAftermath.showDialogue(screen);
+          return;
+        }
+        const button = screen.querySelector('.return-to-title');
+        if (screen.hidden || button.hidden) return;
+        window.location.reload();
+      });
+    });
+
+    function playEnemyKnockdown(target, force = false) {
+      if (target.isBoss || target.knockdownSprite || (!force && !['Perfect', 'Great'].includes(target.hitJudgement))) return;
+      if (target.enemyVariant) {
+        playVariantKnockdown(target);
+        return;
+      }
+      const sprite = document.createElement('div');
+      sprite.className = 'enemy-knockdown';
+      sprite.style.backgroundImage = `url("${enemySprites.knockdown}")`;
+      sprite.style.width = sprite.style.height = `${target.enemyHeight}px`;
+      // Fall toward the visible play area instead of beyond its nearest edge.
+      const facing = target.x > stage.clientWidth / 2 ? -1 : 1;
+      sprite.style.transform = `translate(-50%, -50%) scaleX(${facing})`;
+      const row = target.hitJudgement === 'Perfect' ? '0%' : '100%';
+      sprite.style.backgroundPosition = `0% ${row}`;
+      target.enemy.style.visibility = 'hidden';
+      target.enemy.parentElement.append(sprite);
+      target.knockdownSprite = sprite;
+      for (let frame = 1; frame < 4; frame++) {
+        gameRuntime.setTimeout(() => {
+          if (sprite.isConnected) sprite.style.backgroundPosition = `${frame * 100 / 3}% ${row}`;
+        }, frame * (target.hitJudgement === 'Perfect' ? 100 : 85));
+      }
+    }
+
+    function finishTarget(target, reaction = 'hit') {
+      if (stageEnded || floorTransition || !target || target.judged || !target.element.isConnected) return;
+      if (target.isBoss) {
+        finishBossTurnTarget(target);
+        return;
+      }
+
+      const finishedTarget = target;
+      finishedTarget.judged = true;
+      drainEnemyHp(finishedTarget, 100);
+      nextWaveReadyAt = gameRuntime.now() + randomBetween(config.respawnDelayMs?.min ?? 2000, config.respawnDelayMs?.max ?? 3000);
+      if (hall.config.boss) updateBossEnemyCount();
+      else {
+        defeatedEnemies = Math.min(stageEnemyTotal, defeatedEnemies + 1);
+        enemiesRemaining.textContent = String(stageEnemyTotal - defeatedEnemies);
+      }
+      finishedTarget.machineGunState = null;
+      setMachinePromptVisible(finishedTarget, false);
+      finishedTarget.circle.style.opacity = '0';
+      finishedTarget.judge.classList.remove('visible');
+      if (reaction !== 'none' && !finishedTarget.knockdownSprite) {
+        setEnemySprite(finishedTarget, enemySprites[reaction] ?? enemySprites.hit, reaction === 'hit' || reaction === 'graze');
+        playEnemyKnockdown(finishedTarget);
+      }
+      startDodgeTurnWhenReady();
+      if (serverMode && !hasActiveOrCounteringTargets()) {
+        sendSocket({ type: 'waveCleared', waveId: activeWaveId });
+      }
+
+      gameRuntime.setTimeout(() => {
+        if (finishedTarget.element.isConnected) {
+          finishedTarget.element.remove();
+        }
+        finishedTarget.muzzleFlashes?.forEach(flash => flash.remove());
+        finishedTarget.muzzleFlashes?.clear();
+        activeTargets = activeTargets.filter((item) => item !== finishedTarget);
+        // Keep the final batch on screen until every death reaction has finished.
+        if (!stageEnded && !floorTransition && !hall.config.boss && defeatedEnemies === stageEnemyTotal) {
+          if (!activeTargets.length) completeStage();
+          return;
+        }
+        if (!stageEnded && !serverMode && !hasActiveOrCounteringTargets()) {
+          scheduleSpawn(Math.max(0, nextWaveReadyAt - gameRuntime.now()));
+        }
+      }, judgementHoldMs);
+    }
+
+    function scheduleSpawn(delay = randomBetween(config.respawnDelayMs?.min ?? 2000, config.respawnDelayMs?.max ?? 3000)) {
+      if (stageEnded || floorTransition) return;
+      gameRuntime.clearTimeout(nextSpawnTimer);
+      nextSpawnTimer = gameRuntime.setTimeout(spawnWave, delay);
+    }
+
+    function makeImage(className, src) {
+      const img = document.createElement('img');
+      img.className = className;
+      img.src = `sprites/${src}`;
+      img.alt = '';
+      return img;
+    }
+
+    function slotById(slotId) {
+      return spawnSlots.find((slot) => slot.id === slotId) || spawnSlots[0];
+    }
+
+    function makeTarget(color, slot, options = {}) {
+      if (stageEnded || floorTransition) return;
+      if (hasActiveItem('magnum')) refreshHostageColor(false);
+      const effectiveColor = colorForEnemy(hasActiveItem('magnum') ? 'r' : color);
+      const sprite = colors[effectiveColor];
+      const element = document.createElement('div');
+      const enemy = makeImage('enemy-img', 'enemies/mafia_gunman_aim_01.png');
+      const enemyVariant = options.isBoss ? null : chooseEnemyVariant();
+      if (enemyVariant) enemy.src = enemyVariant.aim;
+      if (options.isBoss) enemy.src = hall.config.boss.sprite;
+      if (options.isBoss && hall.config.boss.embedded) enemy.style.visibility = 'hidden';
+      const enemyMotion = document.createElement('div');
+      enemyMotion.className = 'enemy-motion';
+      enemyMotion.style.zIndex = slot.depth ?? 1;
+      enemyMotion.append(enemy);
+      const enemyCover = slot.clipBottomY != null ? document.createElement('div') : null;
+      if (enemyCover) {
+        enemyCover.className = 'enemy-cover';
+        enemyCover.append(enemyMotion);
+      }
+      const target = makeImage('target-img', sprite.target);
+      const perfect = makeImage('perfect-line-img', sprite.perfect);
+      const circle = makeImage('circle-img', sprite.circle);
+      const judge = makeImage('judge-img', sprite.judge);
+      const enemyHp = document.createElement('div');
+      const enemyHpFill = document.createElement('div');
+      const enemyHpFrame = makeImage('enemy-hp-frame', 'UI/hp_frame.png');
+      const machinePrompt = document.createElement('div');
+      const machinePromptButton = makeImage('', sprite.target);
+      const machinePromptText = document.createElement('span');
+
+      element.className = 'target-set';
+      enemyHp.className = 'enemy-hp';
+      enemyHpFill.className = 'enemy-hp-fill';
+      enemyHp.append(enemyHpFill, enemyHpFrame);
+      machinePrompt.className = 'machine-push-prompt';
+      machinePromptText.textContent = 'PUSH';
+      machinePrompt.append(machinePromptButton, machinePromptText);
+      element.append(enemyCover ?? enemyMotion, enemyHp, target, perfect, circle, judge, machinePrompt);
+      stage.appendChild(element);
+
+      const enemyHeight = stage.clientHeight * slot.heightRatio;
+      const x = hall.screenX(slot.worldX);
+      const y = options.isBoss && hall.config.boss.embedded
+        ? hall.project(slot.worldX, slot.aimY).y + enemyHeight * .20
+        : stage.clientHeight * slot.footY - enemyHeight / 2;
+      const aimOffset = -enemyHeight * 0.20;
+      const duration = hasActiveItem('slow_down')
+        ? randomBetween(4000, 5000)
+        : (options.duration ?? randomBetween(config.spawnDurationMs?.min ?? 1180, config.spawnDurationMs?.max ?? 2600));
+
+      element.style.left = `${x - circleBaseSize / 2}px`;
+      element.style.top = `${y - circleBaseSize / 2}px`;
+      enemy.style.height = `${enemyHeight}px`;
+      enemyHp.style.top = `calc(50% + ${Math.round(enemyHeight * 0.55)}px)`;
+      [target, perfect, circle, judge].forEach((image) => {
+        image.style.top = `calc(50% + ${aimOffset}px)`;
+      });
+      machinePrompt.style.top = `calc(50% + ${aimOffset - 34}px)`;
+
+      const now = gameRuntime.now();
+      const riseMs = slot.rise ? hall.config.riseMs : 0;
+      const startTime = (options.startAt ? Math.max(now, now + (options.startAt - Date.now())) : now) + (config.targetRevealDelayMs ?? 700);
+      if (riseMs) {
+        enemyMotion.animate([
+          { transform: `translateY(${enemyHeight * 0.5}px)`, opacity: 0 },
+          { transform: 'translateY(0)', opacity: 1 }
+        ], { duration: riseMs, easing: 'ease-out' });
+      }
+      const newTarget = {
+        enemyVariant,
+        isBoss: Boolean(options.isBoss),
+        dodgeDurationMs: options.isBoss ? hall.config.boss.dodgeDurationMs : undefined,
+        dodgeShotCount: options.isBoss ? hall.config.boss.dodgeShotCount : undefined,
+        dodgeColorChangeProgress: options.isBoss ? hall.config.boss.dodgeColorChangeProgress : undefined,
+        color: effectiveColor,
+        originalColor: color,
+        slotId: slot.id,
+        targetId: options.id ?? `${slot.id}_${Date.now()}`,
+        element,
+        slot,
+        enemy,
+        enemyCover,
+        enemyHp,
+        enemyHpFill,
+        target,
+        perfect,
+        circle,
+        judge,
+        machinePrompt,
+        machinePromptButton,
+        x,
+        y: y + aimOffset,
+        enemyHeight,
+        enemyCenterY: y,
+        startTime,
+        duration,
+        perfectTime: 0,
+        judged: false,
+        aimingPending: true,
+        countering: false,
+        machineGunHit: false,
+        machineGunState: null,
+        hp: options.isBoss ? bossBattle.hp : 1,
+        maxHp: options.isBoss ? bossBattle.maxHp : 1,
+        visualHp: 100
+      };
+      newTarget.perfectTime = newTarget.startTime + (newTarget.duration * perfectProgress);
+      activeTargets.push(newTarget);
+      setTargetAimingVisible(newTarget, false);
+      positionHallTarget(newTarget);
+      if (newTarget.isBoss) drainEnemyHp(newTarget, 0);
+      return newTarget;
+    }
+
+    function positionHallTarget(target) {
+      const { slot } = target;
+      const height = stage.clientHeight * slot.heightRatio;
+      const centerY = target.isBoss && hall.config.boss.embedded
+        ? hall.project(slot.worldX, slot.aimY).y + height * .20
+        : stage.clientHeight * slot.footY - height / 2;
+      target.x = hall.screenX(slot.worldX);
+      target.y = centerY - height * 0.20;
+      target.enemyHeight = height;
+      target.enemyCenterY = centerY;
+      positionEnemyMuzzleFlashes(target);
+      target.element.style.left = `${target.x - circleBaseSize / 2}px`;
+      target.element.style.top = `${centerY - circleBaseSize / 2}px`;
+      target.enemy.style.height = `${height}px`;
+      if (target.knockdownSprite) {
+        if (target.enemyVariant) positionVariantKnockdown(target);
+        else target.knockdownSprite.style.width = target.knockdownSprite.style.height = `${height}px`;
+      }
+      if (target.enemyCover) {
+        // This mask stays still while the character rises behind the fountain.
+        const bottomInset = centerY + circleBaseSize / 2 - stage.clientHeight * slot.clipBottomY;
+        target.enemyCover.style.clipPath = `inset(-100vh -100vw ${bottomInset}px -100vw)`;
+      }
+      target.enemyHp.style.top = `calc(50% + ${Math.round(height * 0.55)}px)`;
+      [target.target, target.perfect, target.circle, target.judge].forEach((image) => {
+        image.style.top = `calc(50% - ${height * 0.20}px)`;
+      });
+      target.machinePrompt.style.top = `calc(50% - ${height * 0.20 + 34}px)`;
+    }
+
+    function spawnWave(wave = null) {
+      if (stageEnded || floorTransition) return;
+      if (hall.config.special) {
+        if (!sanctuary.active) { clearActiveTargets(); sanctuary.start(hall.config); }
+        return;
+      }
+      if (activeTargets.some(target => target.machineGunState && !target.judged)) {
+        gameRuntime.clearTimeout(nextSpawnTimer);
+        nextSpawnTimer = gameRuntime.setTimeout(() => spawnWave(wave), 100);
+        return;
+      }
+      if (gameRuntime.now() < nextWaveReadyAt) {
+        gameRuntime.clearTimeout(nextSpawnTimer);
+        nextSpawnTimer = gameRuntime.setTimeout(() => spawnWave(wave), nextWaveReadyAt - gameRuntime.now());
+        return;
+      }
+      if (hall.config.boss) {
+        spawnBossWave(wave);
+        return;
+      }
+      clearActiveTargets();
+
+      if (hall.config.uniqueHostageColors) refreshHostageColor();
+      if (wave) {
+        activeWaveId = wave.waveId;
+        const useRoomSlots = currentFloor > 1 || currentStageId !== 'stage1';
+        const roomSlots = useRoomSlots ? shuffleItems(spawnSlots) : [];
+        const targets = wave.targets.slice();
+        if (hall.config.waveTargets) {
+          const available = shuffleItems(Object.keys(colors).filter(color => color !== supplyCrate.color
+            && !hostage.colors.includes(color)));
+          const count = Math.min(hall.config.waveTargets, stageEnemyTotal - defeatedEnemies, available.length);
+          // The legacy local server sends two targets; room rules may require three.
+          while (targets.length < count) {
+            const color = available.find(color => !targets.some(target => target.color === color)) ?? available[0];
+            targets.push({ id: `${wave.waveId}_room_${targets.length}`, color });
+          }
+          targets.length = count;
+        }
+        const enemyColors = hall.config.uniqueHostageColors
+          ? shuffleItems(Object.keys(colors).filter(color => !hostage.colors.includes(color))) : null;
+        targets.slice(0, stageEnemyTotal - defeatedEnemies).forEach((target, index) => {
+          makeTarget(enemyColors ? enemyColors[index] : target.color, useRoomSlots ? roomSlots[index % roomSlots.length] : slotById(target.slotId), {
+            id: target.id,
+            duration: target.duration,
+            startAt: wave.startAt
+          });
+        });
+        beginCrateTurn();
+        return;
+      }
+
+      activeWaveId = `local_${Date.now()}`;
+      const freeColors = Object.keys(colors).filter(color => color !== supplyCrate.color
+        && !hostage.colors.includes(color));
+      const targetCount = Math.min(hall.config.waveTargets ?? config.waveTargets ?? 3, stageEnemyTotal - defeatedEnemies, freeColors.length);
+      const availableSlots = [...spawnSlots].sort(() => Math.random() - 0.5).slice(0, targetCount);
+      const waveColors = [];
+      while (waveColors.length < targetCount) {
+        const color = pickRandomColor();
+        if (!waveColors.includes(color)) {
+          waveColors.push(color);
+        }
+      }
+      waveColors.sort(() => Math.random() - 0.5);
+      waveColors.forEach((color, index) => makeTarget(color, availableSlots[index]));
+      beginCrateTurn();
+    }
+
+    function updateBossEnemyCount() {
+      enemiesRemaining.textContent = String((bossBattle.hp > 0 ? 1 : 0)
+        + activeTargets.filter(target => !target.isBoss && !target.judged).length);
+    }
+
+    function advanceBossTurnWhenReady() {
+      if (stageEnded || floorTransition || bossBattle?.advanceQueued || hasActiveOrCounteringTargets()
+          || dodge.current || dodge.queue.length) return;
+      bossBattle.advanceQueued = true;
+      if (serverMode) sendSocket({ type: 'waveCleared', waveId: activeWaveId });
+      else scheduleSpawn(Math.max(0, nextWaveReadyAt - gameRuntime.now()));
+    }
+
+    function finishBossTurnTarget(target) {
+      target.judged = true;
+      target.machineGunState = null;
+      setMachinePromptVisible(target, false);
+      setTargetAimingVisible(target, false);
+      drainEnemyHp(target, 0);
+      setEnemySprite(target, hall.config.boss.sprite, true);
+      nextWaveReadyAt = gameRuntime.now() + randomBetween(config.respawnDelayMs.min, config.respawnDelayMs.max);
+      handleMissCounterattack(target);
+      gameRuntime.setTimeout(() => {
+        if (target.element.isConnected && target.judged) setEnemySprite(target, hall.config.boss.sprite, false);
+      }, judgementHoldMs);
+    }
+
+    function spawnBossWave(wave) {
+      if (!bossBattle || hasActiveOrCounteringTargets()) return;
+      if (sanctuaryEscapePending && hall.config.bossPhase === 1) {
+        beginSanctuaryEscape();
+        return;
+      }
+      if (bossBattle.hp === 0) return;
+      if (currentStageId === 'stage4') playBgmLoop('final-boss', 'sound/versus.mp3');
+      const existingBoss = activeTargets.find(target => target.isBoss);
+      gameRuntime.clearTimeout(dodgeTurnTimer);
+      gameRuntime.clearTimeout(counterRetryTimer);
+      dodge.clear();
+      activeTargets.filter(target => target !== existingBoss).forEach(target => target.element.remove());
+      activeTargets = existingBoss ? [existingBoss] : [];
+      const turn = bossBattle.nextTurn();
+      bossBattle.advanceQueued = false;
+      activeWaveId = wave?.waveId ?? `boss_${bossBattle.turn}_${Date.now()}`;
+      let target = existingBoss;
+      if (target) {
+        restartTargetTiming(target);
+        setTargetColor(target, hasActiveItem('magnum') ? 'r' : turn.color);
+        if (!hasActiveItem('slow_down') && wave?.targets[0]?.duration) target.duration = wave.targets[0].duration;
+        target.startTime = gameRuntime.now() + Math.max(0, (wave?.startAt ?? Date.now()) - Date.now()) + config.targetRevealDelayMs;
+        target.perfectTime = target.startTime + target.duration * perfectProgress;
+        target.aimingPending = true;
+        setTargetAimingVisible(target, false);
+      } else target = makeTarget(turn.color, spawnSlots[0], {
+        isBoss: true, id: 'mafia_boss', duration: wave?.targets[0]?.duration, startAt: wave?.startAt
+      });
+      target.bossFlipColor = turn.flipColor;
+      target.bossColorChanged = false;
+      turn.guardColors.forEach((color, index) => makeTarget(color, spawnSlots[index + 1], {
+        id: `boss_guard_${bossBattle.turn}_${index}`, duration: wave?.targets[index + 1]?.duration, startAt: wave?.startAt
+      }));
+      updateBossEnemyCount();
+    }
+
+    function updateBossTargetColor(target) {
+      if (!target.isBoss || target.judged || target.machineGunState || target.bossColorChanged
+          || hall.config.boss.colorChangeProgress == null
+          || hasActiveItem('magnum') || gameRuntime.now() < target.startTime + target.duration * hall.config.boss.colorChangeProgress) return;
+      target.bossColorChanged = true;
+      setTargetColor(target, target.bossFlipColor);
+    }
+
+    function judgementYFor(target) {
+      return target.y - (perfectSize / 2) - 58;
+    }
+
+    function currentScale(target) {
+      const elapsed = gameRuntime.now() - target.startTime;
+      const progress = Math.min(Math.max(elapsed / target.duration, 0), 1);
+      return startScale + (endScale - startScale) * progress;
+    }
+
+    function currentCircleDiameter(target) {
+      return circleBaseSize * currentScale(target);
+    }
+
+    function currentTimingDeltaMs(target) {
+      return gameRuntime.now() - target.perfectTime;
+    }
+
+    function hasUnjudgedTargets() {
+      return activeTargets.some((target) => !target.judged);
+    }
+
+    function hasActiveOrCounteringTargets() {
+      return activeTargets.some((target) => !target.judged || target.countering);
+    }
+
+    function targetForColor(color) {
+      if (hasActiveItem('magnum')) {
+        return color === 'r' ? mostUrgentTarget() : null;
+      }
+      return activeTargets
+        .filter((target) => target.color === color && !target.judged && gameRuntime.now() >= target.startTime)
+        .sort((a, b) => a.perfectTime - b.perfectTime)[0] || null;
+    }
+
+    function mostUrgentTarget() {
+      return activeTargets
+        .filter((target) => !target.judged && gameRuntime.now() >= target.startTime)
+        .sort((a, b) => a.perfectTime - b.perfectTime)[0] || null;
+    }
+
+    function judgementMultiplier() {
+      return hasActiveItem('sniper') ? sniperJudgementMultiplier : 1;
+    }
+
+    function effectiveWindow(baseMs) {
+      return baseMs * judgementMultiplier();
+    }
+
+    function judgementForTarget(target) {
+      const distance = Math.abs(currentTimingDeltaMs(target));
+      if (distance <= effectiveWindow(perfectWindowMs)) {
+        return { text: 'Perfect', colorText: '#ffd629' };
+      }
+      if (distance <= effectiveWindow(greatWindowMs)) {
+        return { text: 'Great', colorText: '#39ff67' };
+      }
+      if (distance <= effectiveWindow(goodWindowMs)) {
+        return { text: 'Good', colorText: '#3d8cff' };
+      }
+      if (distance <= effectiveWindow(badWindowMs)) {
+        return { text: 'Bad', colorText: '#b15cff' };
+      }
+      return { text: 'Miss', colorText: '#ff3434' };
+    }
+
+    function setTargetColor(target, color) {
+      color = colorForEnemy(color, target);
+      const sprite = colors[color];
+      target.color = color;
+      target.target.src = `sprites/${sprite.target}`;
+      target.perfect.src = `sprites/${sprite.perfect}`;
+      target.circle.src = `sprites/${sprite.circle}`;
+      target.judge.src = `sprites/${sprite.judge}`;
+      target.machinePromptButton.src = `sprites/${sprite.target}`;
+    }
+
+    function applyMagnumToActiveTargets() {
+      refreshHostageColor(false);
+      activeTargets.forEach((target) => {
+        if ((target.judged && !target.countering) || target.color === 'r') return;
+        setTargetColor(target, 'r');
+      });
+      refreshHostageColor(false);
+    }
+
+    function applyHitResult(target, result, options = {}) {
+      if (stageEnded || !target.element.isConnected) return;
+      const { keepAlive = false, silentMiss = false, silentSound = false } = options;
+      const { text, colorText } = result;
+
+      if (!silentSound) playJudgementSound(text);
+      if (text === 'Miss') {
+        if (!silentMiss) {
+          resetCombo();
+          showJudgement('Miss', '#ff3434', target.x, judgementYFor(target));
+          sendJudgement('Miss', target);
+          handleMissCounterattack(target);
+        }
+        return;
+      }
+
+      showBulletEffect(target.x, target.y);
+      target.hitJudgement = text;
+      const damage = damageForJudgement(text);
+      const gaugeBonus = registerComboHit();
+      showJudgement(text, colorText, target.x, judgementYFor(target));
+      showDamage(damage, target.x, target.y + 3);
+      applyEnemyHpDamage(target, keepAlive ? 1 : hpDamageForJudgement(text));
+      addScore(scoreForHit(damage, target));
+      addItemGaugeFor(text, gaugeBonus);
+      sendJudgement(text, target);
+      handleSanctuaryBossCheckpoint(target);
+      if (target.isBoss && hall.config.boss.embedded) hall.playBossHit();
+      if (target.isBoss && bossBattle.hp === 0) {
+        enemiesRemaining.textContent = '0';
+        completeStage();
+        return damage;
+      }
+
+      if (keepAlive) {
+        target.machineGunHit = true;
+        setEnemySprite(target, text === 'Bad' ? enemySprites.graze : enemySprites.hit, true);
+        playEnemyKnockdown(target, true);
+        gameRuntime.setTimeout(() => {
+          if (target.isBoss && target.element.isConnected && !target.judged) {
+            setEnemySprite(target, enemySprites.aim, false);
+          }
+        }, 120);
+        return damage;
+      }
+
+      finishTarget(target, text === 'Bad' ? 'graze' : 'hit');
+    }
+
+    function startMachineGunRoute(target, result, firstScore) {
+      if (stageEnded || target.judged || !target.element.isConnected) return;
+      const now = gameRuntime.now();
+      target.machineGunHit = true;
+      target.machineGunState = {
+        result,
+        shotsFired: 1,
+        lastScore: firstScore,
+        startedAt: now,
+        endsAt: now + machineGunHoldMs,
+        lastInputAt: now
+      };
+      target.judge.classList.remove('visible');
+      setMachinePromptVisible(target, false);
+      gameRuntime.setTimeout(() => {
+        if (target.element.isConnected && !target.judged && target.machineGunState) {
+          finishTarget(target, 'hit');
+        }
+      }, machineGunHoldMs);
+    }
+
+    function applyMachineGunRepeatHit(target) {
+      const state = target.machineGunState;
+      if (!hasActiveItem('machine_gun') || !state || target.judged || !target.element.isConnected
+          || state.shotsFired >= machineGunMaxShots || gameRuntime.now() >= state.endsAt) return;
+      state.shotsFired += 1;
+      state.lastScore = Math.floor(state.lastScore / 2);
+      state.lastInputAt = gameRuntime.now();
+      setMachinePromptVisible(target, false);
+      playJudgementSound(state.result.text);
+      showBulletEffect(target.x, target.y);
+      showDamage(state.lastScore, target.x, target.y + 3);
+      addScore(scoreForHit(state.lastScore, target));
+      if (target.isBoss && bossBattle.hp === 0) {
+        enemiesRemaining.textContent = '0';
+        completeStage();
+        return;
+      }
+      if (target.isBoss) setEnemySprite(target, enemySprites.hit, true);
+      gameRuntime.setTimeout(() => {
+        if (target.isBoss && target.element.isConnected && !target.judged) {
+          setEnemySprite(target, enemySprites.aim, false);
+        }
+      }, 90);
+      if (state.shotsFired === machineGunMaxShots) {
+        finishTarget(target, 'hit');
+      }
+    }
+
+    function applyShotgunResult(result) {
+      const targets = activeTargets.filter((target) => !target.judged);
+      if (targets.length) playJudgementSound(result.text);
+      targets.forEach((target) => {
+        applyHitResult(target, result, { silentSound: true });
+      });
+    }
+
+    function judgePressed(color) {
+      if (stageEnded || gameRuntime.paused) return;
+      if (tutorial.press(color)) return;
+      if (opening.active) {
+        opening.shoot(color);
+        return;
+      }
+      if (!gameStarted) {
+        return;
+      }
+      if (floorTransition || !campaignStory.layer.hidden) return;
+      if (sanctuary.press(color)) return;
+      if (dodge.press(color)) return;
+      updateCrateInput();
+      if (supplyCrate.press(color)) return;
+      updateHostageInput();
+      if (hostage.press(color)) return;
+      if (!hasUnjudgedTargets()) {
+        return;
+      }
+      activeTargets.forEach(updateBossTargetColor);
+      if (!mostUrgentTarget()) return;
+
+      const target = targetForColor(color);
+      if (!target) {
+        if (hasActiveItem('machine_gun')) {
+          playJudgementSound('Miss');
+          return;
+        }
+        const urgentTarget = mostUrgentTarget();
+        applyHitResult(urgentTarget, { text: 'Miss', colorText: '#ff3434' });
+        return;
+      }
+
+      let result = judgementForTarget(target);
+
+      if (hasActiveItem('machine_gun')) {
+        if (target.machineGunState) {
+          applyMachineGunRepeatHit(target);
+          return;
+        }
+        if (result.text === 'Miss') {
+          applyHitResult(target, result);
+          return;
+        }
+        const firstScore = applyHitResult(target, result, { keepAlive: true, silentMiss: true });
+        startMachineGunRoute(target, result, firstScore);
+        return;
+      }
+
+      if (hasActiveItem('shotgun') && result.text !== 'Miss') {
+        applyShotgunResult(result);
+        return;
+      }
+
+      applyHitResult(target, result);
+    }
+
+    function updateButtonPress(button) {
+      button.classList.add('pressed');
+      gameRuntime.setTimeout(() => button.classList.remove('pressed'), 90);
+    }
+
+    function tick() {
+      if (stageEnded) return;
+      if (floorTransition) {
+        gameRuntime.requestAnimationFrame(tick);
+        return;
+      }
+      updateActiveItemGauge();
+      dodge.update(gameRuntime.now());
+      hall.updateDodge(gameRuntime.now());
+      if (sanctuary.active) {
+        sanctuary.update(gameRuntime.now());
+        gameRuntime.requestAnimationFrame(tick);
+        return;
+      }
+      updateHostageInput();
+      updateCrateInput();
+      activeTargets.forEach((target) => {
+        if (target.judged) return;
+        if (gameRuntime.now() < target.startTime) return;
+        updateBossTargetColor(target);
+        if (target.aimingPending) {
+          target.aimingPending = false;
+          setTargetAimingVisible(target, true);
+        }
+
+        if (target.machineGunState) {
+          const now = gameRuntime.now();
+          if (now >= target.machineGunState.endsAt) {
+            finishTarget(target, 'hit');
+            return;
+          }
+          setMachinePromptVisible(target, now - target.machineGunState.lastInputAt >= machineGunPromptIdleMs);
+          return;
+        }
+
+        const scale = currentScale(target);
+        const timingDeltaMs = currentTimingDeltaMs(target);
+        target.circle.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        const sniperActive = hasActiveItem('sniper');
+        target.perfect.classList.toggle('sniper-assisted', sniperActive);
+        target.judge.classList.toggle('sniper-assisted', sniperActive);
+        const cueMultiplier = judgementMultiplier();
+        const judgeVisible = timingDeltaMs >= -(judgeShowBeforePerfectMs * cueMultiplier)
+          && timingDeltaMs <= (judgeHideAfterPerfectMs * cueMultiplier);
+        target.judge.classList.toggle('visible', judgeVisible);
+
+        const expiredByMachineGun = (hasActiveItem('machine_gun') || target.machineGunHit)
+          && gameRuntime.now() > target.startTime + target.duration + autoMissMs;
+        const expiredNormally = !hasActiveItem('machine_gun') && !target.machineGunHit && timingDeltaMs > autoMissMs;
+
+        if (expiredByMachineGun || expiredNormally) {
+          if (expiredByMachineGun && target.machineGunHit) {
+            finishTarget(target, 'hit');
+          } else {
+            applyHitResult(target, { text: 'Miss', colorText: '#ff3434' });
+          }
+        }
+      });
+
+      gameRuntime.requestAnimationFrame(tick);
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        if (duel.active) {
+          updateButtonPress(button);
+          duel.combat.press(button.dataset.color);
+          return;
+        }
+        if (gameRuntime.paused) return;
+        if (!gameStarted && !opening.canShoot && !tutorial.active) return;
+        resumeBgm();
+        updateButtonPress(button);
+        judgePressed(button.dataset.color);
+      });
+    });
+
+    titleScreen.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      showModeSelect();
+    });
+
+    modeCards.forEach((card) => {
+      card.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        resumeBgm();
+        selectMode(card.dataset.mode, { voice: true });
+      });
+    });
+
+    startGameButton.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      if (transitionLocked || missionBriefing.busy || missionBriefing.active) return;
+      if (selectedMode === 'vs') {
+        startDuelMode();
+        return;
+      }
+      if (selectedMode === '2p') {
+        window.alert('준비중입니다');
+        return;
+      }
+      missionBriefing.open(modeCards.find((card) => card.dataset.mode === '1p'));
+    });
+
+    gaugeRewardButtons.forEach((button) => {
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        if (!gameStarted || stageEnded || gameRuntime.paused) return;
+        resumeBgm();
+        const level = Number(button.dataset.level);
+        if (!isItemGaugeReady(level) || itemChoicesOpen || !storedItems.includes(null)) return;
+        selectedRewardLevel = level;
+        openItemChoices();
+      });
+    });
+
+    itemChoices.forEach((button) => {
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        if (!gameStarted) return;
+        resumeBgm();
+        const item = itemDefs.find((entry) => entry.id === button.dataset.itemId);
+        if (!item) return;
+        selectItem(item);
+      });
+    });
+
+    inventoryButtons.forEach((button, index) => {
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        if (gameRuntime.paused) return;
+        resumeBgm();
+        useStoredItem(index);
+      });
+    });
+
+    window.addEventListener('keydown', (event) => {
+      const inputTarget = event.target;
+      if (inputTarget instanceof HTMLElement
+        && (inputTarget.isContentEditable || inputTarget.closest('input, textarea, select'))) return;
+      if (gameRuntime.paused) return;
+      const keyMap = {
+        ArrowUp: 'b',
+        ArrowLeft: 'g',
+        ArrowDown: 'y',
+        ArrowRight: 'r',
+        KeyW: 'b',
+        KeyA: 'g',
+        KeyS: 'y',
+        KeyD: 'r'
+      };
+      const color = keyMap[event.code];
+      if (duel.active) {
+        if (color && !event.repeat) {
+          event.preventDefault();
+          const button = buttons.find(item => item.dataset.color === color);
+          if (button) updateButtonPress(button);
+          duel.combat.press(color);
+        }
+        return;
+      }
+      if (event.code === 'F2') {
+        if (window.AST_GAME_CONFIG.embedded) return;
+        if (!gameStarted) return;
+        event.preventDefault();
+        itemGauge = Math.min(itemGauge + itemGaugeMax, itemGaugeCap);
+        updateItemGauge();
+        return;
+      }
+      if (event.code === 'F4') {
+        if (window.AST_GAME_CONFIG.embedded) return;
+        if (!gameStarted) return;
+        event.preventDefault();
+        clearActiveItem();
+        return;
+      }
+      if (!color) return;
+      if (!gameStarted && !opening.canShoot && !tutorial.active) return;
+      event.preventDefault();
+      resumeBgm();
+      const button = buttons.find((item) => item.dataset.color === color);
+      if (button) updateButtonPress(button);
+      judgePressed(color);
+    });
+
+    function sendSocket(payload) {
+      if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify(payload));
+    }
+
+    function sendJudgement(text, target) {
+      sendSocket({
+        type: 'judgement',
+        waveId: activeWaveId,
+        targetId: target.targetId,
+        judgement: text,
+        color: target.color
+      });
+    }
+
+    function connectWebSocket() {
+      if (currentStageId !== 'stage1') {
+        serverMode = false;
+        setNetStatus('1P');
+        runAfterFirstWaveDelay(spawnWave);
+        return;
+      }
+      if (window.AST_GAME_CONFIG.embedded) {
+        serverMode = false;
+        setNetStatus('1P');
+        runAfterFirstWaveDelay(spawnWave);
+        return;
+      }
+      if (!('WebSocket' in window)) {
+        setNetStatus('LOCAL');
+        runAfterFirstWaveDelay(spawnWave);
+        return;
+      }
+
+      socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
+
+      socket.addEventListener('open', () => {
+        serverMode = true;
+        gameRuntime.clearTimeout(localFallbackTimer);
+        setNetStatus('SERVER');
+      });
+
+      socket.addEventListener('message', (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'hello') {
+          ownServerLabel = `P${message.player} SERVER`;
+          setNetStatus(ownServerLabel);
+        } else if (message.type === 'wave') {
+          serverMode = true;
+          runAfterFirstWaveDelay(() => spawnWave(message));
+        } else if (message.type === 'roster') {
+          setNetStatus(`${ownServerLabel} / ${message.players.length}P`);
+        }
+      });
+
+      socket.addEventListener('close', () => {
+        serverMode = false;
+        setNetStatus('LOCAL');
+        if (!hasActiveOrCounteringTargets()) {
+          runAfterFirstWaveDelay(() => scheduleSpawn());
+        }
+      });
+
+      socket.addEventListener('error', () => {
+        serverMode = false;
+        setNetStatus('LOCAL');
+      });
+
+      localFallbackTimer = gameRuntime.setTimeout(() => {
+        if (!serverMode && !hasActiveOrCounteringTargets()) {
+          setNetStatus('LOCAL');
+          runAfterFirstWaveDelay(spawnWave);
+        }
+      }, 900);
+    }
+
+    const loadingScreen = document.getElementById('loadingScreen');
+    function showLoading(message) {
+      loadingScreen.textContent = message;
+      loadingScreen.hidden = false;
+    }
+    function hideLoading() { loadingScreen.hidden = true; }
+    async function prepareTitle() {
+      try {
+        const url = new URL(window.location.href);
+        const briefingStage = url.searchParams.get('returnBriefing');
+        if (['1', '2', '3', '4'].includes(briefingStage)) {
+          selectMode('1p');
+          modeScreen.classList.remove('hidden');
+          missionBriefing.restore(modeCards.find(card => card.dataset.mode === '1p'), Number(briefingStage));
+          url.searchParams.delete('returnBriefing');
+          window.history.replaceState(null, '', url.href);
+          hideLoading();
+          const resumeBriefingMusic = () => {
+            if (missionBriefing.active && !transitionLocked && !modeScreen.classList.contains('hidden')) {
+              playBgmSequence('select', 'sound/select_1.mp3', 'sound/select_2.mp3');
+            }
+          };
+          resumeBriefingMusic();
+          modeScreen.addEventListener('pointerdown', resumeBriefingMusic, { once: true });
+          return;
+        }
+        const image = new Image();
+        image.src = 'sprites/Main/main_title.png';
+        await Promise.all([image.decode(), loadBgmBuffer('sound/title.mp3')]);
+        titleScreen.classList.remove('hidden');
+        hideLoading();
+        ensureTitleBgm();
+      } catch (error) {
+        console.error('[Title] Could not prepare title:', error);
+        showLoading('로딩에 실패했습니다. 터치해서 다시 시도해주세요.');
+        loadingScreen.addEventListener('pointerdown', () => {
+          showLoading('게임을 실행중입니다');
+          prepareTitle();
+        }, { once: true });
+      }
+    }
+    prepareTitle();
+    window.setTimeout(() => {
+      opening.prepare().catch((error) => console.warn('[Opening] Preload failed:', error));
+      warmStageMusic({ decode: false });
+    }, 0);
+    window.addEventListener('load', ensureTitleBgm);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) ensureTitleBgm();
+    });
+    titleScreen.addEventListener('pointermove', ensureTitleBgm, { once: true });
+    updateHp();
+    updateItemGauge();
+  </script>
+</body>
+</html>

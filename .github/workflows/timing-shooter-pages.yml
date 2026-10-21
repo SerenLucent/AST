@@ -2,7 +2,7 @@ name: AST Games Pages
 on:
   push:
     branches: [main]
-    paths: ['docs/games/**', '.github/workflows/timing-shooter-pages.yml']
+    paths: ['docs/games/**', 'docs/ast-web/**', '.github/workflows/timing-shooter-pages.yml']
   workflow_dispatch:
 permissions:
   contents: read

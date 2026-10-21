@@ -1,0 +1,247 @@
+{
+  "@@locale": "en",
+  "scoreFolder": "Score folder",
+  "chooseScoreFolder": "Choose folder",
+  "changeScoreFolder": "Change folder",
+  "folderBack": "Back",
+  "folderRefresh": "Refresh list",
+  "folderHelp": "Show only NWC/NWCTXT files and subfolders in an allowed folder. You do not need to move your files.",
+  "folderPermissionHelp": "Choose a folder containing scores and allow access.\n\nOn Android 11 or later, the Download folder itself and storage roots cannot be granted as folders. Use ‘Open file’ above to open individual files there directly. You can choose a subfolder; creating a new folder is not required.",
+  "folderLoading": "Reading this folder’s list…",
+  "folderEmpty": "No NWC/NWCTXT files or subfolders in this folder.",
+  "folderAccessError": "Cannot read this folder or file. Access may have been revoked or the file moved. Choose the folder again or use ‘Open file’.",
+  "folderTimeout": "The storage provider is taking too long. Check your connection, then refresh the list or use ‘Open file’.",
+  "exitAppTitle": "Exit app",
+  "exitAppMessage": "Exit NWC Player?",
+  "cancelExit": "Cancel",
+  "openFile": "Open file",
+  "openNwcFile": "Open NWC file",
+  "readingFile": "Reading file",
+  "performanceMenu": "Player controls",
+  "partVolumes": "Part volumes",
+  "pitchAdjustment": "Pitch (semitones)",
+  "tonic": "Tonic: {note}",
+  "@tonic": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "originalPitch": "Reset pitch",
+  "pitchHelp": "Transpose the score and playback for each key-signature section.\nThe original file is not changed.",
+  "fromBar": "From bar {bar}",
+  "@fromBar": {
+    "placeholders": {
+      "bar": {
+        "type": "int"
+      }
+    }
+  },
+  "barRange": "Bars {from}–{to}",
+  "@barRange": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "lowerPitch": "Down a semitone",
+  "raisePitch": "Up a semitone",
+  "playback": "Playback",
+  "startBar": "Start bar",
+  "previousBar": "Previous bar",
+  "nextBar": "Next bar",
+  "barUnit": "bar",
+  "lowerBpm": "Decrease BPM",
+  "raiseBpm": "Increase BPM",
+  "originalSpeed": "Reset tempo",
+  "pause": "Pause",
+  "resume": "Resume",
+  "stop": "Stop",
+  "playSelected": "Play selected",
+  "playAll": "Play all",
+  "repeatSection": "Loop",
+  "start": "Start",
+  "end": "End",
+  "playLoop": "Play loop",
+  "score": "Score",
+  "scoreSize": "Score size",
+  "zoomOut": "Zoom out",
+  "zoomIn": "Zoom in",
+  "landscape": "Landscape",
+  "closeLandscape": "Close landscape",
+  "followScore": "Follow score",
+  "selectParts": "Select parts to display",
+  "scrollMenu": "Scroll for more controls",
+  "playingBar": "Playing bar: {bar}",
+  "@playingBar": {
+    "placeholders": {
+      "bar": {
+        "type": "String"
+      }
+    }
+  },
+  "addFavorite": "Add to favorites",
+  "removeFavorite": "Remove from favorites",
+  "favorites": "Favorites",
+  "appInformation": "About & privacy",
+  "unlockPro": "Unlock Pro",
+  "lockedControl": "Unlock with Pro",
+  "exitPlayer": "Close player",
+  "favoriteTooLarge": "Files larger than 2 MB cannot be saved as favorites.",
+  "playbackFinished": "Playback finished",
+  "preparingPlayback": "Preparing playback",
+  "playing": "Playing",
+  "resumedPlayback": "Playback resumed",
+  "stoppedPlayback": "Stopped",
+  "preparingLoop": "Preparing loop",
+  "loopStatus": "Looping bars {from}–{to}",
+  "@loopStatus": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "loopTitle": "{name} · Loop bars {from}–{to}",
+  "@loopTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "playbackProgress": "{status} · Bar {bar} · {bpm} BPM",
+  "@playbackProgress": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "bar": {
+        "type": "int"
+      },
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "realtimeError": "Playback error: {error}",
+  "@realtimeError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "readFailed": "Could not open file: {error}",
+  "@readFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "favoriteFailed": "Could not open favorite: {error}",
+  "@favoriteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playbackFailed": "Could not play: {error}",
+  "@playbackFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loopFailed": "Could not loop: {error}",
+  "@loopFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "unexpectedError": "The operation could not be completed. Check the file and your device, then try again.",
+  "invalidNwcString": "Invalid NWC text.",
+  "emptyOrLargeScore": "The score is empty or larger than 20 MB.",
+  "corruptCompressedScore": "The compressed score is damaged or expands beyond 20 MB. Please check the original file.",
+  "scoreTooLarge": "Please select an NWC or NWCTXT score no larger than 20 MB.",
+  "invalidScore": "This is not an NWC/NWCTXT score, or the file is damaged.",
+  "legacyScore": "Older NWC binary files (1.75/2.5) are not supported directly. Open the file in NoteWorthy Composer 2.75 and save it again, or export it as NWCTXT.",
+  "unsupportedTimeSignature": "Unsupported time signature: {signature}",
+  "@unsupportedTimeSignature": {
+    "placeholders": {
+      "signature": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseScoreFile": "Unsupported file type. Only NWC or NWCTXT score files can be opened.",
+  "unreadableFile": "The file cannot be read or is too large.",
+  "unsupportedParts": "Unsupported part configuration (1–16 parts required).",
+  "proInfoFailed": "Could not load purchase information.",
+  "proBillingUnavailable": "Google Play billing is unavailable.",
+  "proConnectionError": "Please check your connection to Google Play.",
+  "proInternetRequired": "Connect to the internet to verify your Pro purchase again.",
+  "proConfirmFailed": "Could not verify the purchase. Please try restoring it again.",
+  "proStartFailed": "Could not start Google Play billing.",
+  "proWindowFailed": "Could not open the purchase screen.",
+  "proRestoring": "Checking your purchases.",
+  "proRestoreFailed": "Could not restore purchases.",
+  "proPending": "Your payment is pending.",
+  "proIncomplete": "The purchase was not completed.",
+  "proUnlocked": "Pro features are unlocked.",
+  "proInvalid": "No valid Pro purchase could be verified.",
+  "proOffline": "You can use Pro during the offline grace period.",
+  "proServerUnavailable": "Could not connect to the purchase verification server.",
+  "proRevoked": "Your Pro purchase was canceled or refunded. Pro features are now locked.",
+  "proDescription": "Score viewing and basic playback are free. Unlock Pro for part volumes, transposition, looping, playback settings, score tools and favorites.",
+  "proTerms": "One-time purchase. Use Pro offline for up to 7 days after the last verification, then reconnect to the internet.",
+  "proNotConfigured": "Purchases are unavailable because the verification server is not connected yet.",
+  "buyPro": "Unlock Pro permanently · {price}",
+  "@buyPro": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "proProductUnavailable": "Google Play did not return a Pro product available for this account and device. Refresh the product information to try again.",
+  "proProductLoading": "Checking the Pro product and price on Google Play…",
+  "proProductTimeout": "Google Play took too long to return product information. Check your connection and try again.",
+  "proRefreshProduct": "Refresh product information",
+  "restorePurchases": "Restore purchases",
+  "reviewAccess": "Review access",
+  "reviewDescription": "For authorized app review only. Enter the access code supplied in Play Console. No purchase or account is needed. Internet is required on each app launch to verify the code. The same Pro features are enabled; this does not create a purchase.",
+  "reviewCode": "Review access code",
+  "reviewActivate": "Activate review access",
+  "reviewChecking": "Verifying code…",
+  "reviewActive": "Review access active. All Pro features are available without a purchase.",
+  "reviewInvalid": "This review access code is invalid or has been disabled.",
+  "reviewUnavailable": "Could not verify review access. Check your internet connection and try again. The review server must also be configured.",
+  "reviewReconnect": "Connect to the internet to verify review access again.",
+  "reviewEnd": "End review access on this device",
+  "privacySummary": "Scores are processed only on your device. When you purchase Pro, the purchase token, product ID and app ID are sent to the verification server. If you use review access, its code is stored securely on your device and sent to the same server for verification.\n\nSupported formats: NWC 2.75 / NWCTXT. For older NWC 1.75/2.5 binary files, save them again with version 2.75 on a PC or export them as NWCTXT.",
+  "copyPrivacyUrl": "Copy the address below and open it in your browser.",
+  "openPrivacy": "Open privacy policy",
+  "privacyNotConfigured": "Review build: no public privacy policy URL is configured.",
+  "openLicenses": "Open-source & font licenses",
+  "close": "Close"
+}
