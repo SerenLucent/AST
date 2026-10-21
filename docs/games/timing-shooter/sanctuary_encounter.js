@@ -64,7 +64,7 @@ class SanctuaryEncounter {
     element.className = attack ? 'sanctuary-attack' : 'sanctuary-counter';
     element.style.setProperty('--shot-color', this.palette[color]);
     if (attack) {
-      element.innerHTML = `<img src="sprites/target_${color}.png" alt=""><img class="sanctuary-ring" src="sprites/circle_${color}.png" alt="">`;
+      element.innerHTML = `<img class="sanctuary-target" src="sprites/target_${color}.png" alt=""><img class="sanctuary-perfect" src="sprites/perfect_target_${color}.png" alt=""><img class="sanctuary-ring" src="sprites/circle_${color}.png" alt="">`;
     } else {
       element.innerHTML = '<div class="sanctuary-counter-frame"></div><div class="sanctuary-counter-growing"></div>';
       const dodge = this.hooks.dodgeConfig();

@@ -1494,7 +1494,7 @@
   <link rel="stylesheet" href="opening.css?v=shot-effect-5">
   <link rel="stylesheet" href="room_warning.css?v=center-2">
   <link rel="stylesheet" href="campaign_story.css?v=ending-type-4">
-  <link rel="stylesheet" href="sanctuary_encounter.css?v=standard-dodge-2">
+  <link rel="stylesheet" href="sanctuary_encounter.css?v=attack-reference-ring-4">
   <link rel="stylesheet" href="wharf_opening.css?v=stage2-distance-3">
   <link rel="stylesheet" href="cutscene_caption.css?v=casino-caption-3">
   <link rel="stylesheet" href="tutorial.css?v=item-guide-6">
@@ -1662,7 +1662,7 @@
   <script src="opening_shot_effect.js?v=all-stages-1"></script>
   <script src="room_warning.js?v=trap-1"></script>
   <script src="campaign_story.js?v=foyer-chase-4"></script>
-  <script src="sanctuary_encounter.js?v=two-rounds-4"></script>
+  <script src="sanctuary_encounter.js?v=attack-reference-ring-5"></script>
   <script src="opening.js?v=stage-music-7"></script>
   <script src="hall_config.js?v=stairs-solo-5"></script>
   <script src="stage2_config.js?v=boss-dodge-10"></script>
@@ -3709,10 +3709,6 @@
       else {
         defeatedEnemies = Math.min(stageEnemyTotal, defeatedEnemies + 1);
         enemiesRemaining.textContent = String(stageEnemyTotal - defeatedEnemies);
-        if (defeatedEnemies === stageEnemyTotal) {
-          completeStage();
-          return;
-        }
       }
       finishedTarget.machineGunState = null;
       setMachinePromptVisible(finishedTarget, false);
@@ -3734,6 +3730,11 @@
         finishedTarget.muzzleFlashes?.forEach(flash => flash.remove());
         finishedTarget.muzzleFlashes?.clear();
         activeTargets = activeTargets.filter((item) => item !== finishedTarget);
+        // Keep the final batch on screen until every death reaction has finished.
+        if (!stageEnded && !floorTransition && !hall.config.boss && defeatedEnemies === stageEnemyTotal) {
+          if (!activeTargets.length) completeStage();
+          return;
+        }
         if (!stageEnded && !serverMode && !hasActiveOrCounteringTargets()) {
           scheduleSpawn(Math.max(0, nextWaveReadyAt - gameRuntime.now()));
         }
