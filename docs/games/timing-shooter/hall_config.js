@@ -14,7 +14,7 @@
       riseMs: 420,
       slots: [
         { id: 'upper_small_door', worldX: 0.665, footY: 0.29, heightRatio: 0.105 },
-        { id: 'upper_fountain_back', worldX: 0.575, footY: 0.50, heightRatio: 0.14 },
+        { id: 'upper_fountain_back', worldX: 0.72, footY: 0.50, heightRatio: 0.14 },
         { id: 'upper_stairs_front', worldX: 0.927, footY: 0.425, heightRatio: 0.14 }
       ],
       occluders: [
@@ -40,7 +40,7 @@
       },
       slots: [
         { id: 'dining_left_aisle', worldX: 0.095, footY: 0.60, heightRatio: 0.25, depth: 3 },
-        { id: 'dining_left_door', worldX: 0.247, footY: 0.45, heightRatio: 0.20 },
+        { id: 'dining_left_door', worldX: 0.21, footY: 0.45, heightRatio: 0.20 },
         { id: 'dining_left_table_back', worldX: 0.435, footY: 0.46, heightRatio: 0.19 }
       ],
       occluders: [

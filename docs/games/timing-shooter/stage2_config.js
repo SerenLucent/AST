@@ -4,8 +4,8 @@ window.TIMING_SHOOTER_STAGE2 = {
   enemyTotal: 16, waveTargets: 2, riseMs: 420,
   slots: [
     { id: 'wharf_crates', worldX: .18, footY: .67, heightRatio: .25, clipBottomY: .554, rise: true },
-    { id: 'wharf_barrels', worldX: .34, footY: .56, heightRatio: .18 },
-    { id: 'wharf_door', worldX: .42, footY: .55, heightRatio: .17 }
+    { id: 'wharf_barrels', worldX: .34, footY: .56, heightRatio: .162 },
+    { id: 'wharf_door', worldX: .455, footY: .58, heightRatio: .153 }
   ],
   occluders: [
     { id: 'wharf_left_cargo', polygon: '4% 55%, 26.5% 55%, 26.5% 68%, 4% 68%' },
@@ -19,7 +19,7 @@ window.TIMING_SHOOTER_STAGE2 = {
     enemyTotal: 20, waveTargets: 2, transitionDelayMs: 1000, loadingHoldMs: 2000, riseMs: 420,
     slots: [
       { id: 'warehouse_crates', worldX: .28, footY: .69, heightRatio: .25, clipBottomY: .554, rise: true },
-      { id: 'warehouse_rear', worldX: .39, footY: .57, heightRatio: .18 },
+      { id: 'warehouse_rear', worldX: .445, footY: .595, heightRatio: .18 },
       { id: 'warehouse_column', worldX: .18, footY: .56, heightRatio: .19 }
     ],
     occluders: [
@@ -36,7 +36,7 @@ window.TIMING_SHOOTER_STAGE2 = {
     slots: [
       { id: 'customs_counter', worldX: .22, footY: .64, heightRatio: .24, clipBottomY: .504, rise: true },
       { id: 'customs_stairs', worldX: .37, footY: .58, heightRatio: .18 },
-      { id: 'customs_pillar', worldX: .12, footY: .68, heightRatio: .22 }
+      { id: 'customs_pillar', worldX: .12, footY: .60, heightRatio: .22 }
     ],
     occluders: [
       { id: 'customs_counter', polygon: '8.5% 50.4%, 32.8% 50.4%, 32.8% 64%, 8.5% 64%' },
@@ -58,9 +58,9 @@ window.TIMING_SHOOTER_STAGE2 = {
     },
     slots: [
       { id: 'whitehair_boss', worldX: .5, footY: .70, heightRatio: .34, clipBottomY: .55 },
-      { id: 'office_guard_left', worldX: .345, footY: .70, heightRatio: .32, clipBottomY: .55 },
-      { id: 'office_guard_right', worldX: .655, footY: .70, heightRatio: .32, clipBottomY: .55 },
-      { id: 'office_guard_front', worldX: .41, footY: .73, heightRatio: .32, clipBottomY: .55 }
+      { id: 'office_guard_left', worldX: .345, footY: .665, heightRatio: .32, clipBottomY: .55 },
+      { id: 'office_guard_right', worldX: .655, footY: .665, heightRatio: .32, clipBottomY: .55 },
+      { id: 'office_guard_front', worldX: .41, footY: .665, heightRatio: .32, clipBottomY: .55 }
     ],
     occluders: [{ id: 'office_desk', polygon: '24% 54.8%, 76% 54.8%, 75% 72%, 25% 72%' }]
   },

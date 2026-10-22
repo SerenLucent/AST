@@ -76,9 +76,9 @@ window.TIMING_SHOOTER_STAGE3 = {
     },
     slots: [
       { id: 'casino_boss', worldX: .5, footY: .65, heightRatio: .34, clipBottomY: .435 },
-      { id: 'casino_guard_left', worldX: .23, footY: .65, heightRatio: .31, clipBottomY: .435 },
-      { id: 'casino_guard_right', worldX: .77, footY: .65, heightRatio: .31, clipBottomY: .435 },
-      { id: 'casino_guard_front', worldX: .37, footY: .68, heightRatio: .31, clipBottomY: .435 }
+      { id: 'casino_guard_left', worldX: .23, footY: .62, heightRatio: .31, clipBottomY: .435 },
+      { id: 'casino_guard_right', worldX: .77, footY: .62, heightRatio: .31, clipBottomY: .435 },
+      { id: 'casino_guard_front', worldX: .37, footY: .62, heightRatio: .31, clipBottomY: .435 }
     ],
     occluders: [{ id: 'casino_desk', polygon: '3% 43.5%, 97% 43.5%, 97% 62%, 3% 62%' }]
   },

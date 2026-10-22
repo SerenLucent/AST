@@ -90,6 +90,9 @@ window.TIMING_SHOOTER_STAGE4_PILLAR_ROOM = {
   ], {
     camera: .5, singleView: true, bossPhase: 1,
     boss: { ...window.TIMING_SHOOTER_STAGE4_PILLAR_ROOM.boss,
+      sprite: 'sprites/duel/mafia_aim_natural_v2.png',
+      hitSprite: 'sprites/duel/mafia_hit_natural_v2.png',
+      muzzleOffsetXRatio: -65 / 1536, muzzleOffsetYRatio: -527 / 1536,
       guardsEveryTurns: 2, guardsPerTurn: 3, dodgeShotCount: 1, embedded: false }
   });
   const final = room('1층 기둥 결전', 'backgrounds/duel_1p_vs_mafia_aim_v2.png', 1,
