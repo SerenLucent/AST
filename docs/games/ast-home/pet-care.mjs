@@ -1,4 +1,4 @@
-import {PetWalker,cellKey} from './pet-walk.mjs?v=20261022-pets2';
+import {PetWalker,cellKey} from './pet-walk.mjs?v=20261022-pets3';
 import {PetCare,PET_IDS} from './pet-care-model.mjs?v=20261022-pets1';
 const names={mochi:'모모',kuki:'쿠키'};
 const picture=(id,pose='front')=>`assets/pets/${id}-${pose}.webp`;
