@@ -1,4 +1,4 @@
-import {mountPetCare} from './pet-care.mjs?v=20261022-pets1';
+import {mountPetCare} from './pet-care.mjs?v=20261022-pets2';
 import {loadAsset,assetUrl,spriteFrames} from './asset-loader.mjs?v=20261020-assets1';
 import {spriteIndex,registeredSprite,drawRegisteredSprite} from './sprite-geometry.mjs?v=20261019-whole3';
 import {TEST_KEY,readTestState,mountTestTools} from './test-session.mjs?v=20261022-pets1';
@@ -29,7 +29,7 @@ const camera={scale:1,x:0,y:0};
 const petCare=mountPetCare({stage:canvas.closest('main'),canvas,storage:localStorage,shared,request:astRequest,localKey:testMode?TEST_KEY+':pets':'ast-home-local-pets-v1',canSend:()=>!sharedSession?.running,
  credit:amount=>{state.coins+=amount;save()},change:()=>ui(),
  receive:r=>{if(r.home.revision>=revision){revision=r.home.revision;state.coins=r.balance;state.items=r.home.items;draw()}},
- world:()=>({ready,width:1536,camera,space:'terrace',cells:()=>{const out=[];for(let x=0;x<COLS;x++)for(let y=0;y<BUILD_ROWS;y++)if(canPlace({uid:'pet-walk',type:'plant',x,y,rotation:0},state.items))out.push({x,y});return out},project:p=>point(p.x+.5,p.y+.5)})});
+ world:()=>({ready,width:1536,camera,space:'terrace',layout:state.items,edit:draft?JSON.stringify(draft):'',cells:()=>{const out=[],items=draft?state.items.filter(i=>i.uid!==draft.uid).concat(draft):state.items;for(let x=0;x<COLS;x++)for(let y=0;y<BUILD_ROWS;y++)if(canPlace({uid:'pet-walk',type:'plant',x,y,rotation:0},items))out.push({x,y});return out},project:p=>point(p.x+.5,p.y+.5)})});
 function clampCamera(){camera.x=Math.max(1536*(1-camera.scale),Math.min(0,camera.x));camera.y=Math.max(1024*(1-camera.scale),Math.min(0,camera.y));}
 function zoom(delta){if(gesture)return;const old=camera.scale,next=Math.max(1,Math.min(3,Math.round((old+delta)*100)/100));camera.x=768-(768-camera.x)*next/old;camera.y=512-(512-camera.y)*next/old;camera.scale=next;clampCamera();$('zoomReset').textContent=Math.round(next*100)+'%';$('zoomOut').disabled=next===1;$('zoomIn').disabled=next===3;draw();}
 $('zoomOut').onclick=()=>zoom(-.25);$('zoomIn').onclick=()=>zoom(.25);$('zoomReset').onclick=()=>{if(gesture)return;camera.scale=1;camera.x=0;camera.y=0;zoom(0)};

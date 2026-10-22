@@ -195,7 +195,7 @@ test('standalone prototype keeps its local balance and never touches the server'
 
 test('HTML cache version loads a real game entry point which imports the required session module', () => {
   const html = fs.readFileSync(path.join(webRoot, 'index.html'), 'utf8');
-  assert.match(html, /game\.js\?v=20261022-pets1/);
+  assert.match(html, /game\.js\?v=20261022-pets2/);
   assert.match(html, /id="retrySync"/);
   const game = fs.readFileSync(path.join(webRoot, 'game.js'), 'utf8');
   assert.match(game, /new SharedHomeSession/);
@@ -207,4 +207,3 @@ test('HTML cache version loads a real game entry point which imports the require
 });
 
 test('camera buttons zoom to 300 percent, clamp, and reset to 100 percent',async()=>{const p=await page({shared:false});for(let i=0;i<12;i++)p.$('zoomIn').onclick();assert.equal(p.$('zoomReset').textContent,'300%');assert.equal(p.$('zoomIn').disabled,true);p.$('zoomOut').onclick();assert.equal(p.$('zoomReset').textContent,'275%');p.$('zoomReset').onclick();assert.equal(p.$('zoomReset').textContent,'100%');assert.equal(p.$('zoomOut').disabled,true);});
-

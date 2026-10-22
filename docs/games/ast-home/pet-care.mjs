@@ -1,3 +1,4 @@
+import {PetWalker,cellKey} from './pet-walk.mjs?v=20261022-pets2';
 import {PetCare,PET_IDS} from './pet-care-model.mjs?v=20261022-pets1';
 const names={mochi:'모모',kuki:'쿠키'};
 const picture=(id,pose='front')=>`assets/pets/${id}-${pose}.webp`;
@@ -12,16 +13,16 @@ export function mountPetCare(options){
  sheet.addEventListener('click',e=>{const button=e.target.closest('[data-feed]');if(!button)return;if(care.feed(button.dataset.feed)){const actor=actors.find(a=>a.id===button.dataset.feed);actor.el.classList.remove('fed');void actor.el.offsetWidth;actor.el.classList.add('fed')}});
  let frame=0,last=0,stopped=false;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const walker=new PetWalker(PET_IDS,{reduced});
  function animate(time){if(stopped)return;frame=requestAnimationFrame(animate);if(time-last<33||document.hidden)return;last=time;const world=options.world();if(!world.ready){layer.hidden=true;return}layer.hidden=false;
-  for(const actor of actors){
-   if(actor.space!==world.space||time>=actor.end){const cells=world.cells(),key=p=>`${p.x},${p.y}`,map=new Map(cells.map(p=>[key(p),p]));if(!cells.length){actor.el.hidden=true;continue}actor.el.hidden=false;
-    if(actor.space!==world.space||!actor.to||!map.has(key(actor.to))){actor.to=cells[Math.floor(Math.random()*cells.length)];actor.space=world.space}
-    actor.from=actor.to;const neighbors=[[1,0],[-1,0],[0,1],[0,-1]].map(([x,y])=>map.get(`${actor.from.x+x},${actor.from.y+y}`)).filter(Boolean);actor.to=neighbors.length?neighbors[Math.floor(Math.random()*neighbors.length)]:actor.from;actor.start=time;actor.end=time+(reduced?3500:1400+Math.random()*1000);
-    const a=world.project(actor.from),b=world.project(actor.to),dx=b.x-a.x,dy=b.y-a.y,pose=Math.abs(dx)>Math.abs(dy)*1.2?'side':dy<0?'back':'front',im=actor.el.querySelector('img');im.src=picture(actor.id,pose);im.dataset.flip=pose==='side'&&dx<0?'-1':'1';
-   }
-   const t=Math.min(1,(time-actor.start)/(actor.end-actor.start)),a=world.project(actor.from),b=world.project(actor.to),r=options.canvas.getBoundingClientRect(),host=options.stage.getBoundingClientRect(),scale=r.width/world.width;
-   const x=world.camera.x+((1-t)*a.x+t*b.x)*world.camera.scale,y=world.camera.y+((1-t)*a.y+t*b.y)*world.camera.scale;
-   actor.el.style.left=`${r.left-host.left+x*scale}px`;actor.el.style.top=`${r.top-host.top+y*scale}px`;actor.el.style.width=`${170*world.camera.scale*scale}px`;
+  for(const pose of walker.update(time,world)){
+   const actor=actors.find(a=>a.id===pose.id);actor.el.hidden=!pose.visible;if(!pose.visible)continue;
+   const a=world.project(pose.from),b=world.project(pose.to),dx=b.x-a.x,dy=b.y-a.y,im=actor.el.querySelector('img');
+   if(pose.moving){const facing=Math.abs(dx)>Math.abs(dy)*1.2?'side':dy<0?'back':'front';if(im.dataset.pose!==facing){im.src=picture(actor.id,facing);im.dataset.pose=facing}im.dataset.flip=facing==='side'&&dx<0?'-1':'1'}
+   const r=options.canvas.getBoundingClientRect(),host=options.stage.getBoundingClientRect(),scale=r.width/world.width;
+   const x=world.camera.x+pose.point.x*world.camera.scale,y=world.camera.y+pose.point.y*world.camera.scale;
+   actor.el.dataset.from=cellKey(pose.from);actor.el.dataset.to=cellKey(pose.to);actor.el.dataset.duration=String(pose.duration);
+   actor.el.style.left=`${r.left-host.left+x*scale}px`;actor.el.style.top=`${r.top-host.top+y*scale}px`;actor.el.style.width=`${170*world.camera.scale*scale}px`;actor.el.style.zIndex=String(Math.round(pose.point.y));
   }
  }
  const tick=setInterval(()=>{render();void care.flush()},15000);const online=()=>void care.flush();window.addEventListener('online',online);frame=requestAnimationFrame(animate);render();

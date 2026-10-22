@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {PetWalker,stepDuration,travelBounds,cellKey} from '../docs/games/ast-home/pet-walk.mjs';
+const project=p=>({x:(p.x-p.y)*40,y:(p.x+p.y)*20});
+const intersects=(a,b)=>a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom;
+function world(n=14){return {space:'room',layout:[],edit:'',project,cells:()=>Array.from({length:n*n},(_,i)=>({x:i%n,y:Math.floor(i/n)})).filter(p=>!(p.x===6&&p.y<10))}}
+function check(poses,w){const free=new Set(w.cells().map(cellKey));for(const p of poses.filter(p=>p.visible)){assert.ok(free.has(cellKey(p.from)));assert.ok(free.has(cellKey(p.to)));assert.ok(Math.abs(p.from.x-p.to.x)+Math.abs(p.from.y-p.to.y)<=1);if(p.moving)assert.ok(p.duration>=700&&p.duration<=1200)}if(poses.every(p=>p.visible))assert.equal(intersects(...poses.map(p=>travelBounds(p.from,p.to,project))),false)}
+test('speed is exactly twice the previous step speed',()=>{for(const r of [0,.25,.5,.99])assert.equal(stepDuration(()=>r),(1400+r*1000)/2);assert.equal(stepDuration(()=>0,true),1750)});
+test('both pets use adjacent free cells and reserve disjoint bodies throughout travel',()=>{let seed=7;const walker=new PetWalker(['mochi','kuki'],{random:()=>((seed=seed*16807%2147483647)-1)/2147483646}),w=world();let moved=0;for(let t=0;t<120000;t+=50){const poses=walker.update(t,w);assert.ok(poses.every(p=>p.visible));check(poses,w);moved+=poses.filter(p=>p.moving).length}assert.ok(moved>100)});
+test('new furniture and moving drafts invalidate occupied cells immediately',()=>{const walker=new PetWalker(['mochi','kuki'],{random:()=>.4}),w=world();let poses=walker.update(0,w);const blocked=new Set(poses.flatMap(p=>[cellKey(p.from),cellKey(p.to)]));const cells=w.cells;w.cells=()=>cells().filter(p=>!blocked.has(cellKey(p)));w.layout=[{uid:'new-furniture'}];check(walker.update(100,w),w);poses=walker.update(1000,w);blocked.add(cellKey(poses[0].to));w.edit='draft-moved';check(walker.update(1050,w),w)});
+test('small room spawns two pets without overlap when there is enough floor',()=>{const w=world(7),walker=new PetWalker(['mochi','kuki'],{random:()=>.5});const poses=walker.update(0,w);assert.ok(poses.every(p=>p.visible));check(poses,w)});

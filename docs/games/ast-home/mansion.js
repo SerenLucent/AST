@@ -1,4 +1,4 @@
-import {mountPetCare} from './pet-care.mjs?v=20261022-pets1';
+import {mountPetCare} from './pet-care.mjs?v=20261022-pets2';
 import {loadAsset,assetUrl,spriteFrames} from './asset-loader.mjs?v=20261022-mic4';
 import {spriteIndex,sourcePoint,pointInClip,drawRegisteredSprite,registeredSprite,transformPoint,tableSurfaceMatrix} from './sprite-geometry.mjs?v=20261019-whole3';
 import {TEST_KEY,readTestState,mountTestTools} from './test-session.mjs?v=20261022-pets1';
@@ -26,7 +26,7 @@ let assetsLoading=true,storeLoading=false;
 const petCare=mountPetCare({stage:$('houseStage'),canvas,storage:localStorage,shared,request,localKey:testMode?TEST_KEY+':pets':'ast-home-local-pets-v1',canSend:()=>!session?.running,
  credit:amount=>{state.coins+=amount;save()},change:()=>update(),
  receive:r=>{if(r.home.revision>=revision){revision=r.home.revision;state.coins=r.balance;const items=r.home.items;void loadSprites(items.filter(i=>AREAS[i.area]?.floor===floor).map(i=>i.type)).then(()=>{if(r.home.revision>=revision){state.items=items;draw()}}).catch(()=>status('새 가구 이미지를 불러오지 못했습니다. 새로고침으로 다시 연결하세요.'))}},
- world:()=>{const id=area&&AREAS[area]?.floor===floor?area:floor===1?'hall':'dining',a=AREAS[id];return {ready,width:2048,camera,space:id,cells:()=>{const out=[];for(let x=0;x<a.w;x++)for(let y=0;y<a.h;y++)if(canBuild({uid:'pet-walk',type:'plant',area:id,x,y,rotation:0},state.items))out.push({x,y});return out},project:p=>groundProject(a.x+p.x+.5,a.y+p.y+.5,floor,id)}}});
+ world:()=>{const id=area&&AREAS[area]?.floor===floor?area:floor===1?'hall':'dining',a=AREAS[id];return {ready,width:2048,camera,space:id,layout:state.items,edit:draft?JSON.stringify(draft):'',cells:()=>{const out=[],items=sceneItems();for(let x=0;x<a.w;x++)for(let y=0;y<a.h;y++)if(canBuild({uid:'pet-walk',type:'plant',area:id,x,y,rotation:0},items))out.push({x,y});return out},project:p=>groundProject(a.x+p.x+.5,a.y+p.y+.5,floor,id)}}});
 function sourceFor(d){return `assets/${['plant','bookshelf','chair'].includes(d.asset)?'furniture':'house'}/${d.asset==='coffee-table'?'coffee-table-contact':d.asset}-4dir.png`}
 async function loadSprites(types){await Promise.all([...new Set(types)].map(async id=>{if(sprites[id])return;const d=definition(id);if(!d)return;const source=sourceFor(d);sprites[id]=await loadAsset(source);frames[id]=spriteFrames(source,'Registered')}))}
 async function loadFloor(n){if(!backgrounds[n])backgrounds[n]=await loadAsset(n===1?'assets/house/floor-1-approved-v5.png':'assets/house/floor-2.png')}
