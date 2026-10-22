@@ -10,11 +10,21 @@ export function travelBounds(from,to,project){
  const a=project(from),b=project(to);
  return {left:Math.min(a.x,b.x)-89,right:Math.max(a.x,b.x)+89,top:Math.min(a.y,b.y)-196,bottom:Math.max(a.y,b.y)+4};
 }
+// Keep a one-cell body margin around furniture, walls and stair exclusions.
+// Use the largest connected floor patch so isolated pockets are never spawn sites.
+export function walkableCells(cells){
+ const raw=new Map(cells.map(p=>[cellKey(p),p])),safe=new Map;
+ for(const p of cells){let open=true;for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)if(!raw.has(cellKey({x:p.x+x,y:p.y+y})))open=false;if(open)safe.set(cellKey(p),p)}
+ const remaining=new Map(safe);let largest=[];
+ while(remaining.size){const start=remaining.values().next().value,group=[start];remaining.delete(cellKey(start));for(let i=0;i<group.length;i++){const p=group[i];for(const [x,y] of [[1,0],[-1,0],[0,1],[0,-1]]){const key=cellKey({x:p.x+x,y:p.y+y}),q=remaining.get(key);if(q){remaining.delete(key);group.push(q)}}}if(group.length>largest.length)largest=group}
+ return largest;
+}
 export class PetWalker {
  constructor(ids,{random=Math.random,reduced=false}={}){this.random=random;this.reduced=reduced;this.states=ids.map(id=>({id,cell:null,target:null,previous:null,start:0,end:0}));this.space=null;this.layout=null;this.edit=null;this.length=-1;this.map=new Map()}
  available(p){return p&&this.map.has(cellKey(p))}
+ validStep(from,to){return this.available(from)&&this.available(to)&&(from.x===to.x||from.y===to.y||(this.available({x:from.x,y:to.y})&&this.available({x:to.x,y:from.y})))}
  clearFor(actor,from,to,world){
-  if(!this.available(from)||!this.available(to))return false;
+  if(!this.validStep(from,to))return false;
   const body=travelBounds(from,to,world.project);
   return this.states.every(other=>other===actor||!other.cell||(
    ![other.cell,other.target].some(p=>same(p,from)||same(p,to))&&
@@ -39,10 +49,10 @@ export class PetWalker {
   const changedSpace=this.space!==world.space;
   if(changedSpace){this.space=world.space;for(const actor of this.states){actor.cell=null;actor.target=null;actor.previous=null}}
   const changed=changedSpace||this.layout!==world.layout||this.length!==world.layout?.length||this.edit!==world.edit;
-  if(changed){this.layout=world.layout;this.length=world.layout?.length;this.edit=world.edit;this.map=new Map(world.cells().map(p=>[cellKey(p),p]));}
+  if(changed){this.layout=world.layout;this.length=world.layout?.length;this.edit=world.edit;this.map=new Map(walkableCells(world.cells()).map(p=>[cellKey(p),p]));}
   for(const actor of this.states){
    // Recheck immediately when furniture is placed or dragged into a route.
-   if(changed&&(!this.available(actor.cell)||!this.available(actor.target))){
+   if(changed&&!this.validStep(actor.cell,actor.target)){
     if(this.available(actor.cell)){actor.target=actor.cell;actor.start=time;actor.end=time}
     else this.reset(actor,world,time);
    }
