@@ -1,4 +1,4 @@
-import {ASSETS} from './asset-manifest.mjs?v=20261020-assets1';
+import {ASSETS} from './asset-manifest.mjs?v=20261022-mic1';
 
 const pending = new Map();
 export function assetUrl(source) {

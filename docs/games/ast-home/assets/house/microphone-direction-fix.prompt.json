@@ -1,0 +1,10 @@
+{
+  "mode": "built-in image_gen edit",
+  "prompt": "Use case: precise-object-edit. Edit this original microphone 2x2 transparent game sprite atlas. Preserve identical black microphone stand, round base, scale, warm isometric painted style. Keep TOP LEFT and TOP RIGHT unchanged: top left capsule tip at UPPER RIGHT ↗; top right capsule tip at UPPER LEFT ↖. Correct ONLY BOTTOM pair: BOTTOM LEFT microphone capsule TOPMOST rounded grille end must be at UPPER LEFT ↖, capsule lower mounting/casing end at LOWER RIGHT. BOTTOM RIGHT capsule TOPMOST rounded grille end must be at UPPER RIGHT ↗, capsule lower mounting/casing end at LOWER LEFT. The bottom two show the opposite/front side of the mic from the upper pair; their capsule tilts MUST swap: bottom left silhouette leans LEFT, bottom right silhouette leans RIGHT. Think four orientations: top row tips / then backslash; bottom row tips backslash then /. NEVER put grille tip below its mounting end. All capsule tops rise above the pivot. All stands upright and same height; no tilted stand. Four whole objects isolated in equal 2x2 cells with generous transparent gutters and identical round base size. Actual transparent alpha, no background, floor, labels, arrows, text, cast shadows, or checkerboard. Crucial bottom-left silhouette is MIRRORED relative to original bottom-left; bottom-right silhouette MIRRORED relative to original bottom-right.",
+  "directions": [
+    "↗",
+    "↖",
+    "↖",
+    "↗"
+  ]
+}
