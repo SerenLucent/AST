@@ -1,10 +1,10 @@
-import {PetWalker,cellKey,facingFor} from './pet-walk.mjs?v=20261022-pets5';
+import {PetWalker,cellKey,facingFor} from './pet-walk.mjs?v=20261022-pets6';
 import {PetCare,PET_IDS} from './pet-care-model.mjs?v=20261022-pets1';
 const names={mochi:'모모',kuki:'쿠키'};
 const picture=(id,pose='front')=>`assets/pets/${id}-${pose}.webp`;
 export function mountPetCare(options){
  const sheet=document.createElement('section');sheet.className='pet-care';sheet.setAttribute('aria-label','모모와 쿠키 돌보기');
- sheet.innerHTML=`<h2>모모와 쿠키 돌보기</h2><small class="pet-build">적용 버전 ${document.documentElement.dataset.homeVersion||'20261022-pets5'}</small><p>무료 먹이주기 · 포만감 +20 · 1 AST 받기</p><div class="pet-care-grid">${PET_IDS.map(id=>`<article class="pet-care-card"><img src="${picture(id)}" alt="${names[id]}"><div><strong>${names[id]}</strong><progress max="100" value="75" aria-label="${names[id]} 포만감"></progress><small data-hunger>포만감 75 / 100</small><button type="button" data-feed="${id}">먹이주기 · +1 AST</button></div></article>`).join('')}</div><span class="pet-care-note" role="status"></span>`;
+ sheet.innerHTML=`<h2>모모와 쿠키 돌보기</h2><small class="pet-build">적용 버전 ${document.documentElement.dataset.homeVersion||'20261022-pets6'}</small><p>무료 먹이주기 · 포만감 +20 · 1 AST 받기</p><div class="pet-care-grid">${PET_IDS.map(id=>`<article class="pet-care-card"><img src="${picture(id)}" alt="${names[id]}"><div><strong>${names[id]}</strong><progress max="100" value="75" aria-label="${names[id]} 포만감"></progress><small data-hunger>포만감 75 / 100</small><button type="button" data-feed="${id}">먹이주기 · +1 AST</button></div></article>`).join('')}</div><span class="pet-care-note" role="status"></span>`;
  options.stage.insertAdjacentElement('afterend',sheet);
  const layer=document.createElement('div');layer.className='pet-wander-layer';layer.setAttribute('aria-hidden','true');options.stage.append(layer);
  const actors=PET_IDS.map(id=>{const el=document.createElement('div');el.className='pet-wander';el.innerHTML=`<img src="${picture(id)}" alt="" draggable="false"><span>냠냠! +1 AST</span>`;layer.append(el);return {id,el,from:null,to:null,start:0,end:0,space:null}});

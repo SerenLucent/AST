@@ -1,4 +1,4 @@
-import {mountPetCare} from './pet-care.mjs?v=20261022-pets5';
+import {mountPetCare} from './pet-care.mjs?v=20261022-pets6';
 import {loadAsset,assetUrl,spriteFrames} from './asset-loader.mjs?v=20261020-assets1';
 import {spriteIndex,registeredSprite,drawRegisteredSprite} from './sprite-geometry.mjs?v=20261019-whole3';
 import {TEST_KEY,readTestState,mountTestTools} from './test-session.mjs?v=20261022-pets1';

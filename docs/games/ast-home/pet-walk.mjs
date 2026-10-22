@@ -1,5 +1,5 @@
 export const cellKey=p=>`${p.x},${p.y}`;
-export const facingFor=(dx,dy)=>Math.abs(dx)>Math.abs(dy)*3?'side':dy<0?'back':'front';
+export const facingFor=(dx,dy)=>Math.abs(dx)>Math.abs(dy)*1.2?'side':dy<0?'back':'front';
 export const stepDuration=(random=Math.random,reduced=false)=>reduced?1750:700+random()*500;
 const same=(a,b)=>a&&b&&a.x===b.x&&a.y===b.y;
 const overlap=(a,b)=>a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom;
@@ -51,7 +51,7 @@ export class PetWalker {
   }
   for(const actor of this.states){
    if(!actor.cell||time<actor.end)continue;
-   let neighbors=[[1,0],[0,1],[-1,0],[0,-1]].map(([x,y])=>this.map.get(`${actor.cell.x+x},${actor.cell.y+y}`)).filter(p=>p&&this.clearFor(actor,actor.cell,p,world));
+   let neighbors=[[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]].filter(([x,y])=>!x||!y||(this.available({x:actor.cell.x+x,y:actor.cell.y})&&this.available({x:actor.cell.x,y:actor.cell.y+y}))).map(([x,y])=>this.map.get(`${actor.cell.x+x},${actor.cell.y+y}`)).filter(p=>p&&this.clearFor(actor,actor.cell,p,world));
    const forward=neighbors.filter(p=>!same(p,actor.previous));if(forward.length)neighbors=forward;
    actor.target=neighbors.length?neighbors[Math.floor(this.random()*neighbors.length)]:actor.cell;actor.start=time;actor.end=time+(neighbors.length?stepDuration(this.random,this.reduced):250);
   }
