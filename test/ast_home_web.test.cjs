@@ -28,7 +28,7 @@ async function page({balance = 80, legacy = false, failRead = false, failImage =
   function element(tag) {
     const e = {tag, children: [], dataset: {}, style: {}, hidden: false, disabled: false, textContent: '', open: false,
       append(...children) { this.children.push(...children); },
-      setAttribute() {}, addEventListener() {},
+      setAttribute() {}, addEventListener() {}, closest() { return this; },
       showModal() { this.open = true; }, close() { this.open = false; },
       querySelectorAll() { return this.children.filter(c => c.className === 'card'); },
       classList: {toggle() {}, add() {}, remove() {}},
@@ -85,6 +85,7 @@ async function page({balance = 80, legacy = false, failRead = false, failImage =
   }}};
   const context = vm.createContext({
     ...model, ...geometry, ASSETS, SharedHomeSession, document, Image: MockImage, window: host,
+    mountPetCare: () => ({bonus: 0, accept() {}}),
     location: {search: shared ? '?mode=shared' : '', reload() {}}, URLSearchParams, crypto,
     localStorage: {getItem: k => records.get(k) ?? null, setItem: (k, v) => records.set(k, v), removeItem: k => records.delete(k)},
     setTimeout(fn, delay) { const id = timers.size + 1; timers.set(id, {fn, delay}); return id; },
@@ -194,7 +195,7 @@ test('standalone prototype keeps its local balance and never touches the server'
 
 test('HTML cache version loads a real game entry point which imports the required session module', () => {
   const html = fs.readFileSync(path.join(webRoot, 'index.html'), 'utf8');
-  assert.match(html, /game\.js\?v=20261020-assets1/);
+  assert.match(html, /game\.js\?v=20261022-pets1/);
   assert.match(html, /id="retrySync"/);
   const game = fs.readFileSync(path.join(webRoot, 'game.js'), 'utf8');
   assert.match(game, /new SharedHomeSession/);

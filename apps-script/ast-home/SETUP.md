@@ -49,3 +49,6 @@ assets/house에 1·2층 배경과 17종 4방향 PNG 시트를 저장한다. 승�
 `node house.test.mjs`: 셀 변환, 방향, 영역 카탈로그, 충돌, 회전, 계단 점유, 식탁 상판 경계.
 `node integration/server.test.cjs`: 잔액 차감/복구 및 확장 서버 검증.
 `node house-browser-check.cjs`: 로컬 체험의 층 전환·연습실 구매·식탁/음식·저장·모바일 메뉴. 로컬 서버 4181 사용.
+
+## 모모·쿠키 먹이주기 추가
+현재 Code.gs에는 무료 먹이(+20), 1 AST 보상, 80 이하 급여, 시간당 10 감소와 비동기 재전송 복구가 포함되어 있습니다. 기존 AST GitHub API 웹 앱 배포를 새 버전으로 업데이트하면 활성화됩니다. APK 교체는 필요 없습니다. 상세 규칙은 docs/games/ast-home/PET-CARE.md를 참고하세요.

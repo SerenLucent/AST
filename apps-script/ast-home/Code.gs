@@ -505,15 +505,16 @@ function homeRecover(properties,token) {
 function homeResponse(properties,token,loginId,state,status) {
   const wallet=readAstGithubWallet(token,astAccountHash(loginId),loginId).wallet;
   if(!wallet)throw new Error('홈 화면에서 아스트를 먼저 조회해 주세요.');
-  return jsonResponse({ok:true,status:status,balance:wallet?wallet.balance:0,home:{schemaVersion:1,revision:state.revision,items:state.items,contributions:state.contributions||{},features:{mansion:1,furniture:2}}});
+  const now=Date.now(),pets=homePets(properties,state,now);return jsonResponse({ok:true,status:status,balance:wallet?wallet.balance:0,serverNow:now,pets:pets,petCare:{sequence:(state.petFeedSequences||{})[loginId]||0,pets:homePersonalPets(properties,state,loginId,now)},home:{schemaVersion:1,revision:state.revision,items:state.items,contributions:state.contributions||{},features:{mansion:1,furniture:2,pets:1}}});
 }
 function homeRequest(properties,token,request) {
   const loginId=String(request.loginId||'').trim().toLowerCase();
   if(!loginId||loginId.length>128||/[\x00-\x1f\x7f]/.test(loginId))throw new Error('로그인이 필요합니다.');
   homeRecover(properties,token);
   const current=homeRead(token),state=current.state;
-  if(request.action==='astHomeGet')return homeResponse(properties,token,loginId,state,'synced');
+  if(request.action==='astHomeGet'){if(!(state.petFeedViews||{})[loginId])properties.setProperty('AST_HOME_PET_VIEW_'+astAccountHash(loginId),JSON.stringify(homePets(properties,state,Date.now())));return homeResponse(properties,token,loginId,state,'synced');}
   if(typeof request.requestId!=='string'||!/^[a-zA-Z0-9_-]{16,80}$/.test(request.requestId))throw new Error('구매 요청 ID가 올바르지 않습니다.');
+  if(request.operation==='feed')return homeFeed(properties,token,request,loginId,current);
   const prior=state.receipts.find(r=>r.requestId===request.requestId);
   if(prior){if(prior.loginId!==loginId)throw new Error('요청 계정 불일치');return homeResponse(properties,token,loginId,state,'already_applied');}
   if(request.expectedRevision!==state.revision)return homeResponse(properties,token,loginId,state,'conflict');
@@ -628,3 +629,40 @@ function canBuild(item,items){
 function floorItems(items,floor){return items.filter(i=>AREAS[i.area]?.floor===floor)}
 function furniturePoint(item,items){const area=AREAS[item.area];if(!item.parent)return {x:area.x+item.x,y:area.y+item.y};const table=items.find(i=>i.uid===item.parent);if(!table)return {x:0,y:0};const td=definition(table.type);let x=item.x,y=item.y;const [w,h]=size(item);if(table.rotation===1){[x,y]=[td.h-item.y-h,item.x]}else if(table.rotation===2){[x,y]=[td.w-item.x-w,td.h-item.y-h]}else if(table.rotation===3){[x,y]=[item.y,td.w-item.x-w]}return {x:area.x+table.x+x,y:area.y+table.y+y}}
 function spriteBox(item,frame,items){const p=furniturePoint(item,items);let [w,h]=size(item);const table=item.parent?items.find(i=>i.uid===item.parent):null;if(table?.rotation%2)[w,h]=[h,w];const center=project(p.x+w/2,p.y+h/2,AREAS[item.area].floor,item.area),front=project(p.x+w,p.y+h,AREAS[item.area].floor,item.area);const tile=FLOOR_ONE_PLANES[item.area]?.tx||30,calibrated=['coffee-table','elegant-sofa'].includes(item.type)&&Number.isFinite(frame.contactU),width=(w+h)*tile*(calibrated?1/.94:.90),height=width*frame.h/frame.w;return {x:calibrated?front.x-width*frame.contactU:center.x-width/2,y:front.y-height*(calibrated?frame.contactV:1)-(calibrated?0:3)-(item.parent?45:0),w:width,h:height}}
+
+// Shared pet satiety; each account keeps its own durable feed sequence.
+function homePets(properties,state,now){
+ let started=Number(properties.getProperty('AST_HOME_PETS_STARTED_V1'));
+ if(!started){started=now;properties.setProperty('AST_HOME_PETS_STARTED_V1',String(now));}
+ const out={};for(const id of ['mochi','kuki']){const p=(state.pets||{})[id]||{hunger:75,updatedAt:started};out[id]={hunger:Math.max(0,Math.min(100,p.hunger)-Math.max(0,Math.floor((now-p.updatedAt)/360000))),updatedAt:now-Math.max(0,now-p.updatedAt)%360000};}
+ return out;
+}
+function homeFeed(properties,token,request,loginId,current){
+ if(!['mochi','kuki'].includes(request.petId)||!Number.isSafeInteger(request.feedSequence)||request.feedSequence<1)throw new Error('먹이주기 정보가 올바르지 않습니다.');
+ const state=current.state,sequences=state.petFeedSequences||{},previous=sequences[loginId]||0;
+ if(request.feedSequence<=previous)return homeResponse(properties,token,loginId,state,'already_applied');
+ if(request.feedSequence!==previous+1)throw new Error('먼저 보낸 먹이주기를 다시 전송해 주세요.');
+ const prior=state.receipts.find(r=>r.requestId===request.requestId);if(prior)throw new Error('이미 사용된 요청 ID입니다.');
+ const accountHash=astAccountHash(loginId),storedWallet=readAstGithubWallet(token,accountHash,loginId);
+ if(!storedWallet.wallet)throw new Error('홈 화면에서 아스트 잔액을 먼저 조회해 주세요.');
+ const wallet=storedWallet.wallet;if(!Number.isSafeInteger(wallet.balance+1))throw new Error('아스트 잔액 범위를 초과했습니다.');
+ const now=Date.now(),personal=homePersonalPets(properties,state,loginId,now),allowed=personal[request.petId].hunger<=80;state.pets=homePets(properties,state,now);
+ if(allowed){state.pets[request.petId].hunger=Math.min(100,state.pets[request.petId].hunger+20);personal[request.petId].hunger=Math.min(100,personal[request.petId].hunger+20);}
+ state.petFeedViews=state.petFeedViews||{};state.petFeedViews[loginId]={pets:personal};
+ // Other users feeding concurrently is intentional: every distinct account
+ // request earns one AST even when the shared pet has already reached 100.
+ if(allowed)wallet.balance++;sequences[loginId]=request.feedSequence;state.petFeedSequences=sequences;
+ state.revision++;state.receipts.push({requestId:request.requestId,loginId:loginId});state.receipts=state.receipts.slice(-512);
+ properties.setProperty(HOME_PENDING,JSON.stringify({requestId:request.requestId,accountHash:accountHash,walletSha:storedWallet.sha,wallet:wallet}));
+ const payload={message:'AST 모모·쿠키 먹이주기 '+state.revision,branch:BRANCH,content:Utilities.base64Encode(JSON.stringify(state),Utilities.Charset.UTF_8)};if(current.sha)payload.sha=current.sha;
+ const r=UrlFetchApp.fetch(contentsUrl(HOME_PATH),{method:'put',headers:githubHeaders(token),contentType:'application/json',payload:JSON.stringify(payload),muteHttpExceptions:true});
+ if(r.getResponseCode()!==200&&r.getResponseCode()!==201){homeRecover(properties,token);throw new Error('먹이주기 저장에 실패했습니다. 같은 요청으로 다시 시도해 주세요.');}
+ homeRecover(properties,token);return homeResponse(properties,token,loginId,state,allowed?'applied':'full');
+}
+
+function homePersonalPets(properties,state,loginId,now){
+ let pets=(state.petFeedViews||{})[loginId]?.pets;
+ if(!pets){try{pets=JSON.parse(properties.getProperty('AST_HOME_PET_VIEW_'+astAccountHash(loginId))||'null')}catch{}}
+ if(!pets)return homePets(properties,state,now);
+ const out={};for(const id of ['mochi','kuki']){const p=pets[id];out[id]={hunger:Math.max(0,Math.min(100,p.hunger)-Math.max(0,Math.floor((now-p.updatedAt)/360000))),updatedAt:now-Math.max(0,now-p.updatedAt)%360000};}return out;
+}

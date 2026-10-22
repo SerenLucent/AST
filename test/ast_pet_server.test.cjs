@@ -1,0 +1,21 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
+let now=10000000,state=null,sha=0,failWallet=false;const props=new Map(),wallets={alice:{balance:0,loginId:'alice'},bob:{balance:0,loginId:'bob'},charlie:{balance:0,loginId:'charlie'}};
+const properties={getProperty:k=>props.get(k)||null,setProperty:(k,v)=>props.set(k,v),deleteProperty:k=>props.delete(k)};
+const response=(code,data)=>({getResponseCode:()=>code,getContentText:()=>JSON.stringify(data)});
+const context={console,Date:class extends Date{static now(){return now}},Utilities:{Charset:{UTF_8:'UTF-8'},base64Encode:s=>Buffer.from(s).toString('base64'),base64Decode:s=>Buffer.from(s,'base64'),newBlob:b=>({getDataAsString:()=>b.toString()})},UrlFetchApp:{fetch:(url,o={})=>{if(o.method==='put'){const p=JSON.parse(o.payload);assert.equal(p.sha,state?String(sha):undefined);state=JSON.parse(Buffer.from(p.content,'base64'));sha++;return response(200,{})}return state?response(200,{sha:String(sha),content:Buffer.from(JSON.stringify(state)).toString('base64')}):response(404,{})}},readWallet:(token,hash,id)=>({wallet:structuredClone(wallets[id]),sha:'wallet-'+id}),saveWallet:(token,hash,w)=>{if(failWallet){failWallet=false;throw Error('lost wallet write')}wallets[w.loginId]=structuredClone(w)}};
+vm.createContext(context);vm.runInContext(fs.readFileSync(require('path').resolve(__dirname,'../apps-script/ast-home/Code.gs'),'utf8')+'\njsonResponse=x=>x;astAccountHash=id=>id;readAstGithubWallet=readWallet;saveAstGithubWallet=saveWallet;',context);
+let n=0;const call=r=>context.homeRequest(properties,'token',r),get=loginId=>call({action:'astHomeGet',loginId}),feed=(loginId,sequence,id)=>call({action:'astHomeApply',operation:'feed',loginId,petId:'mochi',feedSequence:sequence,requestId:id||`feed-request-${String(++n).padStart(8,'0')}`});
+state={schemaVersion:1,revision:0,items:[],receipts:[],contributions:{},pets:{mochi:{hunger:0,updatedAt:now},kuki:{hunger:0,updatedAt:now}}};get('alice');get('bob');
+for(let i=1;i<=5;i++)assert.equal(feed('alice',i).balance,i);
+assert.equal(state.pets.mochi.hunger,100);
+// Bob's five valid client feeds still earn five AST after Alice filled the pet.
+for(let i=1;i<=5;i++)assert.equal(feed('bob',i).balance,i);
+assert.equal(wallets.alice.balance,5);assert.equal(wallets.bob.balance,5);assert.equal(state.pets.mochi.hunger,100);
+assert.equal(feed('alice',5).status,'already_applied');assert.equal(wallets.alice.balance,5,'retries cannot mint twice');
+assert.throws(()=>feed('alice',7),/먼저/);
+now+=3600000;assert.equal(get('bob').pets.mochi.hunger,90);assert.equal(get('alice').petCare.sequence,5);
+now+=7200000;failWallet=true;assert.throws(()=>feed('alice',6,'recover-feed-000000001'),/lost wallet/);assert.equal(wallets.alice.balance,5);assert.equal(get('alice').balance,6);assert.equal(feed('alice',6,'recover-feed-000000001').balance,6);
+state.pets.mochi={hunger:81,updatedAt:now};get('charlie');assert.equal(feed('charlie',1).status,'full');assert.equal(wallets.charlie.balance,0,'81 cannot earn');state.petFeedViews.charlie.pets.mochi={hunger:80,updatedAt:now};assert.equal(feed('charlie',2).balance,1,'80 can eat once');assert.equal(feed('charlie',3).status,'full');assert.equal(wallets.charlie.balance,1,'cannot repeat at 100');
+now+=360000;assert.equal(feed('charlie',4).status,'full');assert.equal(wallets.charlie.balance,1,'99 cannot earn after losing just one point');
+assert.equal(state.contributions.alice,undefined,'feeding is not furniture spending');
+console.log('Server pets: A/B each earn five, shared 100 cap, decay, per-account sequence retries, ordering and interrupted Git/wallet recovery passed');
