@@ -1,6 +1,14 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Home</title><link rel="stylesheet" href="style.css?v=20261019-camera1"><link rel="stylesheet" href="house.css?v=20261019-whole3"><link rel="stylesheet" href="pet-care.css?v=20261022-pets4"></head>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Home</title><link rel="stylesheet" href="style.css?v=20261019-camera1"><link rel="stylesheet" href="house.css?v=20261019-whole3"><link rel="stylesheet" href="pet-care.css?v=20261022-pets5"></head>
 <body><header><strong>MY HOME <small>우리 집 꾸미기</small></strong><div><span class="ast-balance"><img class="ast-coin" src="assets/optimized/ast-coin-small-v1.webp" alt=""><span id="wallet">잔액 확인 중…</span></span><button id="retrySync" hidden>다시 연결</button><button id="shopButton">＋ 아이템 구매</button></div></header>
 <section class="view-toolbar" aria-label="화면 조작"><div class="zoom-group"><span>화면 크기</span><div id="zoomControls" aria-label="화면 확대"><button id="zoomOut" aria-label="축소" disabled>−</button><button id="zoomReset" aria-label="100%로 초기화">100%</button><button id="zoomIn" aria-label="확대">＋</button></div></div></section><main><button id="enterMansion" hidden aria-label="본관 실내로 입장">↳ ENTER</button><canvas id="game" width="1536" height="1024" aria-label="가구를 선택하고 바닥 셀을 눌러 배치하는 거실"></canvas><p id="status" role="status">가구 이미지를 불러오는 중…</p><div id="actions" hidden><span id="furnitureDetails"></span><button id="move">✥ 이동</button><button id="rotateSelected">↻ 회전</button></div><div id="placement" hidden><button id="rotateDraft">↻ 회전</button><button id="confirm"><span>O 확정</span><span class="confirm-cost"><img class="ast-coin" src="assets/optimized/ast-coin-small-v1.webp" alt="아스트"><span id="confirmCost">0</span></span></button><button id="cancel">X 취소</button></div></main>
 <dialog id="shop"><div class="dialogHeading"><h2>가구 구매</h2><button id="closeShop" aria-label="닫기">✕</button></div><p id="shopNotice">가구를 고른 뒤 바닥 셀에 배치하세요. 확정할 때 아스트가 사용됩니다.</p><div id="catalog"></div><small>구매 확정 시 표시된 아스트가 사용됩니다.</small></dialog>
-<script type="module">if(new URLSearchParams(location.search).get("scene")==="mansion"){import("./mansion.js?v=20261022-pets4")}else{import("./game.js?v=20261022-pets4")}</script></body></html>
+<script type="module">
+const fallback='20261022-pets5';
+let version=fallback;
+try{const response=await fetch('./release.json?check='+Date.now(),{cache:'no-store'});if(response.ok){const release=await response.json();if(/^\d{8}-pets\d+$/.test(release.version))version=release.version}}catch{}
+document.documentElement.dataset.homeVersion=version;
+const petStyle=document.querySelector('link[href^="pet-care.css"]');petStyle.href='pet-care.css?v='+version;
+const entry=new URLSearchParams(location.search).get('scene')==='mansion'?'./mansion.js?v=20261022-pets5':'./game.js?v=20261022-pets5';
+await import(entry.replace(fallback,version));
+</script></body></html>
