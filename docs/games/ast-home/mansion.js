@@ -1,4 +1,4 @@
-import {loadAsset,assetUrl,spriteFrames} from './asset-loader.mjs?v=20261022-mic2';
+import {loadAsset,assetUrl,spriteFrames} from './asset-loader.mjs?v=20261022-mic3';
 import {spriteIndex,sourcePoint,pointInClip,drawRegisteredSprite,registeredSprite,transformPoint,tableSurfaceMatrix} from './sprite-geometry.mjs?v=20261019-whole3';
 import {TEST_KEY,readTestState,mountTestTools} from './test-session.mjs';
 import {request} from './ast-bridge.js?v=20261019-house1';
