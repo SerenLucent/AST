@@ -195,7 +195,7 @@ test('standalone prototype keeps its local balance and never touches the server'
 
 test('HTML cache version loads a real game entry point which imports the required session module', () => {
   const html = fs.readFileSync(path.join(webRoot, 'index.html'), 'utf8');
-  assert.match(html, /game\.js\?v=20261022-pets3/);
+  assert.match(html, /game\.js\?v=20261022-pets4/);
   assert.match(html, /id="retrySync"/);
   const game = fs.readFileSync(path.join(webRoot, 'game.js'), 'utf8');
   assert.match(game, /new SharedHomeSession/);

@@ -1,4 +1,5 @@
 export const cellKey=p=>`${p.x},${p.y}`;
+export const facingFor=(dx,dy)=>Math.abs(dx)>Math.abs(dy)*3?'side':dy<0?'back':'front';
 export const stepDuration=(random=Math.random,reduced=false)=>reduced?1750:700+random()*500;
 const same=(a,b)=>a&&b&&a.x===b.x&&a.y===b.y;
 const overlap=(a,b)=>a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom;
@@ -23,10 +24,14 @@ export class PetWalker {
   const old=actor.cell;actor.cell=null;actor.target=null;actor.previous=null;
   const candidates=[...this.map.values()];
   if(old)candidates.sort((a,b)=>(Math.abs(a.x-old.x)+Math.abs(a.y-old.y))-(Math.abs(b.x-old.x)+Math.abs(b.y-old.y)));
-  else if(!this.states.some(other=>other!==actor&&other.cell)&&candidates.length){
-   const points=candidates.map(world.project),cx=(Math.min(...points.map(p=>p.x))+Math.max(...points.map(p=>p.x)))/2,cy=(Math.min(...points.map(p=>p.y))+Math.max(...points.map(p=>p.y)))/2;
-   const edge=p=>{const q=world.project(p);return Math.max(Math.abs(q.x-cx)/178,Math.abs(q.y-cy)/200)};candidates.sort((a,b)=>edge(b)-edge(a));
-  }else {const offset=Math.floor(this.random()*candidates.length);candidates.push(...candidates.splice(0,offset))}
+  else {
+   // Prefer roomy interior cells, rather than the extreme corner or stair gap.
+   const points=candidates.map(world.project),cx=points.reduce((v,p)=>v+p.x,0)/(points.length||1),cy=points.reduce((v,p)=>v+p.y,0)/(points.length||1);
+   const score=p=>{let clearance=0;for(let r=1;r<=5;r++){let open=true;for(let dx=-r;dx<=r;dx++)for(let dy=-r;dy<=r;dy++)if(!this.available({x:p.x+dx,y:p.y+dy}))open=false;if(!open)break;clearance=r;}const q=world.project(p);return clearance*10000-Math.hypot(q.x-cx,q.y-cy)};
+   const scores=new Map(candidates.map(p=>[cellKey(p),score(p)]));candidates.sort((a,b)=>scores.get(cellKey(b))-scores.get(cellKey(a)));
+   // In a tiny room start at an edge only if a central spawn leaves no room for the second body.
+   if(!this.states.some(other=>other!==actor&&other.cell)&&this.states.length>1){const viable=candidates.filter(p=>candidates.some(q=>!overlap(travelBounds(p,p,world.project),travelBounds(q,q,world.project))));if(viable.length)candidates.splice(0,candidates.length,...viable);}
+  }
   const next=candidates.find(p=>this.clearFor(actor,p,p,world));
   if(next){actor.cell=next;actor.target=next;actor.start=time;actor.end=time}
  }

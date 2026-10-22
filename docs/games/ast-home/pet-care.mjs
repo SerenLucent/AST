@@ -1,4 +1,4 @@
-import {PetWalker,cellKey} from './pet-walk.mjs?v=20261022-pets3';
+import {PetWalker,cellKey,facingFor} from './pet-walk.mjs?v=20261022-pets4';
 import {PetCare,PET_IDS} from './pet-care-model.mjs?v=20261022-pets1';
 const names={mochi:'모모',kuki:'쿠키'};
 const picture=(id,pose='front')=>`assets/pets/${id}-${pose}.webp`;
@@ -18,7 +18,7 @@ export function mountPetCare(options){
   for(const pose of walker.update(time,world)){
    const actor=actors.find(a=>a.id===pose.id);actor.el.hidden=!pose.visible;if(!pose.visible)continue;
    const a=world.project(pose.from),b=world.project(pose.to),dx=b.x-a.x,dy=b.y-a.y,im=actor.el.querySelector('img');
-   if(pose.moving){const facing=Math.abs(dx)>Math.abs(dy)*1.2?'side':dy<0?'back':'front';if(im.dataset.pose!==facing){im.src=picture(actor.id,facing);im.dataset.pose=facing}im.dataset.flip=facing==='side'&&dx<0?'-1':'1'}
+   if(pose.moving){const facing=facingFor(dx,dy);if(im.dataset.pose!==facing){im.src=picture(actor.id,facing);im.dataset.pose=facing}im.dataset.flip=facing==='side'&&dx<0?'-1':'1'}
    const r=options.canvas.getBoundingClientRect(),host=options.stage.getBoundingClientRect(),scale=r.width/world.width;
    const x=world.camera.x+pose.point.x*world.camera.scale,y=world.camera.y+pose.point.y*world.camera.scale;
    actor.el.dataset.from=cellKey(pose.from);actor.el.dataset.to=cellKey(pose.to);actor.el.dataset.duration=String(pose.duration);
