@@ -7,12 +7,15 @@ The Android application, APK update JSON, original Apps Script and existing
 games are not replaced. Existing team data and AST balances are shared.
 
 Server
-server/Code.gs belongs in a NEW Apps Script project, not the Android project.
+server/Code.gs belongs in the separate WEB Apps Script project, not the Android project.
+For an existing web deployment, replace its Code.gs and deploy a NEW VERSION of
+the SAME deployment. Keep the existing /exec URL and Script Properties.
 Deploy as owner; allow anyone to reach the endpoint. Actions require an opaque
 web session token. Private keys and passwords remain in Script Properties.
 LEGACY_API_URL / LEGACY_APP_KEY connect to the existing AST gateway.
-WEB_PASSWORD supports the existing shared team password (minimum 11 chars).
-WEB_ADMIN_PASSWORD is separate (minimum 12 chars).
+WEB_PASSWORD uses the owner's existing shared team password, with no minimum length.
+WEB_ADMIN_PASSWORD is separate, also with no minimum length.
+Both properties must be set and non-empty; login requires an exact match.
 WEB_ADMIN_IDS is comma-separated; default admin_naokist.
 Optional GAME_API_URL / GAME_APP_KEY enable timing-shooter score submission.
 The endpoint, which is not a secret, is in web/web-config.json.
@@ -28,6 +31,17 @@ Session token is stored locally, validated by the gateway, with 30-day idle
 expiry renewed when used. Logout/password change/member removal invalidates it.
 Different browsers and home-screen installations may need separate login.
 Do not place server keys, passwords or GitHub tokens in web assets or defines.
+
+Private last web access (revision private-web-access-v1)
+Login, session restore, and foreground return update a private server property.
+Only login ID and server time are stored; no IP/device history, no GitHub write.
+The web administrator reads the report with the existing verified web session.
+Android 3.1.1 uses a separate web-admin login for a read-only report token;
+passwords are never persisted and the token is held only in that screen's memory.
+Report tokens expire after 15 minutes idle and cannot call wallet/profile/proxy.
+Closing the Android screen discards the token and attempts server logout.
+No pre-feature history is reconstructed. Failed reads are not 'no access'.
+This feature requires the web Apps Script update even after the frontend is live.
 
 Build (inside web-app)
 flutter pub get

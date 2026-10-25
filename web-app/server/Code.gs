@@ -5,9 +5,14 @@
  */
 const WEB_IDLE_MS = 30 * 24 * 60 * 60 * 1000;
 const WEB_SESSION_PREFIX = 'AST_WEB_SESSION_';
+const WEB_ACCESS_PREFIX = 'AST_WEB_ACCESS_';
+const WEB_ADMIN_ACCESS_IDLE_MS = 15 * 60 * 1000;
 const WEB_RAW_ROOT = 'https://raw.githubusercontent.com/SerenLucent/AST/main/';
 
-function doGet() { return webJson({ok:true, service:'AST Web gateway', version:1}); }
+function doGet() {
+  // Public, non-secret marker to verify that the updated version was deployed.
+  return webJson({ok:true, service:'AST Web gateway', version:1, revision:'private-web-access-v1'});
+}
 function doPost(e) {
   try {
     const text = e && e.postData && e.postData.contents;
@@ -15,7 +20,15 @@ function doPost(e) {
     const r = JSON.parse(text);
     if (!r || Array.isArray(r) || typeof r !== 'object') webFail('잘못된 요청입니다.', 'BAD_REQUEST');
     if (r.action === 'login') return webJson(webLogin(r));
+    if (r.action === 'adminAccessLogin') {
+      if (!webAdmin(webId(r.loginId))) webFail('웹 관리자 계정으로 인증해 주세요.', 'FORBIDDEN');
+      return webJson(webLogin(r, true));
+    }
     const session = webSession(r.sessionToken);
+    // The Android report token can ONLY read this report or log out.
+    if (session.reportOnly && !['adminWebAccess','logout'].includes(r.action)) {
+      webFail('접속 기록 조회 전용 인증입니다.', 'FORBIDDEN');
+    }
     if (r.action === 'logout') {
       const lock=LockService.getScriptLock();lock.waitLock(10000);
       try {PropertiesService.getScriptProperties().deleteProperty(session.key);}
@@ -23,7 +36,10 @@ function doPost(e) {
       return webJson({ok:true});
     }
     let result;
-    if (r.action === 'session') result = {ok:true, profile:webProfile(session.user)};
+    if (r.action === 'session' || r.action === 'webAccess') {
+      webRecordAccess(session.user);
+      result = {ok:true, profile:webProfile(session.user)};
+    } else if (r.action === 'adminWebAccess') result = webAdminAccess(session.user);
     else if (r.action === 'publicConfig') {
       const source = webReadJson('remote-data/main.json');
       result = {ok:true,config:{generationOptions:source.generationOptions || [], memberGenerationColors:source.memberGenerationColors || {}}};
@@ -64,10 +80,9 @@ function webPassword(id) {
   const p=PropertiesService.getScriptProperties();
   const admin=webAdmin(id);
   const password=p.getProperty(admin?'WEB_ADMIN_PASSWORD':'WEB_PASSWORD');
-  // Keep the existing 11-character team password compatible with web login.
-  // The separately configured administrator password still requires 12.
-  const minimumLength=admin?12:11;
-  if (!password || password.length<minimumLength) webFail('웹 로그인 서버 설정을 관리자에게 확인해 주세요.', 'SETUP_REQUIRED');
+  // Respect the passwords chosen by the owner; do not impose a minimum length.
+  // Missing/empty configuration must never allow passwordless access.
+  if (!password) webFail('웹 로그인 서버 설정을 관리자에게 확인해 주세요.', 'SETUP_REQUIRED');
   return password;
 }
 function webReadJson(path) {
@@ -88,7 +103,7 @@ function webUser(id) {
   return {...u,loginId:id,role:webAdmin(id)?'admin':'member',resetAt:Date.parse(access.sessionResetAt || '') || 0};
 }
 function webProfile(u) { return {loginId:u.loginId,nickname:u.nickname || null,role:u.role}; }
-function webLogin(r) {
+function webLogin(r, reportOnly) {
   const id=webId(r.loginId);
   if(typeof r.password!=='string' || r.password.length>1024) webFail('아이디와 비밀번호를 확인해 주세요.', 'LOGIN_FAILED');
   const lock=LockService.getScriptLock(); lock.waitLock(10000);
@@ -107,8 +122,8 @@ function webLogin(r) {
     if(!secret) { secret=Utilities.getUuid()+Utilities.getUuid(); props.setProperty('WEB_SESSION_SECRET',secret); }
     const random=Utilities.getUuid()+Utilities.getUuid()+String(Date.now());
     const token=Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(random,secret)).replace(/=+$/,'');
-    const now=Date.now(), expiresAt=now+WEB_IDLE_MS;
-    const record={id,createdAt:now,expiresAt,passwordVersion:webHash(webPassword(id))};
+    const now=Date.now(), expiresAt=now+(reportOnly ? WEB_ADMIN_ACCESS_IDLE_MS : WEB_IDLE_MS);
+    const record={id,createdAt:now,expiresAt,passwordVersion:webHash(webPassword(id)),reportOnly:reportOnly===true};
     const all=props.getProperties();
     const own=[];
     for(const [k,v] of Object.entries(all)) if(k.startsWith(WEB_SESSION_PREFIX)) {
@@ -120,6 +135,7 @@ function webLogin(r) {
     own.sort((a,b)=>a.createdAt-b.createdAt);
     while(own.length>=10) props.deleteProperty(own.shift().key);
     props.setProperty(WEB_SESSION_PREFIX+webHash(token),JSON.stringify(record));
+    if (!reportOnly) webWriteAccessLocked(user, now);
     return {ok:true,sessionToken:token,expiresAt,profile:webProfile(user)};
   } finally {lock.releaseLock();}
 }
@@ -145,10 +161,36 @@ function webSession(token) {
       !webEqual(current.passwordVersion,webHash(webPassword(current.id)))) {
       p.deleteProperty(key);webFail('다시 로그인해 주세요.', 'UNAUTHORIZED');
     }
-    const expiresAt=Math.max(current.expiresAt,renewedAt+WEB_IDLE_MS);
+    const expiresAt=Math.max(current.expiresAt,renewedAt+(current.reportOnly ? WEB_ADMIN_ACCESS_IDLE_MS : WEB_IDLE_MS));
     p.setProperty(key,JSON.stringify({...current,expiresAt}));
-    return {key,user,expiresAt};
+    return {key,user,expiresAt,reportOnly:current.reportOnly===true};
   }finally{lock.releaseLock();}
+}
+// Private server properties only. No GitHub write, IP address, device ID,
+// password or token is stored in the access record. Server time is authoritative.
+function webWriteAccessLocked(user, now) {
+  const p=PropertiesService.getScriptProperties(), key=WEB_ACCESS_PREFIX+webHash(user.loginId);
+  let previous=0;
+  try { previous=JSON.parse(p.getProperty(key) || '{}').lastAccessAt || 0; } catch (_) {}
+  p.setProperty(key,JSON.stringify({loginId:user.loginId,lastAccessAt:Math.max(previous,now)}));
+}
+function webRecordAccess(user) {
+  const lock=LockService.getScriptLock();lock.waitLock(10000);
+  try {webWriteAccessLocked(user,Date.now());}finally{lock.releaseLock();}
+}
+function webAdminAccess(user) {
+  if(user.role!=='admin') webFail('관리자만 접속 기록을 조회할 수 있습니다.', 'FORBIDDEN');
+  const users=webReadJson('remote-data/users.json').users || [];
+  const ids=new Set(users.map(u=>String(u.loginId).trim().toLowerCase()));
+  const webAccess={};
+  for(const [key,raw] of Object.entries(PropertiesService.getScriptProperties().getProperties())) {
+    if(!key.startsWith(WEB_ACCESS_PREFIX)) continue;
+    let record;try{record=JSON.parse(raw)}catch(_){continue}
+    if(ids.has(record.loginId) && Number.isSafeInteger(record.lastAccessAt) && record.lastAccessAt>0) {
+      webAccess[record.loginId]=record.lastAccessAt;
+    }
+  }
+  return {ok:true,webAccess};
 }
 function webForward(urlProperty,keyProperty,payload) {
   const p=PropertiesService.getScriptProperties(),url=p.getProperty(urlProperty),key=p.getProperty(keyProperty);

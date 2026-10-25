@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:nwc_player_lab/main.dart' show Lab;
 
@@ -21,6 +23,7 @@ import 'score_library_screen.dart';
 import 'update_screen.dart';
 import 'game_lobby_screen.dart';
 import 'ast_home_lobby_screen.dart';
+import 'transit_live_screen.dart';
 
 ScheduleEntry? closestVisibleSchedule(
   Iterable<ScheduleEntry> entries,
@@ -182,6 +185,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       Icons.chair_outlined,
       Color(0xFF947247),
     ),
+    _MenuItem(
+      'Transit Live',
+      '모임의 시간을 지켜주는 실시간 지하철 정보',
+      Icons.subway_outlined,
+      Color(0xFF19876A),
+    ),
   ];
 
   @override
@@ -290,13 +299,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: _menuItems.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 14,
-                              mainAxisSpacing: 14,
-                              childAspectRatio: 1.02,
-                            ),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount:
+                              MediaQuery.sizeOf(context).width < 360 ? 1 : 2,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 14,
+                          mainAxisExtent: math.max(
+                            200,
+                            (MediaQuery.sizeOf(context).width - 54) / 2 / 1.02,
+                          ),
+                        ),
                         itemBuilder:
                             (context, index) => _MenuCard(
                               item: _menuItems[index],
@@ -553,6 +565,14 @@ class _MenuCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
         onTap: () {
+          if (item.title == 'Transit Live') {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const TransitLiveScreen(),
+              ),
+            );
+            return;
+          }
           if (item.title == 'AST 집 꾸미기') {
             Navigator.of(context)
                 .push(
@@ -670,7 +690,7 @@ class _MenuCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 subtitle,
-                maxLines: 2,
+                maxLines: item.title == 'Transit Live' ? 3 : 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Color(0xFF777184),

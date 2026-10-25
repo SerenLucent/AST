@@ -23,7 +23,7 @@ class AstTeamApp extends StatefulWidget {
   State<AstTeamApp> createState() => _AstTeamAppState();
 }
 
-class _AstTeamAppState extends State<AstTeamApp> {
+class _AstTeamAppState extends State<AstTeamApp> with WidgetsBindingObserver {
   late final SessionService _session;
   final UserRegistryService _registry = UserRegistryService();
   bool _loading = true;
@@ -36,44 +36,53 @@ class _AstTeamAppState extends State<AstTeamApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _session = widget.sessionService ?? SessionService();
     _restoreSession();
   }
 
-  Future<void> _restoreSession() async {
-    setState(() { _loading = true; _restoreError = null; });
-    try {
-    final profile = await _session.currentProfile();
-    if (!mounted) return;
-    setState(() {
-      _loginId = profile?.loginId;
-      _nickname = profile?.nickname;
-      _role = profile?.role;
-      _loading = false;
-    });
-    if (profile != null) {
-      unawaited(
-        _registry
-            .recordLogin(loginId: profile.loginId, nickname: profile.nickname)
-            .timeout(const Duration(seconds: 10))
-            .catchError((_) {}),
-      );
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _loginId != null) {
+      // Login/restore are recorded by the server. Also record a return to an
+      // already-open Safari/home-screen app, without blocking the UI.
+      unawaited(_registry.recordLogin(loginId: _loginId!).catchError((_) {}));
     }
+  }
+
+  Future<void> _restoreSession() async {
+    setState(() {
+      _loading = true;
+      _restoreError = null;
+    });
+    try {
+      final profile = await _session.currentProfile();
+      if (!mounted) return;
+      setState(() {
+        _loginId = profile?.loginId;
+        _nickname = profile?.nickname;
+        _role = profile?.role;
+        _loading = false;
+      });
     } catch (_) {
-      if (mounted) setState(() { _loading = false; _restoreError = '로그인 상태를 확인하지 못했습니다. 인터넷 연결 후 다시 시도해 주세요.'; });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _restoreError = '로그인 상태를 확인하지 못했습니다. 인터넷 연결 후 다시 시도해 주세요.';
+        });
+      }
     }
   }
 
   Future<bool> _login(String id, String password) async {
     if (!await _session.canSignIn(id, password)) return false;
     final profile = await _session.signIn(id);
-    try {
-      await _registry
-          .recordLogin(loginId: profile.loginId, nickname: profile.nickname)
-          .timeout(const Duration(seconds: 25));
-    } catch (_) {
-      // A temporary GitHub write failure must not prevent local sign-in.
-    }
     if (!mounted) return true;
     setState(() {
       _loginId = profile.loginId;
@@ -120,11 +129,33 @@ class _AstTeamAppState extends State<AstTeamApp> {
               : _loading
               ? const _LoadingScreen()
               : _restoreError != null
-              ? Scaffold(body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Padding(padding: const EdgeInsets.all(24), child: Text(_restoreError!, textAlign: TextAlign.center)),
-                  TextButton(onPressed: _restoreSession, child: const Text('다시 연결')),
-                  TextButton(onPressed: () async { await _session.signOut(); if (mounted) setState(() => _restoreError = null); }, child: const Text('다른 계정으로 로그인')),
-                ])))
+              ? Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          _restoreError!,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _restoreSession,
+                        child: const Text('다시 연결'),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          await _session.signOut();
+                          if (mounted) setState(() => _restoreError = null);
+                        },
+                        child: const Text('다른 계정으로 로그인'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
               : _loginId == null
               ? LoginScreen(key: const ValueKey('login'), onLogin: _login)
               : _nickname == null

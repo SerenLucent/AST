@@ -38,7 +38,7 @@ function harness() {
   };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(require.resolve('../server/Code.gs'),'utf8'),context);
-  return {properties,forwards,data,advance:ms=>now+=ms,onRead:fn=>afterRead=fn,
+  return {properties,forwards,data,advance:ms=>now+=ms,onRead:fn=>afterRead=fn,health:()=>context.doGet(),
     call:r=>context.doPost({postData:{contents:JSON.stringify(r)}}),
     login:(id='alice',password='web-test-password-only')=>context.doPost({postData:{contents:JSON.stringify({action:'login',loginId:id,password})}})};
 }
@@ -47,27 +47,42 @@ test('login issues only opaque token and server profile, not app key/password',(
   assert.match(r.sessionToken,/^[A-Za-z0-9_-]{43}$/);assert.ok(!JSON.stringify(r).includes('test-key'));
   assert.ok(!JSON.stringify(r).includes('password'));assert.equal(r.expiresAt,1000000000000+30*86400000);
 });
-test('11-character shared member password supports login and session restore',()=>{
-  const h=harness(),password='A'.repeat(11);
-  h.properties.set('WEB_PASSWORD',password);
-  const r=h.login('alice',password);
-  assert.equal(r.ok,true);assert.equal(r.profile.role,'member');
-  assert.equal(h.call({action:'session',sessionToken:r.sessionToken}).ok,true);
-  assert.equal(h.login('alice','B'.repeat(11)).code,'LOGIN_FAILED');
-});
-test('missing or shorter-than-11 member password remains invalid configuration',()=>{
-  for(const password of ['', 'A'.repeat(10)]) {
-    const h=harness();h.properties.set('WEB_PASSWORD',password);
-    assert.equal(h.login('alice',password).code,'SETUP_REQUIRED');
-    assert.equal(h.forwards.length,0);
+test('member login and restore use the configured password without a minimum length',()=>{
+  for(const length of [1,9,10,11,12]) {
+    const h=harness(),password='A'.repeat(length);
+    h.properties.set('WEB_PASSWORD',password);
+    const r=h.login('alice',password);
+    assert.equal(r.ok,true);assert.equal(r.profile.role,'member');
+    assert.equal(h.call({action:'session',sessionToken:r.sessionToken}).ok,true);
+    assert.equal(h.login('alice','B'.repeat(length)).code,'LOGIN_FAILED');
   }
 });
-test('administrator password requirement is unchanged',()=>{
-  const h=harness();h.properties.set('WEB_ADMIN_PASSWORD','A'.repeat(11));
-  assert.equal(h.login('admin_naokist','A'.repeat(11)).code,'SETUP_REQUIRED');
-  h.properties.set('WEB_ADMIN_PASSWORD','A'.repeat(12));
-  const r=h.login('admin_naokist','A'.repeat(12));
-  assert.equal(r.ok,true);assert.equal(r.profile.role,'admin');
+test('missing or empty member/admin password is rejected without creating a session',()=>{
+  for(const [id,property] of [['alice','WEB_PASSWORD'],['admin_naokist','WEB_ADMIN_PASSWORD']]) {
+    for(const missing of [true,false]) {
+      const h=harness();
+      if(missing) h.properties.delete(property);else h.properties.set(property,'');
+      assert.equal(h.login(id,'').code,'SETUP_REQUIRED');
+      assert.equal(h.forwards.length,0);
+      assert.equal([...h.properties.keys()].some(k=>k.startsWith('AST_WEB_SESSION_')),false);
+    }
+  }
+});
+test('administrator login and restore also have no minimum password length',()=>{
+  for(const length of [1,9,10,11,12]) {
+    const h=harness(),password='A'.repeat(length);
+    h.properties.set('WEB_ADMIN_PASSWORD',password);
+    const r=h.login('admin_naokist',password);
+    assert.equal(r.ok,true);assert.equal(r.profile.role,'admin');
+    assert.equal(h.call({action:'session',sessionToken:r.sessionToken}).ok,true);
+    assert.equal(h.login('admin_naokist','B'.repeat(length)).code,'LOGIN_FAILED');
+  }
+});
+test('public health identifies the deployed revision without exposing properties',()=>{
+  const h=harness(),health=h.health();
+  assert.deepEqual(health,{ok:true,service:'AST Web gateway',version:1,revision:'private-web-access-v1'});
+  assert.ok(!JSON.stringify(health).includes(h.properties.get('WEB_PASSWORD')));
+  assert.ok(!JSON.stringify(health).includes(h.properties.get('WEB_ADMIN_PASSWORD')));
 });
 test('wrong password and forged token cannot query or mutate',()=>{
   const h=harness();assert.equal(h.login('alice','bad').ok,false);
@@ -141,4 +156,68 @@ test('property order does not reject unchanged entries owned by others',()=>{
   assert.equal(h.call({action:'proxy',sessionToken:r.sessionToken,payload}).ok,true);
   payload.content.schedules[1].title='Forged';
   assert.equal(h.call({action:'proxy',sessionToken:r.sessionToken,payload}).ok,false);
+});
+
+function accessRecords(h) {
+  return [...h.properties.entries()].filter(([key])=>key.startsWith('AST_WEB_ACCESS_')).map(([,raw])=>JSON.parse(raw));
+}
+test('web login and restore record server time privately without a GitHub write',()=>{
+  const h=harness(),original=JSON.stringify(h.data),r=h.login();
+  assert.deepEqual(accessRecords(h),[{loginId:'alice',lastAccessAt:1000000000000}]);
+  h.advance(3600000);
+  assert.equal(h.call({action:'session',sessionToken:r.sessionToken}).ok,true);
+  assert.deepEqual(accessRecords(h),[{loginId:'alice',lastAccessAt:1000003600000}]);
+  assert.equal(h.forwards.length,0);assert.equal(JSON.stringify(h.data),original);
+});
+test('foreground access uses verified identity and ignores client timestamp',()=>{
+  const h=harness(),r=h.login();h.advance(5000);
+  assert.equal(h.call({action:'webAccess',sessionToken:r.sessionToken,loginId:'bob',lastAccessAt:9999999999999}).ok,true);
+  assert.deepEqual(accessRecords(h),[{loginId:'alice',lastAccessAt:1000000005000}]);
+});
+test('failed login and rejected session never create access records',()=>{
+  const h=harness();h.login('alice','bad');
+  h.call({action:'webAccess',sessionToken:'x'.repeat(43)});
+  assert.deepEqual(accessRecords(h),[]);
+});
+test('only a verified admin can read web access; public health exposes none',()=>{
+  const h=harness(),member=h.login();
+  assert.equal(h.call({action:'adminWebAccess',sessionToken:member.sessionToken,role:'admin'}).code,'FORBIDDEN');
+  const admin=h.login('admin_naokist','admin-test-password-only');
+  const r=h.call({action:'adminWebAccess',sessionToken:admin.sessionToken});
+  assert.equal(r.webAccess.alice,1000000000000);
+  assert.equal(h.health().webAccess,undefined);
+  for(const secret of ['test-password','test-key','sessionToken']) assert.ok(!JSON.stringify(r).includes(secret));
+});
+test('Android admin report authentication does not count as web usage and cannot mutate',()=>{
+  const h=harness();h.login();
+  const r=h.call({action:'adminAccessLogin',loginId:'admin_naokist',password:'admin-test-password-only'});
+  assert.equal(r.ok,true);assert.equal(r.expiresAt,1000000000000+15*60000);
+  assert.equal(h.call({action:'adminWebAccess',sessionToken:r.sessionToken}).ok,true);
+  assert.deepEqual(accessRecords(h),[{loginId:'alice',lastAccessAt:1000000000000}]);
+  for(const action of ['proxy','webAccess','session','gameScore','profile']) {
+    assert.equal(h.call({action,sessionToken:r.sessionToken,payload:{action:'astWalletClaim'}}).code,'FORBIDDEN');
+  }
+  assert.equal(h.forwards.length,0);
+  assert.equal(h.call({action:'logout',sessionToken:r.sessionToken}).ok,true);
+  assert.equal(h.call({action:'adminWebAccess',sessionToken:r.sessionToken}).code,'UNAUTHORIZED');
+});
+test('member cannot request Android admin report token',()=>{
+  const h=harness();
+  assert.equal(h.call({action:'adminAccessLogin',loginId:'alice',password:'web-test-password-only'}).code,'FORBIDDEN');
+  assert.deepEqual(accessRecords(h),[]);
+});
+test('report session expires after 15 minutes idle; changing admin password revokes it',()=>{
+  const h=harness();const login=()=>h.call({action:'adminAccessLogin',loginId:'admin_naokist',password:'admin-test-password-only'});
+  let r=login();h.advance(15*60000);
+  assert.equal(h.call({action:'adminWebAccess',sessionToken:r.sessionToken}).code,'UNAUTHORIZED');
+  r=login();h.properties.set('WEB_ADMIN_PASSWORD','changed');
+  assert.equal(h.call({action:'adminWebAccess',sessionToken:r.sessionToken}).code,'UNAUTHORIZED');
+});
+test('report excludes deleted users and survives logout',()=>{
+  const h=harness(),alice=h.login();h.login('bob');
+  h.call({action:'logout',sessionToken:alice.sessionToken});
+  h.data['remote-data/users.json'].users=h.data['remote-data/users.json'].users.filter(u=>u.loginId!=='bob');
+  const admin=h.call({action:'adminAccessLogin',loginId:'admin_naokist',password:'admin-test-password-only'});
+  const r=h.call({action:'adminWebAccess',sessionToken:admin.sessionToken});
+  assert.deepEqual(r.webAccess,{alice:1000000000000});
 });

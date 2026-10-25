@@ -1,64 +1,83 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../services/apps_script_gateway.dart';
+import '../services/ast_home_contribution_repository.dart';
 import '../services/user_repository.dart';
 import '../widgets/ast_wallet_widgets.dart';
 import 'ast_home_screen.dart';
 
 class AstHomeLobbyScreen extends StatefulWidget {
-  const AstHomeLobbyScreen({super.key, required this.loginId});
+  const AstHomeLobbyScreen({
+    super.key,
+    required this.loginId,
+    this.repository,
+    this.userRepository,
+  });
   final String loginId;
+  final AstHomeContributionRepository? repository;
+  final UserRepository? userRepository;
   @override
   State<AstHomeLobbyScreen> createState() => _AstHomeLobbyScreenState();
 }
 
 class _AstHomeLobbyScreenState extends State<AstHomeLobbyScreen> {
-  final _gateway = AppsScriptGateway();
+  late final AstHomeContributionRepository _repository;
+  late final UserRepository _userRepository;
   List<MapEntry<String, int>> _rows = [];
   Map<String, String> _names = {};
   bool _loading = true;
   String? _error;
+  int _loadGeneration = 0;
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository ?? AstHomeContributionRepository();
+    _userRepository = widget.userRepository ?? UserRepository();
     _load();
   }
 
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
     setState(() {
       _loading = true;
       _error = null;
     });
+    // Names are optional: a slow/failed nickname lookup must not hold up totals.
+    unawaited(_loadNames(generation));
     try {
-      final result = await _gateway.homeRequest({
-        'action': 'astHomeGet',
-        'loginId': widget.loginId,
-      });
-      try {
-        final users = await UserRepository().fetch();
-        _names = {for (final u in users) u.loginId.toLowerCase(): u.nickname};
-      } catch (_) {}
-      final totals = Map<String, dynamic>.from(
-        (result['home'] as Map)['contributions'] as Map? ?? {},
-      );
-      final rows =
-          totals.entries
-              .map((e) => MapEntry(e.key, (e.value as num).toInt()))
-              .toList()
-            ..sort((a, b) {
-              final order = b.value.compareTo(a.value);
-              return order != 0 ? order : a.key.compareTo(b.key);
-            });
-      if (mounted) setState(() => _rows = rows);
-    } catch (e) {
-      if (mounted) setState(() => _error = '기여도를 불러오지 못했습니다.');
+      final rows = await _repository.fetch();
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _rows = rows);
+      }
+    } catch (_) {
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _error = '기여도를 불러오지 못했습니다.');
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _loadNames(int generation) async {
+    try {
+      final users = await _userRepository.fetch();
+      if (mounted && generation == _loadGeneration) {
+        setState(() {
+          _names = {
+            for (final u in users) u.loginId.trim().toLowerCase(): u.nickname,
+          };
+        });
+      }
+    } catch (_) {
+      // Keep existing names or show login IDs when the directory is unavailable.
     }
   }
 
   @override
   void dispose() {
-    _gateway.close();
+    if (widget.repository == null) _repository.close();
     super.dispose();
   }
 
@@ -117,20 +136,18 @@ class _AstHomeLobbyScreenState extends State<AstHomeLobbyScreen> {
         Padding(
           padding: const EdgeInsets.all(20),
           child: FilledButton.icon(
-            onPressed:
-                _loading || _error != null
-                    ? null
-                    : () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder:
-                              (_) => AstHomeScreen(loginId: widget.loginId),
-                        ),
-                      );
-                      if (mounted) {
-                        _load();
-                      }
-                    },
+            // The leaderboard is informational. The game still loads and checks
+            // the authoritative wallet/state through its existing server bridge.
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => AstHomeScreen(loginId: widget.loginId),
+                ),
+              );
+              if (mounted) {
+                _load();
+              }
+            },
             icon: const Icon(Icons.home),
             label: const Text('집 꾸미기 입장'),
           ),
