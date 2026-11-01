@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "accountHash": "cf8cf09025fcd99df5c1e140df36d023a58a7a99c8eade634bdbe33b5cf60909",
-  "balance": 240,
-  "cycleStartedAt": 1793522823906,
-  "availableAt": 1793526423906,
-  "lastClaimedAt": 1793522823906,
-  "lastRequestId": "32a64e29f5b4c6c591fb58ca5bc5a732"
+  "balance": 250,
+  "cycleStartedAt": 1793540618955,
+  "availableAt": 1793544218955,
+  "lastClaimedAt": 1793540618955,
+  "lastRequestId": "69a9702e4f2133fac3d409a5355a74f8"
 }
